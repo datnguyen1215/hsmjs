@@ -21,7 +21,7 @@ A complete authentication system with login, registration, password reset, and t
 ## Complete Authentication System
 
 ```javascript
-import { createMachine, action } from 'hsm';
+import { createMachine, action } from 'hsmjs';
 
 const machine = createMachine('auth');
 

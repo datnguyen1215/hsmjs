@@ -17,7 +17,7 @@ A comprehensive checkout flow with cart management, shipping, payment processing
 ## Complete Checkout Implementation
 
 ```javascript
-import { createMachine, action } from 'hsm';
+import { createMachine, action } from 'hsmjs';
 
 const machine = createMachine('checkout');
 

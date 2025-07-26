@@ -30,7 +30,7 @@ A form submission flow with validation, error handling, and async submission.
 ## Basic Form Validation
 
 ```javascript
-import { createMachine, action } from 'hsm';
+import { createMachine, action } from 'hsmjs';
 
 const machine = createMachine('form');
 
@@ -121,7 +121,7 @@ await form.send('SUBMIT', {
 ## Advanced Form with Field-Level Validation
 
 ```javascript
-import { createMachine, action } from 'hsm';
+import { createMachine, action } from 'hsmjs';
 
 const machine = createMachine('advanced-form');
 

@@ -5,7 +5,7 @@ HSM works great with TypeScript. Here's the recommended approach for type safety
 ## Type Definitions
 
 ```typescript
-import { createMachine } from 'hsm';
+import { createMachine } from 'hsmjs';
 
 // Define your types
 interface Context {

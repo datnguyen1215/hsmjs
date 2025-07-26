@@ -15,21 +15,21 @@ A lightweight, powerful JavaScript state machine library with hierarchical state
 ## Installation
 
 ```bash
-npm install hsm
+npm install hsmjs
 # or
-yarn add hsm
+yarn add hsmjs
 # or
-pnpm add hsm
+pnpm add hsmjs
 ```
 
 ## Quick Start
 
 ```javascript
 // ES6 Modules
-import { createMachine } from 'hsm';
+import { createMachine } from 'hsmjs';
 
 // CommonJS
-const { createMachine } = require('hsm');
+const { createMachine } = require('hsmjs');
 
 // Define your machine
 const machine = createMachine('toggle');
@@ -70,7 +70,7 @@ Context is the data associated with your machine instance. It persists across st
 ## Real-World Example: Form Submission
 
 ```javascript
-import { createMachine, action } from 'hsm';
+import { createMachine, action } from 'hsmjs';
 
 const machine = createMachine('form');
 
