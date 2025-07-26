@@ -1,6 +1,6 @@
 {
   "name": "hsmjs",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A lightweight, imperative state machine library with hierarchical states and async action support",
   "main": "dist/cjs/index.js",
   "module": "dist/es/index.js",
@@ -14,7 +14,10 @@
     "build:pkg": "echo '{\"type\":\"module\"}' > dist/es/package.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run build",
-    "test": "jest"
+    "test": "jest",
+    "version:patch": "npm version patch --no-git-tag-version && git tag v$(node -p \"require('./package.json').version\")",
+    "version:minor": "npm version minor --no-git-tag-version && git tag v$(node -p \"require('./package.json').version\")",
+    "version:major": "npm version major --no-git-tag-version && git tag v$(node -p \"require('./package.json').version\")"
   },
   "keywords": [
     "state-machine",
