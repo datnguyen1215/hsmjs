@@ -1,0 +1,40 @@
+{
+  "name": "hierarchical-state-machine",
+  "version": "1.0.0",
+  "description": "A lightweight, imperative state machine library with hierarchical states and async action support",
+  "main": "dist/cjs/index.js",
+  "module": "dist/es/index.js",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "npm run clean && npm run build:cjs && npm run build:es",
+    "build:cjs": "babel src --out-dir dist/cjs --presets=@babel/preset-env",
+    "build:es": "babel src --out-dir dist/es --no-babelrc --presets=@babel/preset-modules",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build",
+    "test": "jest"
+  },
+  "keywords": [
+    "state-machine",
+    "fsm",
+    "hierarchical",
+    "async",
+    "imperative"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/cli": "^7.23.0",
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.23.0",
+    "@babel/preset-modules": "^0.1.6",
+    "jest": "^29.7.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/es/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  }
+}
