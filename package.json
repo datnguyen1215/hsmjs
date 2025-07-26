@@ -1,6 +1,6 @@
 {
   "name": "hierarchical-state-machine",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A lightweight, imperative state machine library with hierarchical states and async action support",
   "main": "dist/cjs/index.js",
   "module": "dist/es/index.js",
