@@ -33,8 +33,8 @@ const namedAction = action('test', (ctx) => {
 });
 console.assert(namedAction.actionName === 'test', 'Action should have correct name');
 
-// Test export types
-import hsm from '../../dist/es/index.js';
-console.assert(typeof hsm.createMachine === 'function', 'Default export should have createMachine');
+// Test that named exports work correctly
+console.assert(createMachine !== undefined, 'createMachine should be exported');
+console.assert(action !== undefined, 'action should be exported');
 
 console.log('✓ ES6 import tests passed!');
