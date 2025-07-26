@@ -34,7 +34,7 @@ export function createStateMachineStore(machine, initialContext = {}) {
 
 ```svelte
 <script>
-  import { createMachine } from 'hsmjs';
+  import { createMachine } from '@datnguyen1215/hsmjs';
   import { createStateMachineStore } from './stateMachineStore';
 
   // Define machine

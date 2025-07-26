@@ -53,7 +53,7 @@ export class StateMachineService implements OnDestroy {
 
 ```typescript
 import { Component, OnInit } from '@angular/core';
-import { createMachine } from 'hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 import { StateMachineService } from './state-machine.service';
 
 @Component({

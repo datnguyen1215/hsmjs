@@ -4,10 +4,10 @@
 
 ```javascript
 // ES6 Modules
-import { createMachine, action } from 'hsmjs';
+import { createMachine, action } from '@datnguyen1215/hsmjs';
 
 // CommonJS  
-const { createMachine, action } = require('hsmjs');
+const { createMachine, action } = require('@datnguyen1215/hsmjs');
 ```
 
 ## Table of Contents
@@ -37,7 +37,7 @@ Creates a new state machine definition.
 
 **Example:**
 ```javascript
-import { createMachine } from 'hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('app');
 ```
@@ -311,7 +311,7 @@ Creates a named action for better debugging and reusability.
 
 **Example:**
 ```javascript
-import { action } from 'hsmjs';
+import { action } from '@datnguyen1215/hsmjs';
 
 // Define reusable actions
 const validateForm = action('validateForm', (ctx, event) => {

@@ -5,7 +5,7 @@ Welcome to HSM! This guide will help you get up and running quickly.
 ## Installation
 
 ```bash
-npm install hsmjs
+npm install @datnguyen1215/hsmjs
 ```
 
 ## Importing
@@ -13,19 +13,19 @@ npm install hsmjs
 ### ES6 Modules (ESM)
 
 ```javascript
-import { createMachine, action } from 'hsmjs';
+import { createMachine, action } from '@datnguyen1215/hsmjs';
 ```
 
 ### CommonJS
 
 ```javascript
-const { createMachine, action } = require('hsmjs');
+const { createMachine, action } = require('@datnguyen1215/hsmjs');
 ```
 
 ### TypeScript
 
 ```typescript
-import { createMachine, action } from 'hsmjs';
+import { createMachine, action } from '@datnguyen1215/hsmjs';
 // Full TypeScript support coming soon
 ```
 
@@ -44,7 +44,7 @@ Before diving in, familiarize yourself with these core concepts:
 Let's build a simple toggle switch:
 
 ```javascript
-import { createMachine } from 'hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 // 1. Create a machine
 const machine = createMachine('toggle');

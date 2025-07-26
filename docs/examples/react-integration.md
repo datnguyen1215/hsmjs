@@ -31,7 +31,7 @@ export function useStateMachine(machine, initialContext = {}) {
 ## Usage Example
 
 ```javascript
-import { createMachine } from 'hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 import { useStateMachine } from './useStateMachine';
 
 // Define your machine

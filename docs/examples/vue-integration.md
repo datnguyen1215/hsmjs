@@ -62,7 +62,7 @@ export function useStateMachine(machine, initialContext = {}) {
 </template>
 
 <script setup>
-import { createMachine } from 'hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 import { useStateMachine } from './useStateMachine';
 
 // Define machine

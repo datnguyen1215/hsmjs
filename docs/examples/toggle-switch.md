@@ -14,7 +14,7 @@ The simplest possible state machine - a toggle switch with two states.
 ## Code
 
 ```javascript
-import { createMachine } from 'hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 // Create the machine
 const machine = createMachine('toggle');
@@ -47,7 +47,7 @@ console.log(toggle.current); // 'off'
 Add side effects when entering/exiting states:
 
 ```javascript
-import { createMachine } from 'hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('toggle');
 
@@ -81,7 +81,7 @@ await toggle.send('TOGGLE');
 Track additional data like toggle count:
 
 ```javascript
-import { createMachine } from 'hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('toggle');
 

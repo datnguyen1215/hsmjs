@@ -16,7 +16,7 @@ A traffic light system that cycles through red, yellow, and green states with pr
 ## Basic Implementation
 
 ```javascript
-import { createMachine, action } from 'hsmjs';
+import { createMachine, action } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('traffic-light');
 
@@ -45,7 +45,7 @@ await light.send('TIMER'); // yellow -> red
 ## With Automatic Timing
 
 ```javascript
-import { createMachine, action } from 'hsmjs';
+import { createMachine, action } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('traffic-light');
 
@@ -98,7 +98,7 @@ light.context.instance = light;
 ## With Light Control
 
 ```javascript
-import { createMachine, action } from 'hsmjs';
+import { createMachine, action } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('traffic-light');
 
@@ -157,7 +157,7 @@ const light = machine.start({
 A more complex example with pedestrian crossing support:
 
 ```javascript
-import { createMachine, action } from 'hsmjs';
+import { createMachine, action } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('intersection');
 
