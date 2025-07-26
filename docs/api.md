@@ -1,5 +1,15 @@
 # API Reference
 
+## Importing
+
+```javascript
+// ES6 Modules
+import { createMachine, action } from 'hsm';
+
+// CommonJS  
+const { createMachine, action } = require('hsm');
+```
+
 ## Table of Contents
 
 - [Machine Creation](#machine-creation)

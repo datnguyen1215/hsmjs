@@ -1,4 +1,4 @@
-name: Import Tests
+name: CommonJS and ESM Import Compatibility
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   test-imports:
-    name: Test Import Compatibility
+    name: Test Module Import Compatibility (CJS & ESM)
     runs-on: ubuntu-latest
     
     strategy:

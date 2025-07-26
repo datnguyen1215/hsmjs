@@ -24,10 +24,12 @@ pnpm add hsm
 
 ## Quick Start
 
-Here's a simple toggle switch:
-
 ```javascript
+// ES6 Modules
 import { createMachine } from 'hsm';
+
+// CommonJS
+const { createMachine } = require('hsm');
 
 // Define your machine
 const machine = createMachine('toggle');

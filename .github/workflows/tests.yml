@@ -1,4 +1,4 @@
-name: Tests
+name: Unit Tests
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Test on Node ${{ matrix.node-version }}
+    name: Run Jest Unit Tests - Node ${{ matrix.node-version }}
     runs-on: ubuntu-latest
     
     strategy:

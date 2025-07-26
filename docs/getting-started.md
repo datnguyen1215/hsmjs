@@ -8,6 +8,27 @@ Welcome to HSM! This guide will help you get up and running quickly.
 npm install hsm
 ```
 
+## Importing
+
+### ES6 Modules (ESM)
+
+```javascript
+import { createMachine, action } from 'hsm';
+```
+
+### CommonJS
+
+```javascript
+const { createMachine, action } = require('hsm');
+```
+
+### TypeScript
+
+```typescript
+import { createMachine, action } from 'hsm';
+// Full TypeScript support coming soon
+```
+
 ## Basic Concepts
 
 Before diving in, familiarize yourself with these core concepts:
