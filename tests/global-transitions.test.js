@@ -3,7 +3,7 @@
  * Tests machine-level transitions that work from any state
  */
 
-import { createMachine } from "../dist/es/index.js";
+import { createMachine } from "../dist/cjs/index.js";
 
 describe("Global Transitions", () => {
   describe("Basic Global Transitions", () => {

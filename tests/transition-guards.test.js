@@ -3,7 +3,7 @@
  * Tests conditional transitions using guard functions
  */
 
-import { createMachine } from "../dist/es/index.js";
+import { createMachine } from "../dist/cjs/index.js";
 
 describe("Transition Guards", () => {
   describe("Basic Guard Conditions", () => {

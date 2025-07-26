@@ -3,7 +3,7 @@
  * Tests nested states and parent-child relationships
  */
 
-import { createMachine } from "../dist/es/index.js";
+import { createMachine } from "../dist/cjs/index.js";
 
 describe("Hierarchical States", () => {
   describe("Basic Nested States", () => {
