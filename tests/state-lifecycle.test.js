@@ -3,7 +3,7 @@
  * Tests state entry and exit actions
  */
 
-import { createMachine, action } from "../dist/es/index.js";
+import { createMachine, action } from "../dist/cjs/index.js";
 
 describe("State Lifecycle", () => {
   describe("Entry Actions", () => {

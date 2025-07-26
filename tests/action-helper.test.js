@@ -3,7 +3,7 @@
  * Tests the action() helper function for creating named actions
  */
 
-import { action } from "../dist/es/index.js";
+import { action } from "../dist/cjs/index.js";
 
 describe("Action Helper", () => {
   describe("Basic Action Creation", () => {
