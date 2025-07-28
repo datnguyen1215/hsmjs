@@ -23,7 +23,7 @@ Building complex stateful applications is hard. Traditional state management oft
 
 **hsmjs solves these problems** with an elegant, imperative API that makes state machines feel natural in JavaScript.
 
-## ✨ Features
+## Features
 
 ### Core Features
 - 🎯 **Simple, Intuitive API** - Build state machines that read like natural language
@@ -41,7 +41,7 @@ Building complex stateful applications is hard. Traditional state management oft
 - 📚 **Extensive Documentation** - Examples for every feature
 - 🔧 **Framework Agnostic** - Works with React, Vue, Angular, Svelte, or vanilla JS
 
-## 📦 Installation
+## Installation
 
 ```bash
 npm install @datnguyen1215/hsmjs
@@ -55,7 +55,7 @@ yarn add @datnguyen1215/hsmjs
 pnpm add @datnguyen1215/hsmjs
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Simple Toggle
 
@@ -116,7 +116,7 @@ await counter.send('INCREMENT'); // Count: 2
 await counter.send('INCREMENT'); // Count: 3
 ```
 
-## 🎯 Examples
+## Examples
 
 ### Async Data Fetching
 
@@ -303,7 +303,7 @@ yellow
 machine.initial(red);
 ```
 
-## 🎮 Advanced Patterns
+## Advanced Patterns
 
 ### Global Event Handlers
 
@@ -375,7 +375,7 @@ editing.on('UNDO', (ctx) => {
 });
 ```
 
-## 🔗 Framework Integration
+## Framework Integration
 
 ### React
 
@@ -441,7 +441,7 @@ export function useStateMachine(machine, initialContext) {
 
 [See more framework examples →](./docs/examples/)
 
-## 📊 Comparison
+## Comparison
 
 | Feature | hsmjs | XState | Robot | JavaScript State Machine |
 |---------|-------|--------|-------|-------------------------|
@@ -456,7 +456,7 @@ export function useStateMachine(machine, initialContext) {
 | Learning Curve | Low | High | Low | Low |
 | Imperative API | ✅ | ❌ | ❌ | ✅ |
 
-## 📖 Documentation
+## Documentation
 
 - [Getting Started Guide](./docs/getting-started.md)
 - [Core Concepts](./docs/concepts.md)
@@ -468,7 +468,7 @@ export function useStateMachine(machine, initialContext) {
   - [Traffic Light](./docs/examples/traffic-light.md)
   - [Framework Integrations](./docs/examples/)
 
-## 🛠️ Development
+## Development
 
 ```bash
 # Clone the repository
@@ -512,7 +512,7 @@ This project uses an automated **manual-trigger release system** for controlled,
 
 See [RELEASE.md](./RELEASE.md) for the complete user guide.
 
-## 📝 API Highlights
+## API Highlights
 
 ### Machine Creation
 ```javascript
@@ -541,11 +541,11 @@ instance.subscribe(({ from, to, event }) => {});
 instance.stop();
 ```
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-## 📄 License
+## License
 
 MIT © Dat Nguyen
 
