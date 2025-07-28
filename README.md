@@ -1,26 +1,63 @@
 # @datnguyen1215/hsmjs
 
+<div align="center">
+
 [![npm version](https://badge.fury.io/js/@datnguyen1215%2Fhsmjs.svg)](https://badge.fury.io/js/@datnguyen1215%2Fhsmjs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![npm downloads](https://img.shields.io/npm/dm/@datnguyen1215/hsmjs.svg)](https://www.npmjs.com/package/@datnguyen1215/hsmjs)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@datnguyen1215/hsmjs)](https://bundlephobia.com/package/@datnguyen1215/hsmjs)
 
-A lightweight, powerful hierarchical state machine library for JavaScript with async support and zero dependencies.
+**A lightweight, powerful hierarchical state machine library for JavaScript with async support and zero dependencies.**
 
-## Features
+[Installation](#installation) • [Quick Start](#quick-start) • [Features](#features) • [Examples](#examples) • [API Reference](./docs/api.md) • [Documentation](./docs/README.md)
 
-- 🎯 **Simple, Intuitive API** - Start building state machines in minutes
+</div>
+
+## Why hsmjs?
+
+Building complex stateful applications is hard. Traditional state management often leads to:
+- 🍝 Spaghetti code with scattered state logic
+- 🐛 Hard-to-track bugs from invalid state transitions
+- 🔄 Complex async flow management
+- 📚 Verbose boilerplate code
+
+**hsmjs solves these problems** with an elegant, imperative API that makes state machines feel natural in JavaScript.
+
+## ✨ Features
+
+### Core Features
+- 🎯 **Simple, Intuitive API** - Build state machines that read like natural language
 - 📦 **Hierarchical States** - Organize complex states with parent-child relationships
-- ⚡ **Async First** - Built-in support for async actions and transitions
+- ⚡ **Async/Await Support** - First-class support for async operations
 - 🔥 **Fire-and-Forget Actions** - Execute non-blocking side effects
-- 🪶 **Lightweight** - Zero dependencies, ~10KB minified
-- 🧪 **Battle Tested** - Comprehensive test suite
+- 🛡️ **Transition Guards** - Conditional transitions based on context
+- 🎪 **Event System** - Subscribe to state changes and transitions
+- 🌍 **Global Handlers** - Handle events from any state
 
-## Installation
+### Developer Experience
+- 🪶 **Zero Dependencies** - ~10KB minified, no bloat
+- 📘 **Full TypeScript Support** - Complete type definitions included
+- 🧪 **Battle Tested** - Comprehensive test suite with real-world scenarios
+- 📚 **Extensive Documentation** - Examples for every feature
+- 🔧 **Framework Agnostic** - Works with React, Vue, Angular, Svelte, or vanilla JS
+
+## 📦 Installation
 
 ```bash
 npm install @datnguyen1215/hsmjs
 ```
 
-## Quick Example
+```bash
+yarn add @datnguyen1215/hsmjs
+```
+
+```bash
+pnpm add @datnguyen1215/hsmjs
+```
+
+## 🚀 Quick Start
+
+### Simple Toggle
 
 ```javascript
 import { createMachine } from '@datnguyen1215/hsmjs';
@@ -37,25 +74,407 @@ on.on('TOGGLE', off);
 machine.initial(off);
 
 // Start the machine
-const instance = machine.start();
-console.log(instance.current); // 'off'
+const toggle = machine.start();
+console.log(toggle.current); // 'off'
 
-instance.send('TOGGLE');
-console.log(instance.current); // 'on'
+await toggle.send('TOGGLE');
+console.log(toggle.current); // 'on'
 ```
 
-## Documentation
+### With Actions and Context
 
-For comprehensive documentation, examples, and API reference, visit the [docs folder](./docs/README.md).
+```javascript
+import { createMachine, action } from '@datnguyen1215/hsmjs';
 
-- [Getting Started](./docs/getting-started.md)
+const machine = createMachine('counter');
+
+const idle = machine.state('idle');
+const counting = machine.state('counting');
+
+// Define an action
+const increment = action('increment', (ctx) => {
+  ctx.count++;
+  console.log(`Count: ${ctx.count}`);
+});
+
+idle
+  .on('START', counting)
+  .do(increment);
+
+counting
+  .on('INCREMENT', counting)
+  .do(increment)
+  .on('STOP', idle);
+
+machine.initial(idle);
+
+// Start with initial context
+const counter = machine.start({ count: 0 });
+
+await counter.send('START');    // Count: 1
+await counter.send('INCREMENT'); // Count: 2
+await counter.send('INCREMENT'); // Count: 3
+```
+
+## 🎯 Examples
+
+### Async Data Fetching
+
+```javascript
+const machine = createMachine('data-fetcher');
+
+const idle = machine.state('idle');
+const loading = machine.state('loading');
+const success = machine.state('success');
+const error = machine.state('error');
+
+idle.on('FETCH', loading);
+
+loading
+  .enter(async (ctx) => {
+    try {
+      ctx.data = await fetch(ctx.url).then(r => r.json());
+      ctx.instance.send('SUCCESS');
+    } catch (err) {
+      ctx.error = err;
+      ctx.instance.send('ERROR');
+    }
+  })
+  .on('SUCCESS', success)
+  .on('ERROR', error);
+
+error.on('RETRY', loading);
+success.on('REFRESH', loading);
+
+machine.initial(idle);
+
+const fetcher = machine.start({ 
+  url: 'https://api.example.com/data',
+  data: null,
+  error: null
+});
+
+// Subscribe to state changes
+fetcher.subscribe(({ from, to, event }) => {
+  console.log(`${from} → ${to} (${event})`);
+});
+
+await fetcher.send('FETCH');
+```
+
+### Hierarchical Authentication Flow
+
+```javascript
+const machine = createMachine('auth');
+
+// Parent states
+const unauth = machine.state('unauthenticated');
+const auth = machine.state('authenticated');
+
+// Child states
+const login = unauth.state('login');
+const register = unauth.state('register');
+const forgotPassword = unauth.state('forgotPassword');
+
+const dashboard = auth.state('dashboard');
+const profile = auth.state('profile');
+
+// Set initial states
+unauth.initial(login);
+auth.initial(dashboard);
+
+// Transitions between child states
+login
+  .on('REGISTER', register)
+  .on('FORGOT_PASSWORD', forgotPassword);
+
+register.on('BACK', login);
+forgotPassword.on('BACK', login);
+
+// Transitions between parent states
+unauth.on('LOGIN_SUCCESS', auth);
+auth.on('LOGOUT', unauth);
+
+// Navigation within authenticated state
+dashboard.on('VIEW_PROFILE', profile);
+profile.on('BACK', dashboard);
+
+machine.initial(unauth);
+
+const app = machine.start();
+console.log(app.current); // 'unauthenticated.login'
+```
+
+### Fire-and-Forget Actions (Non-blocking Side Effects)
+
+```javascript
+const machine = createMachine('notification');
+
+const idle = machine.state('idle');
+const showing = machine.state('showing');
+
+idle
+  .on('SHOW', showing)
+  .fire(async (ctx, event) => {
+    // Non-blocking analytics call
+    await analytics.track('notification_shown', {
+      message: event.payload.message
+    });
+  });
+
+showing
+  .enter((ctx, event) => {
+    ctx.message = event.payload.message;
+  })
+  .on('DISMISS', idle)
+  .fire(async () => {
+    // Non-blocking cleanup
+    await api.markAsRead();
+  });
+
+// The transition completes immediately,
+// fire actions run in the background
+```
+
+### Guards (Conditional Transitions)
+
+```javascript
+const machine = createMachine('form');
+
+const editing = machine.state('editing');
+const reviewing = machine.state('reviewing');
+const submitting = machine.state('submitting');
+const success = machine.state('success');
+
+editing
+  .on('CONTINUE', reviewing)
+  .if(ctx => ctx.form.isValid);  // Only transition if form is valid
+
+reviewing
+  .on('BACK', editing)
+  .on('SUBMIT', submitting)
+  .if(ctx => ctx.form.agreeToTerms);  // Must agree to terms
+
+submitting
+  .enter(async (ctx) => {
+    await api.submitForm(ctx.form);
+    ctx.instance.send('SUCCESS');
+  })
+  .on('SUCCESS', success);
+```
+
+### Traffic Light with Timers
+
+```javascript
+const machine = createMachine('traffic-light');
+
+const red = machine.state('red');
+const yellow = machine.state('yellow');
+const green = machine.state('green');
+
+// Auto-advance using timers
+red
+  .enter((ctx) => {
+    ctx.timer = setTimeout(() => {
+      ctx.instance.send('NEXT');
+    }, 3000); // 3 seconds
+  })
+  .exit((ctx) => clearTimeout(ctx.timer))
+  .on('NEXT', green);
+
+green
+  .enter((ctx) => {
+    ctx.timer = setTimeout(() => {
+      ctx.instance.send('NEXT');
+    }, 3000);
+  })
+  .exit((ctx) => clearTimeout(ctx.timer))
+  .on('NEXT', yellow);
+
+yellow
+  .enter((ctx) => {
+    ctx.timer = setTimeout(() => {
+      ctx.instance.send('NEXT');
+    }, 1000); // 1 second
+  })
+  .exit((ctx) => clearTimeout(ctx.timer))
+  .on('NEXT', red);
+
+machine.initial(red);
+```
+
+## 🎮 Advanced Patterns
+
+### Global Event Handlers
+
+Handle events from any state:
+
+```javascript
+const machine = createMachine('app');
+
+const normal = machine.state('normal');
+const emergency = machine.state('emergency');
+
+// Handle emergency from any state
+machine
+  .on('EMERGENCY', emergency)
+  .do((ctx) => {
+    ctx.previousState = ctx.instance.current;
+  });
+
+emergency
+  .on('RESOLVE', (ctx) => ctx.previousState);
+```
+
+### Dynamic State Transitions
+
+```javascript
+const machine = createMachine('wizard');
+
+const steps = ['intro', 'details', 'review', 'complete'];
+const states = {};
+
+// Create states dynamically
+steps.forEach((step, i) => {
+  states[step] = machine.state(step);
+  
+  if (i > 0) {
+    states[step].on('BACK', states[steps[i - 1]]);
+  }
+  
+  if (i < steps.length - 1) {
+    states[step].on('NEXT', states[steps[i + 1]]);
+  }
+});
+
+machine.initial(states.intro);
+```
+
+### State History
+
+```javascript
+const machine = createMachine('editor');
+
+const editing = machine.state('editing');
+const preview = machine.state('preview');
+
+// Track history
+machine.on('*', '*').do((ctx, event) => {
+  ctx.history = ctx.history || [];
+  ctx.history.push({
+    from: event.from,
+    to: event.to,
+    timestamp: Date.now()
+  });
+});
+
+// Navigate back
+editing.on('UNDO', (ctx) => {
+  const prev = ctx.history[ctx.history.length - 2];
+  return prev ? prev.from : null;
+});
+```
+
+## 🔗 Framework Integration
+
+### React
+
+```javascript
+import { useEffect, useState } from 'react';
+import { createMachine } from '@datnguyen1215/hsmjs';
+
+function useStateMachine(machine, initialContext) {
+  const [instance] = useState(() => machine.start(initialContext));
+  const [state, setState] = useState(instance.current);
+
+  useEffect(() => {
+    const unsubscribe = instance.subscribe(({ to }) => {
+      setState(to);
+    });
+    return unsubscribe;
+  }, [instance]);
+
+  return {
+    state,
+    send: instance.send.bind(instance),
+    context: instance.context
+  };
+}
+
+// Usage
+function ToggleButton() {
+  const { state, send } = useStateMachine(toggleMachine);
+  
+  return (
+    <button onClick={() => send('TOGGLE')}>
+      {state === 'on' ? 'ON' : 'OFF'}
+    </button>
+  );
+}
+```
+
+### Vue 3 Composition API
+
+```javascript
+import { ref, onUnmounted } from 'vue';
+import { createMachine } from '@datnguyen1215/hsmjs';
+
+export function useStateMachine(machine, initialContext) {
+  const instance = machine.start(initialContext);
+  const state = ref(instance.current);
+  const context = ref(instance.context);
+
+  const unsubscribe = instance.subscribe(({ to }) => {
+    state.value = to;
+    context.value = instance.context;
+  });
+
+  onUnmounted(unsubscribe);
+
+  return {
+    state,
+    context,
+    send: instance.send.bind(instance)
+  };
+}
+```
+
+[See more framework examples →](./docs/examples/)
+
+## 📊 Comparison
+
+| Feature | hsmjs | XState | Robot | JavaScript State Machine |
+|---------|-------|--------|-------|-------------------------|
+| Hierarchical States | ✅ | ✅ | ❌ | ❌ |
+| Async Actions | ✅ | ✅ | ✅ | ❌ |
+| Fire-and-Forget | ✅ | ❌ | ❌ | ❌ |
+| Guards | ✅ | ✅ | ✅ | ✅ |
+| Context | ✅ | ✅ | ✅ | ❌ |
+| TypeScript | ✅ | ✅ | ✅ | ✅ |
+| Size (minified) | ~10KB | ~30KB | ~3KB | ~6KB |
+| Dependencies | 0 | 0 | 0 | 0 |
+| Learning Curve | Low | High | Low | Low |
+| Imperative API | ✅ | ❌ | ❌ | ✅ |
+
+## 📖 Documentation
+
+- [Getting Started Guide](./docs/getting-started.md)
+- [Core Concepts](./docs/concepts.md)
 - [API Reference](./docs/api.md)
 - [Examples](./docs/examples/)
-- [Concepts](./docs/concepts.md)
+  - [Authentication Flow](./docs/examples/authentication-flow.md)
+  - [Form Validation](./docs/examples/form-validation.md)
+  - [E-commerce Checkout](./docs/examples/ecommerce-checkout.md)
+  - [Traffic Light](./docs/examples/traffic-light.md)
+  - [Framework Integrations](./docs/examples/)
 
-## Development
+## 🛠️ Development
 
 ```bash
+# Clone the repository
+git clone https://github.com/datnguyen1215/hsmjs.git
+cd hsmjs
+
 # Install dependencies
 npm install
 
@@ -64,12 +483,50 @@ npm test
 
 # Build the library
 npm run build
+
+# Run specific test file
+npm test -- basic-state-machine.test.js
 ```
 
-## Release Process
+## 📝 API Highlights
 
-See [RELEASE.md](./RELEASE.md) for information about the release process.
+### Machine Creation
+```javascript
+const machine = createMachine('name');
+const state = machine.state('stateName');
+const childState = parentState.state('childName');
+machine.initial(state);
+```
 
-## License
+### State Configuration
+```javascript
+state
+  .enter((ctx, event) => {})     // Entry action
+  .exit((ctx, event) => {})      // Exit action
+  .on('EVENT', targetState)       // Transition
+  .do((ctx, event) => {})         // Transition action
+  .if((ctx, event) => true)       // Guard condition
+  .fire((ctx, event) => {});      // Fire-and-forget action
+```
 
-MIT
+### Instance Control
+```javascript
+const instance = machine.start(initialContext);
+await instance.send('EVENT', payload);
+instance.subscribe(({ from, to, event }) => {});
+instance.stop();
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+## 📄 License
+
+MIT © Dat Nguyen
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ by developers, for developers.</sub>
+</div>
