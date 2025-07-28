@@ -113,18 +113,18 @@ jobs:
           
           # Create changelog entry
           changelog_entry="## [$new_version](https://github.com/${{ github.repository }}/compare/v$current_version...$tag_name) ($(date +%Y-%m-%d))
-
-### Changes
-
-$commits"
+          
+          ### Changes
+          
+          $commits"
           
           # Add custom release notes if provided
           if [ -n "${{ github.event.inputs.release_notes }}" ]; then
             changelog_entry="$changelog_entry
-
-### Release Notes
-
-${{ github.event.inputs.release_notes }}"
+            
+            ### Release Notes
+            
+            ${{ github.event.inputs.release_notes }}"
           fi
           
           echo "Generated changelog entry:"
