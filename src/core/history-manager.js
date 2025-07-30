@@ -3,7 +3,7 @@
  * Integrates with existing hsmjs architecture
  */
 
-import { CircularBuffer } from './circular-buffer.js';
+import { CircularBuffer } from './circular-buffer.js'
 
 export class HistoryManager {
   /**
@@ -21,11 +21,11 @@ export class HistoryManager {
       excludeStates: [],
       contextSerializer: null,
       ...options
-    };
+    }
 
-    this.buffer = new CircularBuffer(this.options.maxSize);
-    this.entryIndex = new Map(); // id -> buffer index for O(1) lookup
-    this.currentEntryId = null;
+    this.buffer = new CircularBuffer(this.options.maxSize)
+    this.entryIndex = new Map() // id -> buffer index for O(1) lookup
+    this.currentEntryId = null
   }
 
   /**
@@ -40,7 +40,7 @@ export class HistoryManager {
   recordTransition(fromState, toState, context, trigger = null, metadata = {}) {
     // Skip excluded states
     if (this.options.excludeStates.includes(toState)) {
-      return null;
+      return null
     }
 
     const entry = {
@@ -54,22 +54,22 @@ export class HistoryManager {
         ...metadata,
         size: this._estimateSize(context)
       }
-    };
+    }
 
     // Add to buffer (may evict oldest entry)
-    const evictedEntry = this.buffer.add(entry);
-    
+    const evictedEntry = this.buffer.add(entry)
+
     // Update index
     if (evictedEntry) {
-      this.entryIndex.delete(evictedEntry.id);
+      this.entryIndex.delete(evictedEntry.id)
     }
 
     // Update index for new entry
-    const bufferIndex = this.buffer.getSize() - 1;
-    this.entryIndex.set(entry.id, bufferIndex);
+    const bufferIndex = this.buffer.getSize() - 1
+    this.entryIndex.set(entry.id, bufferIndex)
 
-    this.currentEntryId = entry.id;
-    return entry.id;
+    this.currentEntryId = entry.id
+    return entry.id
   }
 
   /**
@@ -77,8 +77,8 @@ export class HistoryManager {
    * @returns {Object} History interface with query methods
    */
   getHistory() {
-    const entries = this.buffer.toArray();
-    
+    const entries = this.buffer.toArray()
+
     return {
       entries: [...entries], // Return copy to prevent mutations
       size: this.buffer.getSize(),
@@ -86,17 +86,17 @@ export class HistoryManager {
       current: this.getCurrentEntry(),
 
       // Query methods
-      getByIndex: (index) => this.getByIndex(index),
-      getById: (id) => this.getById(id),
+      getByIndex: index => this.getByIndex(index),
+      getById: id => this.getById(id),
       getRange: (start, end) => this.getRange(start, end),
-      find: (predicate) => this.find(predicate),
-      filter: (predicate) => this.filter(predicate),
+      find: predicate => this.find(predicate),
+      filter: predicate => this.filter(predicate),
 
       // Navigation methods
-      canRollback: (targetEntry) => this.canRollback(targetEntry),
-      getStepsBack: (targetEntry) => this.getStepsBack(targetEntry),
+      canRollback: targetEntry => this.canRollback(targetEntry),
+      getStepsBack: targetEntry => this.getStepsBack(targetEntry),
       getPath: (fromEntry, toEntry) => this.getPath(fromEntry, toEntry)
-    };
+    }
   }
 
   /**
@@ -104,8 +104,8 @@ export class HistoryManager {
    * @returns {Object|null} Current entry
    */
   getCurrentEntry() {
-    if (!this.currentEntryId) return null;
-    return this.getById(this.currentEntryId);
+    if (!this.currentEntryId) return null
+    return this.getById(this.currentEntryId)
   }
 
   /**
@@ -114,7 +114,7 @@ export class HistoryManager {
    * @returns {Object|null} History entry
    */
   getByIndex(index) {
-    return this.buffer.get(index) || null;
+    return this.buffer.get(index) || null
   }
 
   /**
@@ -123,8 +123,8 @@ export class HistoryManager {
    * @returns {Object|null} History entry
    */
   getById(id) {
-    const entries = this.buffer.toArray();
-    return entries.find(entry => entry.id === id) || null;
+    const entries = this.buffer.toArray()
+    return entries.find(entry => entry.id === id) || null
   }
 
   /**
@@ -134,8 +134,8 @@ export class HistoryManager {
    * @returns {Array} Array of entries
    */
   getRange(start, end) {
-    const entries = this.buffer.toArray();
-    return entries.slice(start, end);
+    const entries = this.buffer.toArray()
+    return entries.slice(start, end)
   }
 
   /**
@@ -144,7 +144,7 @@ export class HistoryManager {
    * @returns {Object|null} First matching entry
    */
   find(predicate) {
-    return this.buffer.find(predicate) || null;
+    return this.buffer.find(predicate) || null
   }
 
   /**
@@ -153,7 +153,7 @@ export class HistoryManager {
    * @returns {Array} Matching entries
    */
   filter(predicate) {
-    return this.buffer.filter(predicate);
+    return this.buffer.filter(predicate)
   }
 
   /**
@@ -162,8 +162,8 @@ export class HistoryManager {
    * @returns {boolean} True if rollback is possible
    */
   canRollback(targetEntry) {
-    if (!targetEntry || !targetEntry.id) return false;
-    return this.getById(targetEntry.id) !== null;
+    if (!targetEntry || !targetEntry.id) return false
+    return this.getById(targetEntry.id) !== null
   }
 
   /**
@@ -172,14 +172,14 @@ export class HistoryManager {
    * @returns {number} Number of steps back, -1 if not found
    */
   getStepsBack(targetEntry) {
-    if (!this.canRollback(targetEntry)) return -1;
-    
-    const entries = this.buffer.toArray();
-    const currentIndex = entries.findIndex(e => e.id === this.currentEntryId);
-    const targetIndex = entries.findIndex(e => e.id === targetEntry.id);
-    
-    if (currentIndex === -1 || targetIndex === -1) return -1;
-    return currentIndex - targetIndex;
+    if (!this.canRollback(targetEntry)) return -1
+
+    const entries = this.buffer.toArray()
+    const currentIndex = entries.findIndex(e => e.id === this.currentEntryId)
+    const targetIndex = entries.findIndex(e => e.id === targetEntry.id)
+
+    if (currentIndex === -1 || targetIndex === -1) return -1
+    return currentIndex - targetIndex
   }
 
   /**
@@ -189,15 +189,15 @@ export class HistoryManager {
    * @returns {Array} Path of entries
    */
   getPath(fromEntry, toEntry) {
-    const entries = this.buffer.toArray();
-    const fromIndex = entries.findIndex(e => e.id === fromEntry.id);
-    const toIndex = entries.findIndex(e => e.id === toEntry.id);
-    
-    if (fromIndex === -1 || toIndex === -1) return [];
-    
-    const start = Math.min(fromIndex, toIndex);
-    const end = Math.max(fromIndex, toIndex) + 1;
-    return entries.slice(start, end);
+    const entries = this.buffer.toArray()
+    const fromIndex = entries.findIndex(e => e.id === fromEntry.id)
+    const toIndex = entries.findIndex(e => e.id === toEntry.id)
+
+    if (fromIndex === -1 || toIndex === -1) return []
+
+    const start = Math.min(fromIndex, toIndex)
+    const end = Math.max(fromIndex, toIndex) + 1
+    return entries.slice(start, end)
   }
 
   /**
@@ -205,13 +205,13 @@ export class HistoryManager {
    * @returns {Object} Memory usage stats
    */
   getMemoryUsage() {
-    const entries = this.buffer.toArray();
-    let totalSize = 0;
-    let entryCount = entries.length;
-    
+    const entries = this.buffer.toArray()
+    let totalSize = 0
+    let entryCount = entries.length
+
     entries.forEach(entry => {
-      totalSize += entry.metadata?.size || 0;
-    });
+      totalSize += entry.metadata?.size || 0
+    })
 
     return {
       totalSize,
@@ -219,16 +219,16 @@ export class HistoryManager {
       averageSize: entryCount > 0 ? totalSize / entryCount : 0,
       maxSize: this.options.maxSize,
       utilization: this.buffer.getStats().utilization
-    };
+    }
   }
 
   /**
    * Clear all history
    */
   clear() {
-    this.buffer.clear();
-    this.entryIndex.clear();
-    this.currentEntryId = null;
+    this.buffer.clear()
+    this.entryIndex.clear()
+    this.currentEntryId = null
   }
 
   /**
@@ -236,21 +236,21 @@ export class HistoryManager {
    * @param {Object} newOptions - New configuration
    */
   configure(newOptions) {
-    const oldMaxSize = this.options.maxSize;
-    this.options = { ...this.options, ...newOptions };
+    const oldMaxSize = this.options.maxSize
+    this.options = { ...this.options, ...newOptions }
 
     // If maxSize changed, create new buffer
     if (this.options.maxSize !== oldMaxSize) {
-      const oldEntries = this.buffer.toArray();
-      this.buffer = new CircularBuffer(this.options.maxSize);
-      this.entryIndex.clear();
+      const oldEntries = this.buffer.toArray()
+      this.buffer = new CircularBuffer(this.options.maxSize)
+      this.entryIndex.clear()
 
       // Re-add entries up to new limit
-      const entriesToKeep = oldEntries.slice(-this.options.maxSize);
+      const entriesToKeep = oldEntries.slice(-this.options.maxSize)
       entriesToKeep.forEach((entry, index) => {
-        this.buffer.add(entry);
-        this.entryIndex.set(entry.id, index);
-      });
+        this.buffer.add(entry)
+        this.entryIndex.set(entry.id, index)
+      })
     }
   }
 
@@ -264,7 +264,7 @@ export class HistoryManager {
    * @private
    */
   _generateId() {
-    return `history_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `history_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
   /**
@@ -275,15 +275,15 @@ export class HistoryManager {
    */
   _serializeContext(context) {
     if (this.options.contextSerializer) {
-      return this.options.contextSerializer(context);
+      return this.options.contextSerializer(context)
     }
 
     try {
       // Deep clone to prevent mutations
-      return JSON.parse(JSON.stringify(context));
+      return JSON.parse(JSON.stringify(context))
     } catch (error) {
       // If serialization fails, store error marker
-      return { __serialization_error: error.message };
+      return { __serialization_error: error.message }
     }
   }
 
@@ -295,9 +295,9 @@ export class HistoryManager {
    */
   _estimateSize(context) {
     try {
-      return JSON.stringify(context).length * 2; // Rough estimate: 2 bytes per char
+      return JSON.stringify(context).length * 2 // Rough estimate: 2 bytes per char
     } catch {
-      return 0;
+      return 0
     }
   }
 }

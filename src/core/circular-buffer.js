@@ -10,15 +10,15 @@ export class CircularBuffer {
    */
   constructor(maxSize) {
     if (maxSize <= 0) {
-      throw new Error('CircularBuffer maxSize must be greater than 0');
+      throw new Error('CircularBuffer maxSize must be greater than 0')
     }
-    
-    this.maxSize = maxSize;
-    this.buffer = new Array(maxSize);
-    this.head = 0;  // Next insertion position
-    this.tail = 0;  // Oldest item position
-    this.size = 0;  // Current number of items
-    this._isFull = false;
+
+    this.maxSize = maxSize
+    this.buffer = new Array(maxSize)
+    this.head = 0 // Next insertion position
+    this.tail = 0 // Oldest item position
+    this.size = 0 // Current number of items
+    this._isFull = false
   }
 
   /**
@@ -27,24 +27,24 @@ export class CircularBuffer {
    * @returns {any|undefined} Evicted item if buffer was full
    */
   add(item) {
-    let evictedItem;
+    let evictedItem
 
     // If buffer is full, we'll evict the oldest item
     if (this._isFull) {
-      evictedItem = this.buffer[this.tail];
-      this.tail = (this.tail + 1) % this.maxSize;
+      evictedItem = this.buffer[this.tail]
+      this.tail = (this.tail + 1) % this.maxSize
     } else {
-      this.size++;
+      this.size++
     }
 
     // Add new item at head position
-    this.buffer[this.head] = item;
-    this.head = (this.head + 1) % this.maxSize;
-    
-    // Update full status
-    this._isFull = (this.size === this.maxSize);
+    this.buffer[this.head] = item
+    this.head = (this.head + 1) % this.maxSize
 
-    return evictedItem;
+    // Update full status
+    this._isFull = this.size === this.maxSize
+
+    return evictedItem
   }
 
   /**
@@ -54,11 +54,11 @@ export class CircularBuffer {
    */
   get(index) {
     if (index < 0 || index >= this.size) {
-      return undefined;
+      return undefined
     }
 
-    const actualIndex = (this.tail + index) % this.maxSize;
-    return this.buffer[actualIndex];
+    const actualIndex = (this.tail + index) % this.maxSize
+    return this.buffer[actualIndex]
   }
 
   /**
@@ -66,9 +66,9 @@ export class CircularBuffer {
    * @returns {any|undefined} Most recently added item
    */
   newest() {
-    if (this.size === 0) return undefined;
-    const newestIndex = (this.head - 1 + this.maxSize) % this.maxSize;
-    return this.buffer[newestIndex];
+    if (this.size === 0) return undefined
+    const newestIndex = (this.head - 1 + this.maxSize) % this.maxSize
+    return this.buffer[newestIndex]
   }
 
   /**
@@ -76,8 +76,8 @@ export class CircularBuffer {
    * @returns {any|undefined} Oldest item in buffer
    */
   oldest() {
-    if (this.size === 0) return undefined;
-    return this.buffer[this.tail];
+    if (this.size === 0) return undefined
+    return this.buffer[this.tail]
   }
 
   /**
@@ -85,11 +85,11 @@ export class CircularBuffer {
    * @returns {Array} All items in chronological order
    */
   toArray() {
-    const result = [];
+    const result = []
     for (let i = 0; i < this.size; i++) {
-      result.push(this.get(i));
+      result.push(this.get(i))
     }
-    return result;
+    return result
   }
 
   /**
@@ -99,12 +99,12 @@ export class CircularBuffer {
    */
   find(predicate) {
     for (let i = 0; i < this.size; i++) {
-      const item = this.get(i);
+      const item = this.get(i)
       if (predicate(item)) {
-        return item;
+        return item
       }
     }
-    return undefined;
+    return undefined
   }
 
   /**
@@ -113,25 +113,25 @@ export class CircularBuffer {
    * @returns {Array} All matching items
    */
   filter(predicate) {
-    const result = [];
+    const result = []
     for (let i = 0; i < this.size; i++) {
-      const item = this.get(i);
+      const item = this.get(i)
       if (predicate(item)) {
-        result.push(item);
+        result.push(item)
       }
     }
-    return result;
+    return result
   }
 
   /**
    * Clear all items from buffer
    */
   clear() {
-    this.buffer.fill(undefined);
-    this.head = 0;
-    this.tail = 0;
-    this.size = 0;
-    this._isFull = false;
+    this.buffer.fill(undefined)
+    this.head = 0
+    this.tail = 0
+    this.size = 0
+    this._isFull = false
   }
 
   /**
@@ -139,7 +139,7 @@ export class CircularBuffer {
    * @returns {boolean} True if empty
    */
   isEmpty() {
-    return this.size === 0;
+    return this.size === 0
   }
 
   /**
@@ -147,7 +147,7 @@ export class CircularBuffer {
    * @returns {boolean} True if full
    */
   isFull() {
-    return this._isFull;
+    return this._isFull
   }
 
   /**
@@ -155,7 +155,7 @@ export class CircularBuffer {
    * @returns {number} Number of items in buffer
    */
   getSize() {
-    return this.size;
+    return this.size
   }
 
   /**
@@ -163,7 +163,7 @@ export class CircularBuffer {
    * @returns {number} Maximum number of items
    */
   getMaxSize() {
-    return this.maxSize;
+    return this.maxSize
   }
 
   /**
@@ -177,6 +177,6 @@ export class CircularBuffer {
       isFull: this._isFull,
       isEmpty: this.size === 0,
       utilization: this.size / this.maxSize
-    };
+    }
   }
 }

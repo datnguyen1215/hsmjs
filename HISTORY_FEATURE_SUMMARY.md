@@ -2,19 +2,21 @@
 
 ## ✅ Implementation Complete
 
-The history tracking and rollback system has been successfully implemented in the hsmjs project! 
+The history tracking and rollback system has been successfully implemented in the hsmjs project!
 
 ## 🚀 What Was Added
 
 ### Core Components
 
 1. **CircularBuffer** (`src/core/circular-buffer.js`)
+
    - Memory-efficient fixed-size buffer with O(1) operations
    - Automatic eviction of oldest entries when limit reached
    - Query methods: get, find, filter, toArray
    - Statistics and utility methods
 
 2. **HistoryManager** (`src/core/history-manager.js`)
+
    - Records state transitions with metadata
    - Configurable history size (default: 30 entries)
    - Context serialization with error handling
@@ -30,7 +32,9 @@ The history tracking and rollback system has been successfully implemented in th
 ### API Features
 
 #### `machine.history()`
+
 Returns a rich history interface with:
+
 - `entries` - Array of all history entries
 - `size`, `maxSize` - Current and maximum history size
 - `current` - Current history entry
@@ -38,7 +42,9 @@ Returns a rich history interface with:
 - Navigation methods: `canRollback()`, `getStepsBack()`, `getPath()`
 
 #### `machine.rollback(historyInstance)`
+
 Safely rollback to any previous state with:
+
 - State validation and error handling
 - Context restoration from history
 - Comprehensive result object with success/error information
@@ -49,15 +55,16 @@ Safely rollback to any previous state with:
 ```javascript
 const instance = machine.start(context, {
   history: {
-    maxSize: 30,                    // History buffer size
-    enableCompression: false,       // Context compression
-    excludeStates: ['temp'],        // States to skip
-    contextSerializer: (ctx) => {}  // Custom serialization
+    maxSize: 30, // History buffer size
+    enableCompression: false, // Context compression
+    excludeStates: ['temp'], // States to skip
+    contextSerializer: ctx => {} // Custom serialization
   }
-});
+})
 ```
 
 ### Memory Management
+
 - **Circular buffer** prevents unbounded memory growth
 - **Context serialization** with circular reference handling
 - **Size estimation** and memory usage tracking
@@ -66,6 +73,7 @@ const instance = machine.start(context, {
 ## 📊 Test Coverage
 
 **24 comprehensive tests** covering:
+
 - History tracking functionality
 - Query interface operations
 - Rollback scenarios and error handling
@@ -78,6 +86,7 @@ const instance = machine.start(context, {
 ## 📚 Documentation
 
 1. **Comprehensive Example** (`docs/examples/history-rollback.md`)
+
    - Basic usage patterns
    - Query examples
    - Rollback scenarios
@@ -85,6 +94,7 @@ const instance = machine.start(context, {
    - Performance considerations
 
 2. **Updated README** with:
+
    - New feature listing
    - Quick example
    - Updated examples index
@@ -96,42 +106,47 @@ const instance = machine.start(context, {
 ## 🔧 Integration
 
 ### Backward Compatibility
+
 - **100% backward compatible** - existing code works unchanged
 - History is **opt-in** - only enabled when configured
 - **No breaking changes** to existing API
 
 ### Usage Example
+
 ```javascript
-import { createMachine } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs'
 
-const machine = createMachine('workflow');
-const idle = machine.state('idle');
-const processing = machine.state('processing');
+const machine = createMachine('workflow')
+const idle = machine.state('idle')
+const processing = machine.state('processing')
 
-idle.on('start', processing);
-processing.on('complete', idle);
-machine.initial(idle);
+idle.on('start', processing)
+processing.on('complete', idle)
+machine.initial(idle)
 
 // Enable history tracking
-const instance = machine.start({ data: 'test' }, { 
-  history: { maxSize: 50 } 
-});
+const instance = machine.start(
+  { data: 'test' },
+  {
+    history: { maxSize: 50 }
+  }
+)
 
 // Use normally - history is tracked automatically
-await instance.send('start');
-await instance.send('complete'); 
+await instance.send('start')
+await instance.send('complete')
 
 // Access history
-const history = instance.history();
-console.log(`History: ${history.size} entries`);
+const history = instance.history()
+console.log(`History: ${history.size} entries`)
 
 // Rollback to previous state
-const processingEntry = history.find(e => e.toState === 'processing');
-const result = await instance.rollback(processingEntry);
+const processingEntry = history.find(e => e.toState === 'processing')
+const result = await instance.rollback(processingEntry)
 
 if (result.success) {
-  console.log(`Rolled back ${result.stepsBack} steps`);
-  console.log(`Current state: ${instance.current}`);
+  console.log(`Rolled back ${result.stepsBack} steps`)
+  console.log(`Current state: ${instance.current}`)
 }
 ```
 
@@ -147,12 +162,12 @@ if (result.success) {
 ✅ **Production-ready configuration** options  
 ✅ **Extensive test coverage** (24 tests, 100% pass rate)  
 ✅ **Complete documentation** with examples and guides  
-✅ **Backward compatibility** - no breaking changes  
+✅ **Backward compatibility** - no breaking changes
 
 ## 🔥 Performance
 
 - **O(1) history operations** using circular buffer
-- **Memory-bounded** with automatic cleanup  
+- **Memory-bounded** with automatic cleanup
 - **Configurable compression** for large contexts
 - **Lazy serialization** to minimize performance impact
 - **Built for production** with memory pressure handling
@@ -162,8 +177,9 @@ if (result.success) {
 The history and rollback system is **production-ready** and can be released as version 1.2.0 of hsmjs!
 
 All requirements have been met:
+
 - ✅ `machine.history()` API implemented
-- ✅ `machine.rollback(historyInstance)` API implemented  
+- ✅ `machine.rollback(historyInstance)` API implemented
 - ✅ Configurable 30-entry default limit with memory management
 - ✅ Full backward compatibility
 - ✅ Comprehensive testing

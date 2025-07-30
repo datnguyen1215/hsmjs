@@ -11,18 +11,18 @@
  */
 export const action = (name, fn) => {
   if (!name || typeof name !== 'string') {
-    throw new Error('Action name is required');
+    throw new Error('Action name is required')
   }
-  
+
   if (typeof fn !== 'function') {
-    throw new Error('Action function is required');
+    throw new Error('Action function is required')
   }
-  
+
   // Create wrapper that preserves name
-  const namedAction = (...args) => fn(...args);
-  
+  const namedAction = (...args) => fn(...args)
+
   // Attach name for debugging
-  namedAction.actionName = name;
-  
-  return namedAction;
-};
+  namedAction.actionName = name
+
+  return namedAction
+}
