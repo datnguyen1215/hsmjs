@@ -442,6 +442,53 @@ export class Instance {
   }
 
   /**
+   * Get visualizer interface for instance with current state highlighting
+   * @returns {Object} Visualizer with preview() and save() methods
+   */
+  visualizer() {
+    return {
+      /**
+       * Preview instance diagram in browser with current state highlighted
+       * @returns {Promise<void>} Opens browser with diagram
+       */
+      preview: async () => {
+        const diagram = this.visualize()
+        await this.machine._openBrowserPreview(diagram)
+      },
+      
+      /**
+       * Save instance diagram to file with current state highlighted
+       * @param {string} filename - Optional filename (auto-detects format)
+       * @returns {Promise<string>} Saved file path
+       */
+      save: async (filename) => {
+        const diagram = this.visualize()
+        return await this.machine._saveDiagram(diagram, filename)
+      }
+    }
+  }
+
+  /**
+   * Visualize current instance with highlighted current state
+   * @returns {string} Mermaid diagram with current state highlighted
+   */
+  visualize() {
+    const diagram = this.machine.visualize()
+    
+    if (!this.current) {
+      return diagram
+    }
+    
+    // Add current state styling
+    const currentId = this.machine._sanitizeId(this.current)
+    const styledDiagram = diagram + '\n' +
+      `  class ${currentId} current\n` +
+      '  classDef current fill:#e1f5fe,stroke:#01579b,stroke-width:3px'
+    
+    return styledDiagram
+  }
+
+  /**
    * Notify all listeners
    * @private
    */

@@ -36,6 +36,7 @@ Building complex stateful applications is hard. Traditional state management oft
 - 🎪 **Event System** - Subscribe to state changes and transitions
 - 🌍 **Global Handlers** - Handle events from any state
 - 📜 **History & Rollback** - Track transitions and rollback to previous states
+- 🎨 **Visual Debugging** - Generate interactive Mermaid diagrams of your state machines
 
 ### Developer Experience
 
@@ -44,6 +45,7 @@ Building complex stateful applications is hard. Traditional state management oft
 - 🧪 **Battle Tested** - Comprehensive test suite with real-world scenarios
 - 📚 **Extensive Documentation** - Examples for every feature
 - 🔧 **Framework Agnostic** - Works with React, Vue, Angular, Svelte, or vanilla JS
+- 🎨 **Built-in Visualization** - Generate Mermaid diagrams with browser preview
 
 ## Installation
 
@@ -83,6 +85,16 @@ console.log(toggle.current) // 'off'
 
 await toggle.send('TOGGLE')
 console.log(toggle.current) // 'on'
+
+// Visualize your state machine
+const diagram = machine.visualize()
+console.log(diagram) // Mermaid diagram syntax
+
+// Open in browser for interactive viewing
+await machine.visualizer().preview()
+
+// Save as HTML file
+await machine.visualizer().save('toggle-machine.html')
 ```
 
 ### With Actions and Context
@@ -114,6 +126,63 @@ await counter.send('START') // Count: 1
 await counter.send('INCREMENT') // Count: 2
 await counter.send('INCREMENT') // Count: 3
 ```
+
+## State Machine Visualization
+
+HSMJS includes powerful built-in visualization capabilities:
+
+```javascript
+// Generate Mermaid diagram of any state machine
+const diagram = machine.visualize()
+
+// Preview in browser with interactive navigation
+await machine.visualizer().preview()
+
+// Save as HTML file with embedded Mermaid
+await machine.visualizer().save('my-state-machine.html')
+
+// Save as raw Mermaid text file
+await machine.visualizer().save('my-state-machine.mmd')
+```
+
+### Hierarchical State Visualization
+
+Complex nested states are automatically organized using Mermaid subgraphs:
+
+```javascript
+const machine = createMachine('media-player')
+
+const stopped = machine.state('stopped')
+const playing = machine.state('playing')
+
+// Nested states within 'playing'
+const normal = playing.state('normal')
+const fastForward = playing.state('fast-forward')
+
+stopped.on('PLAY', normal)
+normal.on('FF', fastForward)
+playing.on('STOP', stopped)
+
+machine.initial(stopped)
+
+// Generates clean hierarchical diagram
+await machine.visualizer().preview()
+```
+
+### Current State Highlighting
+
+Running instances show the active state with special styling:
+
+```javascript
+const instance = machine.start()
+await instance.send('PLAY')
+
+// Shows current state highlighted in blue
+const diagram = instance.visualize()
+await instance.visualizer().preview()
+```
+
+[📖 Complete Visualization Guide →](./docs/visualization.md)
 
 ## Examples
 
@@ -495,6 +564,7 @@ if (rollbackResult.success) {
 - [Getting Started Guide](./docs/getting-started.md)
 - [Core Concepts](./docs/concepts.md)
 - [API Reference](./docs/api.md)
+- [State Machine Visualization](./docs/visualization.md) ⭐ **New!**
 - [Examples](./docs/examples/)
   - [Authentication Flow](./docs/examples/authentication-flow.md)
   - [Form Validation](./docs/examples/form-validation.md)
@@ -579,6 +649,19 @@ const instance = machine.start(initialContext)
 await instance.send('EVENT', payload)
 instance.subscribe(({ from, to, event }) => {})
 instance.stop()
+```
+
+### Visualization
+
+```javascript
+// Generate Mermaid diagram
+const diagram = machine.visualize()
+const instanceDiagram = instance.visualize() // With current state
+
+// Browser preview and file export
+await machine.visualizer().preview()
+await machine.visualizer().save('diagram.html')
+await instance.visualizer().save('current-state.html')
 ```
 
 ## Contributing
