@@ -9,17 +9,20 @@ This project uses a **manual trigger GitHub Actions workflow** for controlled, r
 ### For Team Members
 
 1. **Navigate to GitHub Actions**
+
    - Go to the **Actions** tab in the repository
    - Select **Manual Release** workflow
    - Click **Run workflow**
 
 2. **Configure Release**
+
    - **Branch**: Use `main` (default)
    - **Version Type**: Choose `patch`, `minor`, or `major`
    - **Release Notes**: Optional custom notes
    - **Dry Run**: ✅ Check this for testing first
 
 3. **Test First (Recommended)**
+
    - Always run with "Dry run" checked first
    - Review the generated changelog and version
    - Only proceed with actual release after dry run succeeds
@@ -33,11 +36,11 @@ This project uses a **manual trigger GitHub Actions workflow** for controlled, r
 
 Choose the appropriate version increment based on your changes:
 
-| Type | Example | Use For |
-|------|---------|----------|
-| **patch** | 1.1.3 → 1.1.4 | Bug fixes, minor improvements |
+| Type      | Example       | Use For                            |
+| --------- | ------------- | ---------------------------------- |
+| **patch** | 1.1.3 → 1.1.4 | Bug fixes, minor improvements      |
 | **minor** | 1.1.3 → 1.2.0 | New features (backward compatible) |
-| **major** | 1.1.3 → 2.0.0 | Breaking changes |
+| **major** | 1.1.3 → 2.0.0 | Breaking changes                   |
 
 ## 🔍 What the Workflow Does
 
@@ -59,8 +62,8 @@ Choose the appropriate version increment based on your changes:
 
 ### Changes
 
-* Add new feature ([abc123](https://github.com/owner/repo/commit/abc123))
-* Fix bug in state machine ([def456](https://github.com/owner/repo/commit/def456))
+- Add new feature ([abc123](https://github.com/owner/repo/commit/abc123))
+- Fix bug in state machine ([def456](https://github.com/owner/repo/commit/def456))
 
 ### Release Notes
 
@@ -72,6 +75,7 @@ Choose the appropriate version increment based on your changes:
 **Always test with dry run first!** This mode:
 
 ✅ **What it does:**
+
 - Validates all workflow steps
 - Shows what version would be created
 - Runs build and tests
@@ -79,6 +83,7 @@ Choose the appropriate version increment based on your changes:
 - Provides detailed summary
 
 ❌ **What it doesn't do:**
+
 - Update package.json
 - Create git commits or tags
 - Publish to NPM
@@ -89,6 +94,7 @@ Choose the appropriate version increment based on your changes:
 ### Automatic Rollback
 
 If any step fails during release, the workflow automatically:
+
 - Deletes any created git tags
 - Reverts commits if made
 - Safely rolls back repository state
@@ -113,12 +119,14 @@ git push --force-with-lease origin main
 ### Repository Secrets
 
 Ensure these secrets are configured:
+
 - ✅ `GITHUB_TOKEN` - Automatically provided by GitHub
 - ✅ `NPM_TOKEN` - NPM authentication token (configured)
 
 ### Permissions
 
 The workflow has these permissions:
+
 - `contents: write` - Creating releases and pushing tags
 - `packages: write` - NPM publishing
 - `pull-requests: read` - Reading PR information
@@ -126,21 +134,25 @@ The workflow has these permissions:
 ## 🎯 Best Practices
 
 1. **Always Use Dry Run First** 🧪
+
    - Test every release before publishing
    - Review generated changelog
    - Verify version increment is correct
 
 2. **Write Clear Commit Messages** 📝
+
    - Changelog is generated from git commits
    - Use conventional commit format when possible
    - Be descriptive about changes
 
 3. **Add Custom Release Notes** 📋
+
    - Highlight breaking changes
    - Mention important new features
    - Provide migration instructions
 
 4. **Monitor Workflow Execution** 👀
+
    - Watch the Actions tab during release
    - Check each step completes successfully
    - Verify final NPM publication
@@ -155,19 +167,23 @@ The workflow has these permissions:
 ### Common Issues
 
 **Build or Test Failures**
+
 - Fix issues in your code first
 - Ensure all tests pass locally
 - Check that dependencies are properly installed
 
 **Permission Errors**
+
 - Verify NPM_TOKEN is valid and has publish permissions
 - Check repository permissions for the workflow
 
 **Git Conflicts**
+
 - Ensure main branch is up to date
 - Pull latest changes before releasing
 
 **Version Conflicts**
+
 - Check if version already exists on NPM
 - Verify package.json version is correct
 
@@ -183,11 +199,13 @@ The workflow has these permissions:
 ### What Changed
 
 **Before (Release Please):**
+
 - Automatic releases on PR merge
 - Convention-based commit parsing
 - Less control over release timing
 
 **After (Manual Release):**
+
 - Manual trigger with full control
 - Flexible changelog generation
 - Dry run capability
@@ -196,6 +214,7 @@ The workflow has these permissions:
 ### Backup Files
 
 The following Release Please files were backed up:
+
 - `.release-please.json` → `.release-please.json.backup`
 - `.release-please-manifest.json` → `.release-please-manifest.json.backup`
 - `.github/workflows/release-please.yml` → `.github/workflows/release-please.yml.backup`
@@ -213,7 +232,8 @@ These can be safely deleted once you're comfortable with the new system.
 ## 📈 Success Metrics
 
 **Testing Results:** 98.6% success rate (70/71 tests passed)
-- ✅ Version management: 100% 
+
+- ✅ Version management: 100%
 - ✅ Changelog generation: 100%
 - ✅ Dry run functionality: 100%
 - ✅ Error handling: 100%
@@ -224,4 +244,4 @@ These can be safely deleted once you're comfortable with the new system.
 
 ---
 
-*For detailed technical documentation, see [MANUAL_RELEASE_GUIDE.md](./MANUAL_RELEASE_GUIDE.md)*
+_For detailed technical documentation, see [MANUAL_RELEASE_GUIDE.md](./MANUAL_RELEASE_GUIDE.md)_

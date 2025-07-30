@@ -16,6 +16,7 @@
 ## Why hsmjs?
 
 Building complex stateful applications is hard. Traditional state management often leads to:
+
 - 🍝 Spaghetti code with scattered state logic
 - 🐛 Hard-to-track bugs from invalid state transitions
 - 🔄 Complex async flow management
@@ -26,6 +27,7 @@ Building complex stateful applications is hard. Traditional state management oft
 ## Features
 
 ### Core Features
+
 - 🎯 **Simple, Intuitive API** - Build state machines that read like natural language
 - 📦 **Hierarchical States** - Organize complex states with parent-child relationships
 - ⚡ **Async/Await Support** - First-class support for async operations
@@ -33,8 +35,10 @@ Building complex stateful applications is hard. Traditional state management oft
 - 🛡️ **Transition Guards** - Conditional transitions based on context
 - 🎪 **Event System** - Subscribe to state changes and transitions
 - 🌍 **Global Handlers** - Handle events from any state
+- 📜 **History & Rollback** - Track transitions and rollback to previous states
 
 ### Developer Experience
+
 - 🪶 **Zero Dependencies** - ~10KB minified, no bloat
 - 📘 **Full TypeScript Support** - Complete type definitions included
 - 🧪 **Battle Tested** - Comprehensive test suite with real-world scenarios
@@ -60,60 +64,55 @@ pnpm add @datnguyen1215/hsmjs
 ### Simple Toggle
 
 ```javascript
-import { createMachine } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs'
 
 // Create a simple toggle machine
-const machine = createMachine('toggle');
+const machine = createMachine('toggle')
 
-const off = machine.state('off');
-const on = machine.state('on');
+const off = machine.state('off')
+const on = machine.state('on')
 
-off.on('TOGGLE', on);
-on.on('TOGGLE', off);
+off.on('TOGGLE', on)
+on.on('TOGGLE', off)
 
-machine.initial(off);
+machine.initial(off)
 
 // Start the machine
-const toggle = machine.start();
-console.log(toggle.current); // 'off'
+const toggle = machine.start()
+console.log(toggle.current) // 'off'
 
-await toggle.send('TOGGLE');
-console.log(toggle.current); // 'on'
+await toggle.send('TOGGLE')
+console.log(toggle.current) // 'on'
 ```
 
 ### With Actions and Context
 
 ```javascript
-import { createMachine, action } from '@datnguyen1215/hsmjs';
+import { createMachine, action } from '@datnguyen1215/hsmjs'
 
-const machine = createMachine('counter');
+const machine = createMachine('counter')
 
-const idle = machine.state('idle');
-const counting = machine.state('counting');
+const idle = machine.state('idle')
+const counting = machine.state('counting')
 
 // Define an action
-const increment = action('increment', (ctx) => {
-  ctx.count++;
-  console.log(`Count: ${ctx.count}`);
-});
+const increment = action('increment', ctx => {
+  ctx.count++
+  console.log(`Count: ${ctx.count}`)
+})
 
-idle
-  .on('START', counting)
-  .do(increment);
+idle.on('START', counting).do(increment)
 
-counting
-  .on('INCREMENT', counting)
-  .do(increment)
-  .on('STOP', idle);
+counting.on('INCREMENT', counting).do(increment).on('STOP', idle)
 
-machine.initial(idle);
+machine.initial(idle)
 
 // Start with initial context
-const counter = machine.start({ count: 0 });
+const counter = machine.start({ count: 0 })
 
-await counter.send('START');    // Count: 1
-await counter.send('INCREMENT'); // Count: 2
-await counter.send('INCREMENT'); // Count: 3
+await counter.send('START') // Count: 1
+await counter.send('INCREMENT') // Count: 2
+await counter.send('INCREMENT') // Count: 3
 ```
 
 ## Examples
@@ -121,116 +120,112 @@ await counter.send('INCREMENT'); // Count: 3
 ### Async Data Fetching
 
 ```javascript
-const machine = createMachine('data-fetcher');
+const machine = createMachine('data-fetcher')
 
-const idle = machine.state('idle');
-const loading = machine.state('loading');
-const success = machine.state('success');
-const error = machine.state('error');
+const idle = machine.state('idle')
+const loading = machine.state('loading')
+const success = machine.state('success')
+const error = machine.state('error')
 
-idle.on('FETCH', loading);
+idle.on('FETCH', loading)
 
 loading
-  .enter(async (ctx) => {
+  .enter(async ctx => {
     try {
-      ctx.data = await fetch(ctx.url).then(r => r.json());
-      ctx.instance.send('SUCCESS');
+      ctx.data = await fetch(ctx.url).then(r => r.json())
+      ctx.instance.send('SUCCESS')
     } catch (err) {
-      ctx.error = err;
-      ctx.instance.send('ERROR');
+      ctx.error = err
+      ctx.instance.send('ERROR')
     }
   })
   .on('SUCCESS', success)
-  .on('ERROR', error);
+  .on('ERROR', error)
 
-error.on('RETRY', loading);
-success.on('REFRESH', loading);
+error.on('RETRY', loading)
+success.on('REFRESH', loading)
 
-machine.initial(idle);
+machine.initial(idle)
 
-const fetcher = machine.start({ 
+const fetcher = machine.start({
   url: 'https://api.example.com/data',
   data: null,
   error: null
-});
+})
 
 // Subscribe to state changes
 fetcher.subscribe(({ from, to, event }) => {
-  console.log(`${from} → ${to} (${event})`);
-});
+  console.log(`${from} → ${to} (${event})`)
+})
 
-await fetcher.send('FETCH');
+await fetcher.send('FETCH')
 ```
 
 ### Hierarchical Authentication Flow
 
 ```javascript
-const machine = createMachine('auth');
+const machine = createMachine('auth')
 
 // Parent states
-const unauth = machine.state('unauthenticated');
-const auth = machine.state('authenticated');
+const unauth = machine.state('unauthenticated')
+const auth = machine.state('authenticated')
 
 // Child states
-const login = unauth.state('login');
-const register = unauth.state('register');
-const forgotPassword = unauth.state('forgotPassword');
+const login = unauth.state('login')
+const register = unauth.state('register')
+const forgotPassword = unauth.state('forgotPassword')
 
-const dashboard = auth.state('dashboard');
-const profile = auth.state('profile');
+const dashboard = auth.state('dashboard')
+const profile = auth.state('profile')
 
 // Set initial states
-unauth.initial(login);
-auth.initial(dashboard);
+unauth.initial(login)
+auth.initial(dashboard)
 
 // Transitions between child states
-login
-  .on('REGISTER', register)
-  .on('FORGOT_PASSWORD', forgotPassword);
+login.on('REGISTER', register).on('FORGOT_PASSWORD', forgotPassword)
 
-register.on('BACK', login);
-forgotPassword.on('BACK', login);
+register.on('BACK', login)
+forgotPassword.on('BACK', login)
 
 // Transitions between parent states
-unauth.on('LOGIN_SUCCESS', auth);
-auth.on('LOGOUT', unauth);
+unauth.on('LOGIN_SUCCESS', auth)
+auth.on('LOGOUT', unauth)
 
 // Navigation within authenticated state
-dashboard.on('VIEW_PROFILE', profile);
-profile.on('BACK', dashboard);
+dashboard.on('VIEW_PROFILE', profile)
+profile.on('BACK', dashboard)
 
-machine.initial(unauth);
+machine.initial(unauth)
 
-const app = machine.start();
-console.log(app.current); // 'unauthenticated.login'
+const app = machine.start()
+console.log(app.current) // 'unauthenticated.login'
 ```
 
 ### Fire-and-Forget Actions (Non-blocking Side Effects)
 
 ```javascript
-const machine = createMachine('notification');
+const machine = createMachine('notification')
 
-const idle = machine.state('idle');
-const showing = machine.state('showing');
+const idle = machine.state('idle')
+const showing = machine.state('showing')
 
-idle
-  .on('SHOW', showing)
-  .fire(async (ctx, event) => {
-    // Non-blocking analytics call
-    await analytics.track('notification_shown', {
-      message: event.payload.message
-    });
-  });
+idle.on('SHOW', showing).fire(async (ctx, event) => {
+  // Non-blocking analytics call
+  await analytics.track('notification_shown', {
+    message: event.payload.message
+  })
+})
 
 showing
   .enter((ctx, event) => {
-    ctx.message = event.payload.message;
+    ctx.message = event.payload.message
   })
   .on('DISMISS', idle)
   .fire(async () => {
     // Non-blocking cleanup
-    await api.markAsRead();
-  });
+    await api.markAsRead()
+  })
 
 // The transition completes immediately,
 // fire actions run in the background
@@ -239,68 +234,66 @@ showing
 ### Guards (Conditional Transitions)
 
 ```javascript
-const machine = createMachine('form');
+const machine = createMachine('form')
 
-const editing = machine.state('editing');
-const reviewing = machine.state('reviewing');
-const submitting = machine.state('submitting');
-const success = machine.state('success');
+const editing = machine.state('editing')
+const reviewing = machine.state('reviewing')
+const submitting = machine.state('submitting')
+const success = machine.state('success')
 
-editing
-  .on('CONTINUE', reviewing)
-  .if(ctx => ctx.form.isValid);  // Only transition if form is valid
+editing.on('CONTINUE', reviewing).if(ctx => ctx.form.isValid) // Only transition if form is valid
 
 reviewing
   .on('BACK', editing)
   .on('SUBMIT', submitting)
-  .if(ctx => ctx.form.agreeToTerms);  // Must agree to terms
+  .if(ctx => ctx.form.agreeToTerms) // Must agree to terms
 
 submitting
-  .enter(async (ctx) => {
-    await api.submitForm(ctx.form);
-    ctx.instance.send('SUCCESS');
+  .enter(async ctx => {
+    await api.submitForm(ctx.form)
+    ctx.instance.send('SUCCESS')
   })
-  .on('SUCCESS', success);
+  .on('SUCCESS', success)
 ```
 
 ### Traffic Light with Timers
 
 ```javascript
-const machine = createMachine('traffic-light');
+const machine = createMachine('traffic-light')
 
-const red = machine.state('red');
-const yellow = machine.state('yellow');
-const green = machine.state('green');
+const red = machine.state('red')
+const yellow = machine.state('yellow')
+const green = machine.state('green')
 
 // Auto-advance using timers
 red
-  .enter((ctx) => {
+  .enter(ctx => {
     ctx.timer = setTimeout(() => {
-      ctx.instance.send('NEXT');
-    }, 3000); // 3 seconds
+      ctx.instance.send('NEXT')
+    }, 3000) // 3 seconds
   })
-  .exit((ctx) => clearTimeout(ctx.timer))
-  .on('NEXT', green);
+  .exit(ctx => clearTimeout(ctx.timer))
+  .on('NEXT', green)
 
 green
-  .enter((ctx) => {
+  .enter(ctx => {
     ctx.timer = setTimeout(() => {
-      ctx.instance.send('NEXT');
-    }, 3000);
+      ctx.instance.send('NEXT')
+    }, 3000)
   })
-  .exit((ctx) => clearTimeout(ctx.timer))
-  .on('NEXT', yellow);
+  .exit(ctx => clearTimeout(ctx.timer))
+  .on('NEXT', yellow)
 
 yellow
-  .enter((ctx) => {
+  .enter(ctx => {
     ctx.timer = setTimeout(() => {
-      ctx.instance.send('NEXT');
-    }, 1000); // 1 second
+      ctx.instance.send('NEXT')
+    }, 1000) // 1 second
   })
-  .exit((ctx) => clearTimeout(ctx.timer))
-  .on('NEXT', red);
+  .exit(ctx => clearTimeout(ctx.timer))
+  .on('NEXT', red)
 
-machine.initial(red);
+machine.initial(red)
 ```
 
 ## Advanced Patterns
@@ -310,69 +303,66 @@ machine.initial(red);
 Handle events from any state:
 
 ```javascript
-const machine = createMachine('app');
+const machine = createMachine('app')
 
-const normal = machine.state('normal');
-const emergency = machine.state('emergency');
+const normal = machine.state('normal')
+const emergency = machine.state('emergency')
 
 // Handle emergency from any state
-machine
-  .on('EMERGENCY', emergency)
-  .do((ctx) => {
-    ctx.previousState = ctx.instance.current;
-  });
+machine.on('EMERGENCY', emergency).do(ctx => {
+  ctx.previousState = ctx.instance.current
+})
 
-emergency
-  .on('RESOLVE', (ctx) => ctx.previousState);
+emergency.on('RESOLVE', ctx => ctx.previousState)
 ```
 
 ### Dynamic State Transitions
 
 ```javascript
-const machine = createMachine('wizard');
+const machine = createMachine('wizard')
 
-const steps = ['intro', 'details', 'review', 'complete'];
-const states = {};
+const steps = ['intro', 'details', 'review', 'complete']
+const states = {}
 
 // Create states dynamically
 steps.forEach((step, i) => {
-  states[step] = machine.state(step);
-  
-  if (i > 0) {
-    states[step].on('BACK', states[steps[i - 1]]);
-  }
-  
-  if (i < steps.length - 1) {
-    states[step].on('NEXT', states[steps[i + 1]]);
-  }
-});
+  states[step] = machine.state(step)
 
-machine.initial(states.intro);
+  if (i > 0) {
+    states[step].on('BACK', states[steps[i - 1]])
+  }
+
+  if (i < steps.length - 1) {
+    states[step].on('NEXT', states[steps[i + 1]])
+  }
+})
+
+machine.initial(states.intro)
 ```
 
 ### State History
 
 ```javascript
-const machine = createMachine('editor');
+const machine = createMachine('editor')
 
-const editing = machine.state('editing');
-const preview = machine.state('preview');
+const editing = machine.state('editing')
+const preview = machine.state('preview')
 
 // Track history
 machine.on('*', '*').do((ctx, event) => {
-  ctx.history = ctx.history || [];
+  ctx.history = ctx.history || []
   ctx.history.push({
     from: event.from,
     to: event.to,
     timestamp: Date.now()
-  });
-});
+  })
+})
 
 // Navigate back
-editing.on('UNDO', (ctx) => {
-  const prev = ctx.history[ctx.history.length - 2];
-  return prev ? prev.from : null;
-});
+editing.on('UNDO', ctx => {
+  const prev = ctx.history[ctx.history.length - 2]
+  return prev ? prev.from : null
+})
 ```
 
 ## Framework Integration
@@ -380,62 +370,62 @@ editing.on('UNDO', (ctx) => {
 ### React
 
 ```javascript
-import { useEffect, useState } from 'react';
-import { createMachine } from '@datnguyen1215/hsmjs';
+import { useEffect, useState } from 'react'
+import { createMachine } from '@datnguyen1215/hsmjs'
 
 function useStateMachine(machine, initialContext) {
-  const [instance] = useState(() => machine.start(initialContext));
-  const [state, setState] = useState(instance.current);
+  const [instance] = useState(() => machine.start(initialContext))
+  const [state, setState] = useState(instance.current)
 
   useEffect(() => {
     const unsubscribe = instance.subscribe(({ to }) => {
-      setState(to);
-    });
-    return unsubscribe;
-  }, [instance]);
+      setState(to)
+    })
+    return unsubscribe
+  }, [instance])
 
   return {
     state,
     send: instance.send.bind(instance),
     context: instance.context
-  };
+  }
 }
 
 // Usage
 function ToggleButton() {
-  const { state, send } = useStateMachine(toggleMachine);
-  
+  const { state, send } = useStateMachine(toggleMachine)
+
   return (
     <button onClick={() => send('TOGGLE')}>
       {state === 'on' ? 'ON' : 'OFF'}
     </button>
-  );
+  )
 }
 ```
 
 ### Vue 3 Composition API
 
 ```javascript
-import { ref, onUnmounted } from 'vue';
-import { createMachine } from '@datnguyen1215/hsmjs';
+import { ref, onUnmounted } from 'vue'
+import { createMachine } from '@datnguyen1215/hsmjs'
 
 export function useStateMachine(machine, initialContext) {
-  const instance = machine.start(initialContext);
-  const state = ref(instance.current);
-  const context = ref(instance.context);
+  const instance = machine.start(initialContext)
+  const state = ref(instance.current)
+  const context = ref(instance.context)
 
   const unsubscribe = instance.subscribe(({ to }) => {
-    state.value = to;
-    context.value = instance.context;
-  });
+    state.value = to
+    context.value = instance.context
+  })
 
-  onUnmounted(unsubscribe);
+  onUnmounted(unsubscribe)
 
   return {
     state,
     context,
     send: instance.send.bind(instance)
-  };
+  }
 }
 ```
 
@@ -443,18 +433,62 @@ export function useStateMachine(machine, initialContext) {
 
 ## Comparison
 
-| Feature | hsmjs | XState | Robot | JavaScript State Machine |
-|---------|-------|--------|-------|-------------------------|
-| Hierarchical States | ✅ | ✅ | ❌ | ❌ |
-| Async Actions | ✅ | ✅ | ✅ | ❌ |
-| Fire-and-Forget | ✅ | ❌ | ❌ | ❌ |
-| Guards | ✅ | ✅ | ✅ | ✅ |
-| Context | ✅ | ✅ | ✅ | ❌ |
-| TypeScript | ✅ | ✅ | ✅ | ✅ |
-| Size (minified) | ~10KB | ~30KB | ~3KB | ~6KB |
-| Dependencies | 0 | 0 | 0 | 0 |
-| Learning Curve | Low | High | Low | Low |
-| Imperative API | ✅ | ❌ | ❌ | ✅ |
+| Feature             | hsmjs | XState | Robot | JavaScript State Machine |
+| ------------------- | ----- | ------ | ----- | ------------------------ |
+| Hierarchical States | ✅    | ✅     | ❌    | ❌                       |
+| Async Actions       | ✅    | ✅     | ✅    | ❌                       |
+| Fire-and-Forget     | ✅    | ❌     | ❌    | ❌                       |
+| Guards              | ✅    | ✅     | ✅    | ✅                       |
+| Context             | ✅    | ✅     | ✅    | ❌                       |
+| TypeScript          | ✅    | ✅     | ✅    | ✅                       |
+| Size (minified)     | ~10KB | ~30KB  | ~3KB  | ~6KB                     |
+| Dependencies        | 0     | 0      | 0     | 0                        |
+| Learning Curve      | Low   | High   | Low   | Low                      |
+| Imperative API      | ✅    | ❌     | ❌    | ✅                       |
+
+### History & Rollback
+
+```javascript
+const machine = createMachine('document-editor')
+const editing = machine.state('editing')
+const preview = machine.state('preview')
+const published = machine.state('published')
+
+editing.on('preview', preview)
+preview.on('edit', editing)
+preview.on('publish', published)
+published.on('edit', editing)
+
+machine.initial(editing)
+
+// Start with history enabled
+const editor = machine.start(
+  { content: 'Initial content', version: 1 },
+  { history: { maxSize: 50 } } // Track last 50 transitions
+)
+
+// Make some changes
+await editor.send('preview')
+editor.context.content = 'Updated content'
+editor.context.version = 2
+
+await editor.send('publish')
+
+// Access history
+const history = editor.history()
+console.log(`History size: ${history.size}`)
+console.log('All entries:', history.entries)
+
+// Rollback to previous state
+const previewEntry = history.find(entry => entry.toState === 'preview')
+const rollbackResult = await editor.rollback(previewEntry)
+
+if (rollbackResult.success) {
+  console.log(`Rolled back ${rollbackResult.stepsBack} steps`)
+  console.log('Current state:', editor.current) // 'preview'
+  console.log('Restored context:', editor.context) // Previous version
+}
+```
 
 ## Documentation
 
@@ -465,6 +499,7 @@ export function useStateMachine(machine, initialContext) {
   - [Authentication Flow](./docs/examples/authentication-flow.md)
   - [Form Validation](./docs/examples/form-validation.md)
   - [E-commerce Checkout](./docs/examples/ecommerce-checkout.md)
+  - [History & Rollback](./docs/examples/history-rollback.md)
   - [Traffic Light](./docs/examples/traffic-light.md)
   - [Framework Integrations](./docs/examples/)
 
@@ -493,6 +528,7 @@ npm test -- basic-state-machine.test.js
 This project uses an automated **manual-trigger release system** for controlled, reliable releases:
 
 **Quick Release Steps:**
+
 1. Go to **Actions** → **Manual Release** in GitHub
 2. Choose version type: `patch` (bugs), `minor` (features), or `major` (breaking)
 3. Add custom release notes (optional)
@@ -500,6 +536,7 @@ This project uses an automated **manual-trigger release system** for controlled,
 5. Execute the actual release
 
 **Key Features:**
+
 - 🎯 **Full Control** - Release when you're ready, not automatically
 - 🧪 **Dry Run Testing** - Validate everything before publishing
 - 📋 **Auto Changelog** - Generated from git commits with custom notes
@@ -515,30 +552,33 @@ See [RELEASE.md](./RELEASE.md) for the complete user guide.
 ## API Highlights
 
 ### Machine Creation
+
 ```javascript
-const machine = createMachine('name');
-const state = machine.state('stateName');
-const childState = parentState.state('childName');
-machine.initial(state);
+const machine = createMachine('name')
+const state = machine.state('stateName')
+const childState = parentState.state('childName')
+machine.initial(state)
 ```
 
 ### State Configuration
+
 ```javascript
 state
-  .enter((ctx, event) => {})     // Entry action
-  .exit((ctx, event) => {})      // Exit action
-  .on('EVENT', targetState)       // Transition
-  .do((ctx, event) => {})         // Transition action
-  .if((ctx, event) => true)       // Guard condition
-  .fire((ctx, event) => {});      // Fire-and-forget action
+  .enter((ctx, event) => {}) // Entry action
+  .exit((ctx, event) => {}) // Exit action
+  .on('EVENT', targetState) // Transition
+  .do((ctx, event) => {}) // Transition action
+  .if((ctx, event) => true) // Guard condition
+  .fire((ctx, event) => {}) // Fire-and-forget action
 ```
 
 ### Instance Control
+
 ```javascript
-const instance = machine.start(initialContext);
-await instance.send('EVENT', payload);
-instance.subscribe(({ from, to, event }) => {});
-instance.stop();
+const instance = machine.start(initialContext)
+await instance.send('EVENT', payload)
+instance.subscribe(({ from, to, event }) => {})
+instance.stop()
 ```
 
 ## Contributing
