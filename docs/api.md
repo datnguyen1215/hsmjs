@@ -1,5 +1,7 @@
 # API Reference
 
+> **New in v1.2.0:** Built-in state machine visualization with Mermaid diagram generation and browser preview capabilities.
+
 ## Importing
 
 ```javascript
@@ -23,6 +25,7 @@ const { createMachine, action } = require('@datnguyen1215/hsmjs');
 - [Global Handlers](#global-handlers)
 - [Context Management](#context-management)
 - [Event Subscriptions](#event-subscriptions)
+- [**Visualization (New!)**](#visualization) ⭐
 
 ## Machine Creation
 
@@ -639,5 +642,257 @@ state
   });
 
 await instance.send('GO_TO_STATE'); // Transition succeeds
+```
+
+## Visualization
+
+> **New Feature:** Generate Mermaid diagrams of your state machines for documentation and debugging.
+
+### Machine Visualization
+
+#### `machine.visualize(): string`
+
+Generates a Mermaid diagram string representing the complete state machine structure.
+
+**Returns:** `string` - Mermaid diagram syntax
+
+**Features:**
+- Hierarchical states shown as subgraphs
+- Initial state highlighted with special styling
+- All transitions with event labels
+- Sanitized state IDs for Mermaid compatibility
+
+**Example:**
+```javascript
+const machine = createMachine('toggle')
+
+const off = machine.state('off')
+const on = machine.state('on')
+
+off.on('TOGGLE', on)
+on.on('TOGGLE', off)
+machine.initial(off)
+
+const diagram = machine.visualize()
+console.log(diagram)
+```
+
+**Output:**
+```mermaid
+graph TD
+  off(("off"))
+  on("on")
+  off -->|TOGGLE| on
+  on -->|TOGGLE| off
+  class off initial
+  classDef initial fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+```
+
+#### `machine.visualizer(): VisualizerInterface`
+
+Returns a visualizer object with preview and save capabilities.
+
+**Returns:** Object with methods:
+- `preview(): Promise<void>` - Opens diagram in browser
+- `save(filename: string): Promise<string>` - Saves diagram to file
+
+**Example:**
+```javascript
+const viz = machine.visualizer()
+
+// Preview in browser
+await viz.preview()
+
+// Save as HTML file
+await viz.save('my-state-machine.html')
+
+// Save as Mermaid text file  
+await viz.save('my-state-machine.mmd')
+```
+
+### Instance Visualization
+
+#### `instance.visualize(): string`
+
+Generates a Mermaid diagram with current state highlighting for running instances.
+
+**Returns:** `string` - Mermaid diagram with current state styling
+
+**Features:**
+- All machine structure visualization features
+- Current state highlighted in blue
+- Combines initial state and current state styling
+
+**Example:**
+```javascript
+const instance = machine.start()
+await instance.send('TOGGLE')
+
+const diagram = instance.visualize()
+// Shows 'on' state with blue highlighting
+```
+
+**Current State Styling:**
+```css
+class on current
+classDef current fill:#e1f5fe,stroke:#01579b,stroke-width:3px
+```
+
+#### `instance.visualizer(): VisualizerInterface`
+
+Returns a visualizer object for the instance with current state context.
+
+**Returns:** Object with same methods as machine visualizer but includes current state highlighting
+
+**Example:**
+```javascript
+const instance = machine.start()
+await instance.send('PLAY')
+
+// Preview shows current state highlighted
+await instance.visualizer().preview()
+
+// Save current state snapshot
+await instance.visualizer().save('current-state.html')
+```
+
+### Hierarchical State Visualization
+
+Complex nested states are automatically organized using Mermaid subgraphs:
+
+**Example:**
+```javascript
+const machine = createMachine('media-player')
+
+const stopped = machine.state('stopped')
+const playing = machine.state('playing')
+
+// Nested states
+const normal = playing.state('normal')
+const fastForward = playing.state('fast-forward')
+
+stopped.on('PLAY', normal)
+normal.on('FF', fastForward)
+fastForward.on('NORMAL', normal)
+playing.on('STOP', stopped)
+
+machine.initial(stopped)
+
+const diagram = machine.visualize()
+```
+
+**Generated Structure:**
+```mermaid
+graph TD
+  stopped(("stopped"))
+  subgraph playing["playing"]
+    playing_normal("normal")
+    playing_fast_forward("fast-forward")
+  end
+  stopped -->|PLAY| playing_normal
+  playing_normal -->|FF| playing_fast_forward
+  playing_fast_forward -->|NORMAL| playing_normal
+  playing -->|STOP| stopped
+  class stopped initial
+  classDef initial fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+```
+
+### File Export Formats
+
+#### HTML Export
+
+Files with `.html` extension generate complete HTML pages with embedded Mermaid:
+
+```javascript
+await machine.visualizer().save('state-machine.html')
+```
+
+**Generated HTML includes:**
+- Mermaid.js library from CDN
+- Responsive styling
+- Diagram title and metadata
+- Interactive navigation (zoom, pan)
+
+#### Mermaid Text Export
+
+Files with `.mmd`, `.md`, or other extensions save raw Mermaid syntax:
+
+```javascript
+await machine.visualizer().save('state-machine.mmd')
+```
+
+**Use cases:**
+- Include in documentation
+- Import into other Mermaid tools
+- Version control friendly format
+- Custom processing workflows
+
+### Browser Preview
+
+The `preview()` method generates a temporary HTML file and opens it in your default browser:
+
+**Features:**
+- Automatic cleanup of temporary files
+- Cross-platform browser detection
+- Real-time diagram rendering
+- Interactive zoom and pan
+- Mobile-friendly responsive design
+
+**System Requirements:**
+- Node.js environment
+- Default browser configured
+- Internet connection (for Mermaid.js CDN)
+
+**Example:**
+```javascript
+// Preview machine structure
+await machine.visualizer().preview()
+
+// Preview with current state highlighting
+const instance = machine.start()
+await instance.send('ACTIVATE')
+await instance.visualizer().preview()
+```
+
+### Advanced Visualization Features
+
+#### State ID Sanitization
+
+Complex state names are automatically sanitized for Mermaid compatibility:
+
+```javascript
+const state1 = machine.state('state-with-dashes')
+const state2 = machine.state('state.with.dots')  
+const state3 = machine.state('state with spaces')
+
+// Generated IDs: state_with_dashes, state_with_dots, state_with_spaces
+// Display labels preserve original names
+```
+
+#### Multi-level Nesting
+
+Unlimited nesting depth is supported:
+
+```javascript
+const auth = machine.state('authenticated')
+const profile = auth.state('profile')
+const settings = profile.state('settings')
+const privacy = settings.state('privacy')
+
+// Creates properly nested subgraphs:
+// authenticated -> profile -> settings -> privacy
+```
+
+#### Global Transitions
+
+Global machine transitions are visualized with special styling:
+
+```javascript
+machine.on('ERROR', errorState)
+
+// Shows as: START((" ")) -->|ERROR| error
+```
+
+For complete visualization examples and troubleshooting, see the [State Machine Visualization Guide](./visualization.md).
 // Error logged: "Entry action error: Entry error"
 ```
