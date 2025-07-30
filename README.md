@@ -33,6 +33,7 @@ Building complex stateful applications is hard. Traditional state management oft
 - 🛡️ **Transition Guards** - Conditional transitions based on context
 - 🎪 **Event System** - Subscribe to state changes and transitions
 - 🌍 **Global Handlers** - Handle events from any state
+- 📜 **History & Rollback** - Track transitions and rollback to previous states
 
 ### Developer Experience
 - 🪶 **Zero Dependencies** - ~10KB minified, no bloat
@@ -456,6 +457,50 @@ export function useStateMachine(machine, initialContext) {
 | Learning Curve | Low | High | Low | Low |
 | Imperative API | ✅ | ❌ | ❌ | ✅ |
 
+### History & Rollback
+
+```javascript
+const machine = createMachine('document-editor');
+const editing = machine.state('editing');
+const preview = machine.state('preview');
+const published = machine.state('published');
+
+editing.on('preview', preview);
+preview.on('edit', editing);
+preview.on('publish', published);
+published.on('edit', editing);
+
+machine.initial(editing);
+
+// Start with history enabled
+const editor = machine.start(
+  { content: 'Initial content', version: 1 },
+  { history: { maxSize: 50 } } // Track last 50 transitions
+);
+
+// Make some changes
+await editor.send('preview');
+editor.context.content = 'Updated content';
+editor.context.version = 2;
+
+await editor.send('publish');
+
+// Access history
+const history = editor.history();
+console.log(`History size: ${history.size}`);
+console.log('All entries:', history.entries);
+
+// Rollback to previous state
+const previewEntry = history.find(entry => entry.toState === 'preview');
+const rollbackResult = await editor.rollback(previewEntry);
+
+if (rollbackResult.success) {
+  console.log(`Rolled back ${rollbackResult.stepsBack} steps`);
+  console.log('Current state:', editor.current); // 'preview'
+  console.log('Restored context:', editor.context); // Previous version
+}
+```
+
 ## Documentation
 
 - [Getting Started Guide](./docs/getting-started.md)
@@ -465,6 +510,7 @@ export function useStateMachine(machine, initialContext) {
   - [Authentication Flow](./docs/examples/authentication-flow.md)
   - [Form Validation](./docs/examples/form-validation.md)
   - [E-commerce Checkout](./docs/examples/ecommerce-checkout.md)
+  - [History & Rollback](./docs/examples/history-rollback.md)
   - [Traffic Light](./docs/examples/traffic-light.md)
   - [Framework Integrations](./docs/examples/)
 

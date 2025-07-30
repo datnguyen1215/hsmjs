@@ -3,18 +3,25 @@
  * Handles state transitions, actions, and event processing
  */
 
+import { HistoryManager } from '../core/history-manager.js';
+
 export class Instance {
   /**
    * Create a new instance
    * @param {Machine} machine - Machine definition
    * @param {Object} initialContext - Initial context
+   * @param {Object} options - Configuration options
+   * @param {Object} options.history - History configuration
    */
-  constructor(machine, initialContext) {
+  constructor(machine, initialContext, options = {}) {
     this.machine = machine;
     // Deep clone context to ensure isolation
     this.context = JSON.parse(JSON.stringify(initialContext || {}));
     this.currentState = null;
     this.listeners = [];
+    
+    // Initialize history manager
+    this.historyManager = new HistoryManager(options.history);
     
     // Enter initial state
     const targetState = this._resolveDeepestState(machine.initialState);
@@ -27,6 +34,15 @@ export class Instance {
     this._enterState(targetState);
     
     this.currentState = targetState;
+    
+    // Record initial state in history
+    this.historyManager.recordTransition(
+      null, // No previous state
+      targetState.path,
+      this.context,
+      'init',
+      { initialization: true }
+    );
   }
   
   /**
@@ -74,6 +90,120 @@ export class Instance {
         this.listeners.splice(index, 1);
       }
     };
+  }
+
+  /**
+   * Get history interface with query and navigation methods
+   * @returns {Object} History interface
+   */
+  history() {
+    return this.historyManager.getHistory();
+  }
+
+  /**
+   * Rollback to a specific history entry
+   * @param {Object} targetEntry - History entry to rollback to
+   * @returns {Promise<Object>} Rollback result
+   */
+  async rollback(targetEntry) {
+    if (!targetEntry || !targetEntry.id) {
+      return {
+        success: false,
+        error: {
+          code: 'INVALID_ENTRY',
+          message: 'Target entry is required and must have an ID'
+        }
+      };
+    }
+
+    // Validate that entry exists in history
+    if (!this.historyManager.canRollback(targetEntry)) {
+      return {
+        success: false,
+        error: {
+          code: 'ENTRY_NOT_FOUND',
+          message: 'Target entry not found in current history'
+        }
+      };
+    }
+
+    try {
+      const fromEntry = this.historyManager.getCurrentEntry();
+      const fromState = this.currentState;
+      
+      // Restore state and context from history entry
+      const targetState = this.machine.findState(targetEntry.toState);
+      if (!targetState) {
+        return {
+          success: false,
+          error: {
+            code: 'STATE_NOT_FOUND',
+            message: `State '${targetEntry.toState}' not found in machine definition`
+          }
+        };
+      }
+
+      // Perform rollback transition
+      this._performRollback(fromState, targetState, targetEntry);
+      
+      // Update context from history
+      this.context = JSON.parse(JSON.stringify(targetEntry.context));
+      
+      // Record rollback in history
+      const stepsBack = this.historyManager.getStepsBack(targetEntry);
+      this.historyManager.recordTransition(
+        fromState.path,
+        targetState.path,
+        this.context,
+        'rollback',
+        { 
+          rollback: true, 
+          targetEntryId: targetEntry.id,
+          stepsBack
+        }
+      );
+
+      return {
+        success: true,
+        fromEntry,
+        toEntry: targetEntry,
+        stepsBack,
+        timestamp: Date.now()
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'ROLLBACK_FAILED',
+          message: error.message,
+          details: error
+        }
+      };
+    }
+  }
+
+  /**
+   * Configure history options
+   * @param {Object} options - History configuration options
+   */
+  configureHistory(options) {
+    this.historyManager.configure(options);
+  }
+
+  /**
+   * Get memory usage information
+   * @returns {Object} Memory usage statistics
+   */
+  getHistoryMemoryUsage() {
+    return this.historyManager.getMemoryUsage();
+  }
+
+  /**
+   * Clear all history (useful for testing or memory management)
+   */
+  clearHistory() {
+    this.historyManager.clear();
   }
   
   /**
@@ -149,6 +279,8 @@ export class Instance {
    * @private
    */
   _performTransition(fromState, toState, event) {
+    const fromStatePath = fromState ? fromState.path : null;
+    
     // Exit current state and ancestors
     const exitStates = this._getExitStates(fromState, toState);
     for (const state of exitStates) {
@@ -164,11 +296,55 @@ export class Instance {
     // Update current state
     this.currentState = this._resolveDeepestState(toState);
     
+    // Record transition in history (if not a rollback)
+    if (!event.rollback) {
+      this.historyManager.recordTransition(
+        fromStatePath,
+        this.currentState.path,
+        this.context,
+        event.type,
+        {
+          timestamp: Date.now(),
+          transitionType: 'normal'
+        }
+      );
+    }
+    
+    // Notify listeners
+    this._notifyListeners({
+      from: fromStatePath,
+      to: this.currentState.path,
+      event: event.type
+    });
+  }
+
+  /**
+   * Perform rollback transition (similar to normal transition but without history recording)
+   * @private
+   */
+  _performRollback(fromState, toState, targetEntry) {
+    // Exit current state and ancestors
+    const exitStates = this._getExitStates(fromState, toState);
+    for (const state of exitStates) {
+      this._exitState(state, { type: 'rollback', rollback: true });
+    }
+    
+    // Enter target state and ancestors  
+    const enterStates = this._getEnterStates(fromState, toState);
+    for (const state of enterStates) {
+      this._enterState(state, { type: 'rollback', rollback: true });
+    }
+    
+    // Update current state
+    this.currentState = this._resolveDeepestState(toState);
+    
     // Notify listeners
     this._notifyListeners({
       from: fromState.path,
       to: this.currentState.path,
-      event: event.type
+      event: 'rollback',
+      rollback: true,
+      targetEntry
     });
   }
   

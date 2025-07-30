@@ -82,14 +82,16 @@ export class Machine {
   /**
    * Create a running instance of the machine
    * @param {Object} initialContext - Initial context
+   * @param {Object} options - Configuration options
+   * @param {Object} options.history - History configuration
    * @returns {Instance} Machine instance
    */
-  start(initialContext = {}) {
+  start(initialContext = {}, options = {}) {
     if (!this.initialState) {
       throw new Error('No initial state defined');
     }
     
-    return new Instance(this, initialContext);
+    return new Instance(this, initialContext, options);
   }
   
   /**
