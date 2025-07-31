@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.2.0](https://github.com/datnguyen1215/hsmjs/compare/v1.1.4...v1.2.0) (2025-07-31)
+
+### Changes
+
+* Merge pull request #12 from datnguyen1215/remove-swarm ([97584cf](https://github.com/datnguyen1215/hsmjs/commit/97584cf99a21809356c621d3a593f9d7687135bb))
+* add .swarm into gitignore. ([adf0e17](https://github.com/datnguyen1215/hsmjs/commit/adf0e17097a4c45d3a9a9d8c16d6193ca79db023))
+* remove swarm file. ([4c1a999](https://github.com/datnguyen1215/hsmjs/commit/4c1a999697301ae0b68adf2f514ab955e3d249b1))
+* Merge pull request #11 from datnguyen1215/feat/minimized-version ([1396135](https://github.com/datnguyen1215/hsmjs/commit/1396135ae64011f593616a0cee03ab19f5161919))
+* update github workflows. ([6ff5b3e](https://github.com/datnguyen1215/hsmjs/commit/6ff5b3eb04b482872397ecb94055408156737d2d))
+* refactor: clean console logs and implement comprehensive npm consumer tests ([58ecdaa](https://github.com/datnguyen1215/hsmjs/commit/58ecdaa2caacbc0a306bdcca4e66686b5fd7aa86))
+* feat: implement comprehensive dual ESM/CJS package architecture ([5ee974f](https://github.com/datnguyen1215/hsmjs/commit/5ee974fd9e690d9d89bfc1a1f04e4dcb18451d43))
+* fix: adjust performance test thresholds for CI environment compatibility ([bd103a2](https://github.com/datnguyen1215/hsmjs/commit/bd103a2a8c4965638610fdbaa2567e5833bc829b))
+* Fix GitHub Actions CI failures for minimalist distribution ([89cb188](https://github.com/datnguyen1215/hsmjs/commit/89cb188962f829a419a6f8aeb69181bd850b326b))
+*   test: align test suite with minimalist distribution architecture ([bd81254](https://github.com/datnguyen1215/hsmjs/commit/bd8125433e9041e7e808cc6c39c8579def4bb9e4))
+* save work. ([2c55472](https://github.com/datnguyen1215/hsmjs/commit/2c554723526bdf0f2ab61b1992db732d31ba5155))
+* Merge pull request #10 from datnguyen1215/feat/visualizer ([98fb0c9](https://github.com/datnguyen1215/hsmjs/commit/98fb0c965d06d483a8dca8f3c85a848e07a06f5e))
+* update docs. ([5767cd3](https://github.com/datnguyen1215/hsmjs/commit/5767cd3f37d7ffbd283dcc53f6c1f1d574cdaac9))
+* support visualizer with mermaid. ([e9846d8](https://github.com/datnguyen1215/hsmjs/commit/e9846d861f7dfdfa6900e6370c6a4900b0f019fa))
+* Merge pull request #8 from datnguyen1215/feat/history-rollback ([e2a4b21](https://github.com/datnguyen1215/hsmjs/commit/e2a4b21d2358ff2e4a394903bec626236e7f52ed))
+* Fix npm ci issues by updating package-lock.json ([cd55faa](https://github.com/datnguyen1215/hsmjs/commit/cd55faa13fbaaebf4aa5f53c28fcac9e8f00ea1e))
+* format codes using prettier. ([094520c](https://github.com/datnguyen1215/hsmjs/commit/094520c288ddfbfeaf02bb241afc5b931f901e93))
+*   Add history tracking and rollback system to state machines ([6dee12d](https://github.com/datnguyen1215/hsmjs/commit/6dee12d9e825bf87cea5ad7ebf950d91ee7a724d))
+* remove test-manual. ([73ee72a](https://github.com/datnguyen1215/hsmjs/commit/73ee72aecba0d15c126f013fc59a8e43b15ecfc9))
+* Merge pull request #7 from datnguyen1215/fix/github-integration-and-anchors ([bc3e00d](https://github.com/datnguyen1215/hsmjs/commit/bc3e00d5240e0f8aaea63df4ee87d197409088ca))
+* fix: improve GitHub integration and README anchor links ([e6d452c](https://github.com/datnguyen1215/hsmjs/commit/e6d452c1934fe12c0f16d86a3637bd7751ccd375))
+
+
 ## [1.1.4](https://github.com/datnguyen1215/hsmjs/compare/v1.1.3...v1.1.4) (2025-07-28)
 
 ### Changes
