@@ -25,7 +25,7 @@ describe('Build Sizes', () => {
       const stats = fs.statSync(umdPath);
       const sizeKB = (stats.size / 1024).toFixed(2);
       
-      console.log(`UMD minified build size: ${stats.size} bytes (${sizeKB} KB)`);
+
       expect(stats.size).toBeLessThan(UMD_SIZE_THRESHOLD);
     });
   });
@@ -36,7 +36,7 @@ describe('Build Sizes', () => {
       const gzipped = gzipSync(content);
       const sizeKB = (gzipped.length / 1024).toFixed(2);
       
-      console.log(`UMD gzipped size: ${gzipped.length} bytes (${sizeKB} KB)`);
+
       expect(gzipped.length).toBeLessThan(UMD_GZIPPED_THRESHOLD);
     });
   });
@@ -47,7 +47,7 @@ describe('Build Sizes', () => {
       const gzipped = gzipSync(content);
       const ratio = (gzipped.length / content.length) * 100;
       
-      console.log(`UMD compression ratio: ${ratio.toFixed(1)}%`);
+
       // Good compression should achieve at least 60% reduction (40% of original)
       expect(ratio).toBeLessThan(60);
     });

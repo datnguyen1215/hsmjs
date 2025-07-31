@@ -38,11 +38,6 @@ describe('Size Regression Tests', () => {
       const increase = currentSize - baselineSize;
       const percentIncrease = increase / baselineSize;
 
-      console.log(`Source Size Analysis:
-        Baseline: ${baselineSize} bytes
-        Current:  ${currentSize} bytes
-        Change:   ${increase > 0 ? '+' : ''}${increase} bytes (${(percentIncrease * 100).toFixed(1)}%)
-      `);
 
       // Warning for moderate increases
       if (percentIncrease > REGRESSION_THRESHOLDS.warning) {
@@ -55,7 +50,7 @@ describe('Size Regression Tests', () => {
 
     test('UMD minified size regression', () => {
       if (!fs.existsSync(umdPath)) {
-        console.log('UMD build not found, skipping size regression test');
+
         return;
       }
       
@@ -64,11 +59,6 @@ describe('Size Regression Tests', () => {
       const increase = currentSize - baselineSize;
       const percentIncrease = increase / baselineSize;
 
-      console.log(`UMD Size Analysis:
-        Baseline: ${baselineSize} bytes
-        Current:  ${currentSize} bytes
-        Change:   ${increase > 0 ? '+' : ''}${increase} bytes (${(percentIncrease * 100).toFixed(1)}%)
-      `);
 
       // Warning for moderate increases
       if (percentIncrease > REGRESSION_THRESHOLDS.warning) {
@@ -88,11 +78,6 @@ describe('Size Regression Tests', () => {
       const increase = currentGzipped - baselineGzipped;
       const percentIncrease = increase / baselineGzipped;
 
-      console.log(`Source Gzipped Analysis:
-        Baseline: ${baselineGzipped} bytes
-        Current:  ${currentGzipped} bytes
-        Change:   ${increase > 0 ? '+' : ''}${increase} bytes (${(percentIncrease * 100).toFixed(1)}%)
-      `);
 
       if (percentIncrease > REGRESSION_THRESHOLDS.warning) {
         console.warn(`⚠️  Source gzipped size increased by ${(percentIncrease * 100).toFixed(1)}%`);
@@ -103,7 +88,7 @@ describe('Size Regression Tests', () => {
 
     test('UMD gzipped size regression', () => {
       if (!fs.existsSync(umdPath)) {
-        console.log('UMD build not found, skipping gzipped size regression test');
+
         return;
       }
       
@@ -113,11 +98,6 @@ describe('Size Regression Tests', () => {
       const increase = currentGzipped - baselineGzipped;
       const percentIncrease = increase / baselineGzipped;
 
-      console.log(`UMD Gzipped Analysis:
-        Baseline: ${baselineGzipped} bytes
-        Current:  ${currentGzipped} bytes
-        Change:   ${increase > 0 ? '+' : ''}${increase} bytes (${(percentIncrease * 100).toFixed(1)}%)
-      `);
 
       if (percentIncrease > REGRESSION_THRESHOLDS.warning) {
         console.warn(`⚠️  UMD gzipped size increased by ${(percentIncrease * 100).toFixed(1)}%`);
@@ -133,7 +113,7 @@ describe('Size Regression Tests', () => {
       expect(fs.existsSync(srcPath)).toBe(true);
       
       const srcSize = fs.statSync(srcPath).size;
-      console.log(`Source module size: ${(srcSize / 1024).toFixed(2)} KB`);
+
       
       // Source should be reasonable size
       expect(srcSize).toBeGreaterThan(100); // At least 100 bytes
@@ -142,12 +122,12 @@ describe('Size Regression Tests', () => {
 
     test('UMD build validation if available', () => {
       if (!fs.existsSync(umdPath)) {
-        console.log('UMD build not found - this is okay for source-only distribution');
+
         return;
       }
       
       const umdSize = fs.statSync(umdPath).size;
-      console.log(`UMD build size: ${(umdSize / 1024).toFixed(2)} KB`);
+
       
       // UMD should be reasonably sized
       expect(umdSize).toBeGreaterThan(10000); // At least 10KB
@@ -176,12 +156,6 @@ describe('Size Regression Tests', () => {
         };
       }
 
-      console.log(`📈 Size changes since last run:
-        Source: ${currentSizes.sizes.src.raw - BASELINE_SIZES.src.raw} bytes
-        UMD: ${currentSizes.sizes.umd ? (currentSizes.sizes.umd.raw - BASELINE_SIZES.umd.raw) + ' bytes' : 'N/A'}
-        Previous version: ${BASELINE_SIZES.version}
-        Current version:  ${currentSizes.version}
-      `);
 
       // Always pass - this is just for tracking
       expect(true).toBe(true);
@@ -197,12 +171,6 @@ describe('Size Regression Tests', () => {
       const linesOfCode = fs.readFileSync(srcPath, 'utf8').split('\n').length;
       const bytesPerLine = srcSize / linesOfCode;
       
-      console.log(`📊 Size Efficiency Analysis:
-        Total size: ${srcSizeKB.toFixed(2)} KB
-        Lines of code: ${linesOfCode}
-        Bytes per line: ${bytesPerLine.toFixed(1)}
-        Source complexity: ${linesOfCode > 20 ? 'High' : 'Low'}
-      `);
 
       // Basic efficiency checks
       expect(bytesPerLine).toBeLessThan(100); // Reasonable code density
@@ -211,7 +179,7 @@ describe('Size Regression Tests', () => {
 
     test('bundle optimization recommendations', () => {
       if (!fs.existsSync(umdPath)) {
-        console.log('No UMD build to analyze');
+
         return;
       }
       
@@ -223,12 +191,6 @@ describe('Size Regression Tests', () => {
       const umdGzipped = gzipSync(fs.readFileSync(umdPath)).length;
       const gzipEfficiency = umdGzipped / umdSize;
       
-      console.log(`🔧 Bundle Optimization Analysis:
-        Compression ratio: ${compressionRatio.toFixed(1)}x
-        Gzip efficiency: ${(gzipEfficiency * 100).toFixed(1)}%
-        Total overhead: ${((umdSize - srcSize) / 1024).toFixed(2)} KB
-        Network impact: ${(umdGzipped / 1024).toFixed(2)} KB gzipped
-      `);
 
       // Optimization recommendations
       if (gzipEfficiency > 0.4) {

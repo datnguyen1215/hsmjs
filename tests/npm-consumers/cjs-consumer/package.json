@@ -1,0 +1,17 @@
+{
+  "name": "hsmjs-cjs-consumer-test",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CommonJS consumer test for @datnguyen1215/hsmjs dual package",
+  "main": "require-test.js",
+  "scripts": {
+    "test": "node require-test.js",
+    "test:verbose": "node --trace-warnings require-test.js"
+  },
+  "dependencies": {
+    "@datnguyen1215/hsmjs": "file:../../../"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

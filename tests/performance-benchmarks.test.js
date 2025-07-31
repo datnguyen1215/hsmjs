@@ -44,7 +44,7 @@ describe('Performance Benchmarks', () => {
       const totalTime = end - start;
       const avgTime = totalTime / iterations;
       
-      console.log(`Source Machine Creation: ${totalTime.toFixed(2)}ms total, ${avgTime.toFixed(3)}ms avg`);
+      // Performance metrics validated silently
       expect(avgTime).toBeLessThan(PERFORMANCE_THRESHOLDS.machineCreation);
     });
 
@@ -69,7 +69,7 @@ describe('Performance Benchmarks', () => {
       const totalTime = end - start;
       const avgTime = totalTime / iterations;
       
-      console.log(`Source State Transitions: ${totalTime.toFixed(2)}ms total, ${avgTime.toFixed(3)}ms avg`);
+      // Transition performance validated silently
       expect(totalTime).toBeLessThan(PERFORMANCE_THRESHOLDS.bulkTransitions);
     });
 
@@ -102,7 +102,7 @@ describe('Performance Benchmarks', () => {
       const totalTime = end - start;
       const avgTime = totalTime / iterations;
       
-      console.log(`Source Action Execution: ${totalTime.toFixed(2)}ms total, ${avgTime.toFixed(3)}ms avg`);
+      // Action performance validated silently
       expect(avgTime).toBeLessThan(PERFORMANCE_THRESHOLDS.actionExecution);
       expect(executionCount).toBe(iterations);
     });
@@ -160,13 +160,13 @@ describe('Performance Benchmarks', () => {
       const totalTime = end - start;
       const avgTime = totalTime / iterations;
       
-      console.log(`Source Complex Workflow: ${totalTime.toFixed(2)}ms total, ${avgTime.toFixed(3)}ms avg per workflow`);
+      // Workflow performance validated silently
       expect(avgTime).toBeLessThan(5); // Complex workflow should complete in under 5ms
     });
 
     test('memory usage and garbage collection', () => {
       if (!global.gc) {
-        console.log('Garbage collection not available, skipping memory test');
+
         return;
       }
 
@@ -197,11 +197,6 @@ describe('Performance Benchmarks', () => {
       const peakIncrease = midMemory - initialMemory;
       const finalIncrease = finalMemory - initialMemory;
       
-      console.log(`Source Memory Test: ${(end - start).toFixed(2)}ms
-        Peak increase: ${(peakIncrease / 1024 / 1024).toFixed(2)} MB
-        Final increase: ${(finalIncrease / 1024 / 1024).toFixed(2)} MB
-        Cleaned up: ${((peakIncrease - finalIncrease) / 1024 / 1024).toFixed(2)} MB
-      `);
       
       expect(end - start).toBeLessThan(PERFORMANCE_THRESHOLDS.memoryLeakTest);
       expect(finalIncrease).toBeLessThan(peakIncrease * 0.5); // Should clean up at least 50%
@@ -214,13 +209,13 @@ describe('Performance Benchmarks', () => {
     beforeAll(() => {
       umdExists = fs.existsSync(umdPath);
       if (!umdExists) {
-        console.log('UMD build not found, skipping UMD performance tests');
+
       }
     });
 
     test('machine creation performance', () => {
       if (!umdExists) {
-        console.log('Skipping UMD test - build not available');
+
         return;
       }
       
@@ -237,20 +232,20 @@ describe('Performance Benchmarks', () => {
       const totalTime = end - start;
       const avgTime = totalTime / iterations;
       
-      console.log(`UMD File Check: ${totalTime.toFixed(2)}ms total, ${avgTime.toFixed(3)}ms avg`);
+
       expect(avgTime).toBeLessThan(1); // File system operations should be fast
     });
 
     test('UMD file size validation', () => {
       if (!umdExists) {
-        console.log('Skipping UMD file size test - build not available');
+
         return;
       }
       
       const stats = fs.statSync(umdPath);
       const sizeKB = stats.size / 1024;
       
-      console.log(`UMD Build Size: ${sizeKB.toFixed(2)} KB`);
+
       
       // Should be reasonable size for minified UMD
       expect(sizeKB).toBeGreaterThan(10); // At least 10KB
@@ -266,13 +261,13 @@ describe('Performance Benchmarks', () => {
       srcModule = require(srcPath);
       umdExists = fs.existsSync(umdPath);
       if (!umdExists) {
-        console.log('UMD build not found, skipping comparison tests');
+
       }
     });
 
     test('source module vs UMD size comparison', () => {
       if (!umdExists) {
-        console.log('Skipping size comparison - UMD build not available');
+
         return;
       }
       
@@ -283,11 +278,6 @@ describe('Performance Benchmarks', () => {
       const srcSizeKB = srcStats.size / 1024;
       const umdSizeKB = umdStats.size / 1024;
       
-      console.log(`Size Comparison:
-        Source: ${srcSizeKB.toFixed(2)} KB
-        UMD:    ${umdSizeKB.toFixed(2)} KB
-        Ratio:  ${(umdSizeKB / srcSizeKB).toFixed(2)}x
-      `);
       
       // UMD should be larger due to bundling but not excessively
       expect(umdSizeKB).toBeGreaterThan(srcSizeKB);
@@ -295,7 +285,7 @@ describe('Performance Benchmarks', () => {
     });
 
     test('performance baseline validation', () => {
-      console.log('Source module performance baseline validated');
+
       
       const machine = srcModule.createMachine('baseline-test');
       const state1 = machine.state('state1');

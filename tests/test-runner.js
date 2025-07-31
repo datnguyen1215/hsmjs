@@ -30,7 +30,7 @@ class TestRunner {
       debug: '🐛'
     }[level] || 'ℹ️';
 
-    console.log(`${prefix} [${timestamp}] ${message}`);
+
   }
 
   async runJestTests() {
@@ -78,7 +78,7 @@ class TestRunner {
     const esTestScript = `
       import { createMachine, action } from './dist/es/index.js';
       
-      console.log('✅ ES import successful');
+
       
       const machine = createMachine('es-test');
       const idle = machine.state('idle');
@@ -88,17 +88,17 @@ class TestRunner {
       machine.initial(idle);
       
       const instance = machine.start();
-      console.log('✅ ES machine creation successful');
+
       
       await instance.send('START');
-      console.log('✅ ES state transition successful');
+
       
       const testAction = action('test', (ctx) => {
         ctx.tested = true;
       });
-      console.log('✅ ES action creation successful');
+
       
-      console.log('🎉 All ES module tests passed!');
+
     `;
 
     const testFile = path.join(__dirname, '..', 'es-module-test.mjs');

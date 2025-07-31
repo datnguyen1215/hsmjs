@@ -188,7 +188,7 @@ describe('API Exports', () => {
       expect(time).toBeLessThan(100);
       expect(instance.context.counter).toBe(iterations);
       
-      console.log(`Performance: ${iterations} transitions in ${time.toFixed(2)}ms`);
+
     });
   });
 });

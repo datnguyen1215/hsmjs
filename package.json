@@ -38,6 +38,13 @@
     "size:gzip": "npx gzip-size-cli dist/umd/hsmjs.min.js dist/esm/hsmjs.esm.min.js",
     "size:report": "npm run size:gzip && npm run size:check",
     "test": "jest",
+    "test:npm-consumers": "node tests/npm-consumers/test-runner.js",
+    "test:esm-consumer": "cd tests/npm-consumers/esm-consumer && npm test",
+    "test:cjs-consumer": "cd tests/npm-consumers/cjs-consumer && npm test",
+    "test:browser-consumer": "echo 'Open tests/npm-consumers/browser-consumer/index.html in browser'",
+    "test:typescript-consumer": "cd tests/npm-consumers/typescript-consumer && npm test",
+    "setup:npm-consumers": "node tests/npm-consumers/test-runner.js && echo 'Consumer environments setup complete'",
+    "clean:npm-consumers": "node tests/npm-consumers/test-runner.js --cleanup",
     "version:patch": "npm version patch --no-git-tag-version && git tag v$(node -p \"require('./package.json').version\")",
     "version:minor": "npm version minor --no-git-tag-version && git tag v$(node -p \"require('./package.json').version\")",
     "version:major": "npm version major --no-git-tag-version && git tag v$(node -p \"require('./package.json').version\")"
