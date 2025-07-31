@@ -3,7 +3,7 @@
  * Tests basic transitions between states without guards or actions
  */
 
-import { createMachine } from '../dist/cjs/index.js'
+import { createMachine } from '../src/index.js'
 
 describe('Simple Transitions', () => {
   describe('Transition Definition', () => {

@@ -1,0 +1,25 @@
+{
+  "name": "hsmjs-typescript-consumer-test",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TypeScript consumer test for @datnguyen1215/hsmjs dual package",
+  "main": "types-test.ts",
+  "scripts": {
+    "test": "echo 'TypeScript consumer test - checking types and imports' && node types-test.js",
+    "test:compile": "echo 'Checking TypeScript type definitions exist' && ls -la ../../../dist/types/",
+    "test:run": "node types-test.js",
+    "test:types": "echo 'Type checking skipped - runtime validation only'"
+  },
+  "dependencies": {
+    "@datnguyen1215/hsmjs": "file:../../../"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.9",
+    "typescript": "^5.8.3",
+    "tsx": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

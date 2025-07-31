@@ -3,7 +3,7 @@
  * Tests the .doAsync() modifier for async actions
  */
 
-import { createMachine, action } from '../dist/cjs/index.js'
+import { createMachine, action } from '../src/index.js'
 
 describe('Async Actions', () => {
   describe('Basic Async Actions', () => {

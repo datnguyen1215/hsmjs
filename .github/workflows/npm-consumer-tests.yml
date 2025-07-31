@@ -1,4 +1,4 @@
-name: CommonJS and ESM Import Compatibility
+name: NPM Consumer Tests
 
 on:
   pull_request:
@@ -7,13 +7,13 @@ on:
     branches: [ main ]
 
 jobs:
-  test-imports:
-    name: Test Module Import Compatibility (CJS & ESM)
+  npm-consumer-tests:
+    name: NPM Consumer Tests - Node ${{ matrix.node-version }}
     runs-on: ubuntu-latest
     
     strategy:
       matrix:
-        node-version: [16.x, 18.x, 20.x]
+        node-version: [18, 20, 22]
     
     steps:
     - name: Checkout code
@@ -31,8 +31,5 @@ jobs:
     - name: Build library
       run: npm run build
     
-    - name: Test ES5 (CommonJS) imports
-      run: node tests/imports/test-es5-import.js
-    
-    - name: Test ES6 (ESM) imports
-      run: node tests/imports/test-es6-import.mjs
+    - name: Run NPM consumer tests
+      run: npm run test:npm-consumers

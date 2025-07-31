@@ -3,7 +3,7 @@
  * Tests fundamental machine creation, state definition, and initialization
  */
 
-import { createMachine } from '../dist/cjs/index.js'
+import { createMachine } from '../src/index.js'
 
 describe('Basic State Machine', () => {
   describe('Machine Creation', () => {

@@ -1,0 +1,58 @@
+[
+  {
+    "timestamp": "2025-07-30T17:18:13.533Z",
+    "version": "1.1.4",
+    "sizes": {
+      "cjs": {
+        "raw": 448,
+        "gzipped": 206
+      },
+      "es": {
+        "raw": 196,
+        "gzipped": 153
+      }
+    }
+  },
+  {
+    "timestamp": "2025-07-30T17:19:45.509Z",
+    "version": "1.1.4",
+    "sizes": {
+      "cjs": {
+        "raw": 448,
+        "gzipped": 206
+      },
+      "es": {
+        "raw": 196,
+        "gzipped": 153
+      }
+    }
+  },
+  {
+    "timestamp": "2025-07-30T17:19:53.165Z",
+    "version": "1.1.4",
+    "sizes": {
+      "cjs": {
+        "raw": 448,
+        "gzipped": 206
+      },
+      "es": {
+        "raw": 196,
+        "gzipped": 153
+      }
+    }
+  },
+  {
+    "timestamp": "2025-07-30T17:32:42.652Z",
+    "version": "1.1.4",
+    "sizes": {
+      "cjs": {
+        "raw": 448,
+        "gzipped": 206
+      },
+      "es": {
+        "raw": 196,
+        "gzipped": 153
+      }
+    }
+  }
+]
