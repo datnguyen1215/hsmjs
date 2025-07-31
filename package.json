@@ -1,6 +1,7 @@
 {
   "name": "@datnguyen1215/hsmjs",
   "version": "1.1.4",
+  "type": "module",
   "description": "A lightweight, imperative state machine library with hierarchical states and async action support",
   "main": "src/index.js",
   "browser": "dist/hsmjs.min.js",
@@ -10,6 +11,7 @@
   "files": [
     "src/",
     "dist/hsmjs.min.js",
+    "dist/types/",
     "types/"
   ],
   "scripts": {
