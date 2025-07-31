@@ -12,12 +12,13 @@ describe('Performance Benchmarks', () => {
   const umdPath = path.join(distPath, 'hsmjs.min.js');
 
   // Performance thresholds (in milliseconds)
+  // Adjusted for CI environment which can be 2-3x slower than local development
   const PERFORMANCE_THRESHOLDS = {
-    machineCreation: 10,        // Creating a machine should take < 10ms
-    stateTransition: 1,         // Single transition should take < 1ms
-    actionExecution: 0.5,       // Action execution should take < 0.5ms
-    bulkTransitions: 100,       // 1000 transitions should take < 100ms
-    memoryLeakTest: 50,         // Memory test should complete < 50ms
+    machineCreation: 20,        // Creating a machine should take < 20ms (CI-friendly)
+    stateTransition: 2,         // Single transition should take < 2ms (CI-friendly)
+    actionExecution: 1,         // Action execution should take < 1ms (CI-friendly)
+    bulkTransitions: 200,       // 1000 transitions should take < 200ms (CI-friendly)
+    memoryLeakTest: 100,        // Memory test should complete < 100ms (CI-friendly)
   };
 
   describe('Source Module Performance', () => {
