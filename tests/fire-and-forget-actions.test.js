@@ -3,7 +3,7 @@
  * Tests the .fire() modifier for non-blocking actions
  */
 
-import { createMachine, action } from '../dist/cjs/index.js'
+import { createMachine, action } from '../src/index.js'
 
 describe('Fire-and-Forget Actions', () => {
   describe('Basic Fire Actions', () => {

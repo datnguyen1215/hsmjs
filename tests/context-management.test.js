@@ -3,7 +3,7 @@
  * Tests context initialization, isolation, and updates
  */
 
-import { createMachine } from '../dist/cjs/index.js'
+import { createMachine } from '../src/index.js'
 
 describe('Context Management', () => {
   describe('Context Initialization', () => {

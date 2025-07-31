@@ -3,7 +3,7 @@
  * Tests that the type definitions work correctly with actual JavaScript code
  */
 
-const { createMachine, action } = require('../dist/cjs/index.js');
+const { createMachine, action } = require('../src/index.js');
 const fs = require('fs');
 const path = require('path');
 

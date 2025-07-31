@@ -2,18 +2,18 @@
   "name": "@datnguyen1215/hsmjs",
   "version": "1.1.4",
   "description": "A lightweight, imperative state machine library with hierarchical states and async action support",
-  "main": "dist/cjs/index.js",
-  "module": "dist/es/index.js",
-  "browser": "dist/umd/hsmjs.min.js",
-  "unpkg": "dist/umd/hsmjs.min.js",
-  "jsdelivr": "dist/umd/hsmjs.min.js",
+  "main": "src/index.js",
+  "browser": "dist/hsmjs.min.js",
+  "unpkg": "dist/hsmjs.min.js",
+  "jsdelivr": "dist/hsmjs.min.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "dist/",
+    "src/",
+    "dist/hsmjs.min.js",
     "types/"
   ],
   "scripts": {
-    "build": "npm run clean && npm run build:cjs && npm run build:es && npm run build:pkg && npm run build:umd && npm run build:types",
+    "build": "npm run clean && npm run build:umd && npm run build:types",
     "build:types": "mkdir -p dist/types && cp types/index.d.ts dist/types/index.d.ts",
     "build:types:validate": "npx tsc --noEmit types/index.d.ts",
     "build:cjs": "babel src --out-dir dist/cjs --presets=@babel/preset-env",
@@ -72,40 +72,17 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/es/index.js",
-      "require": "./dist/cjs/index.js",
-      "browser": "./dist/umd/hsmjs.min.js"
+      "import": "./src/index.js",
+      "require": "./src/index.js",
+      "browser": "./dist/hsmjs.min.js"
     },
-    "./min": {
-      "import": "./dist/esm/hsmjs.esm.min.js",
-      "require": "./dist/cjs/index.js",
-      "browser": "./dist/umd/hsmjs.min.js"
-    },
-    "./umd": "./dist/umd/hsmjs.js",
-    "./umd/min": "./dist/umd/hsmjs.min.js",
-    "./esm": "./dist/esm/hsmjs.esm.js",
-    "./esm/min": "./dist/esm/hsmjs.esm.min.js",
+    "./min": "./dist/hsmjs.min.js",
     "./package.json": "./package.json"
   },
   "bundlesize": [
     {
-      "path": "dist/umd/hsmjs.min.js",
+      "path": "dist/hsmjs.min.js",
       "maxSize": "15 kB",
-      "compression": "gzip"
-    },
-    {
-      "path": "dist/esm/hsmjs.esm.min.js",
-      "maxSize": "14 kB",
-      "compression": "gzip"
-    },
-    {
-      "path": "dist/cjs/index.js",
-      "maxSize": "16 kB",
-      "compression": "gzip"
-    },
-    {
-      "path": "dist/es/index.js",
-      "maxSize": "16 kB",
       "compression": "gzip"
     }
   ]

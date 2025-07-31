@@ -3,7 +3,7 @@
  * Tests the subscribe/unsubscribe functionality for state change notifications
  */
 
-import { createMachine } from '../dist/cjs/index.js'
+import { createMachine } from '../src/index.js'
 
 describe('Event Subscriptions', () => {
   describe('Basic Subscriptions', () => {

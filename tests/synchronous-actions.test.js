@@ -3,7 +3,7 @@
  * Tests the .do() modifier for synchronous actions
  */
 
-import { createMachine, action } from '../dist/cjs/index.js'
+import { createMachine, action } from '../src/index.js'
 
 describe('Synchronous Actions', () => {
   describe('Basic Do Actions', () => {

@@ -1,283 +1,83 @@
 /**
- * Build Formats Test Suite
- * Tests that all build formats (CJS, ESM) work correctly and export the same API
+ * Build Format Validation Tests
+ * Tests the minimalist UMD-only distribution format
  */
 
 const fs = require('fs');
 const path = require('path');
 
 describe('Build Formats', () => {
-  const distPath = path.join(__dirname, '..', 'dist');
-  const cjsPath = path.join(distPath, 'cjs', 'index.js');
-  const esPath = path.join(distPath, 'es', 'index.js');
+  const umdPath = path.join(__dirname, '../dist/hsmjs.min.js');
 
-  beforeAll(() => {
-    // Ensure build files exist
-    expect(fs.existsSync(cjsPath)).toBeTruthy();
-    expect(fs.existsSync(esPath)).toBeTruthy();
-  });
-
-  describe('CommonJS Build', () => {
-    let cjsModule;
-
-    beforeAll(() => {
-      // Clear require cache to ensure fresh load
-      delete require.cache[require.resolve(cjsPath)];
-      cjsModule = require(cjsPath);
+  describe('UMD Build', () => {
+    test('UMD file exists', () => {
+      expect(fs.existsSync(umdPath)).toBe(true);
     });
 
-    test('exports createMachine function', () => {
-      expect(typeof cjsModule.createMachine).toBe('function');
+    test('UMD file has correct structure', () => {
+      const content = fs.readFileSync(umdPath, 'utf8');
+      
+      // Should contain UMD wrapper (modern format)
+      expect(content).toMatch(/!function\s*\([^)]+\)/); // Modern UMD format
+      expect(content).toMatch(/typeof\s+exports/);
+      expect(content).toMatch(/typeof\s+module/);
+      
+      // Should expose HSM as global
+      expect(content).toMatch(/HSM\s*=/);
     });
 
-    test('exports action function', () => {
-      expect(typeof cjsModule.action).toBe('function');
+    test('UMD file is minified', () => {
+      const content = fs.readFileSync(umdPath, 'utf8');
+      
+      // Should not contain unnecessary whitespace
+      expect(content.split('\n').length).toBeLessThan(20); // Minified should be few lines
+      
+      // Should not contain comments (except license banner)
+      const lines = content.split('\n');
+      const commentLines = lines.filter(line => line.trim().startsWith('//') || line.includes('/*'));
+      expect(commentLines.length).toBeLessThan(10); // Only license banner allowed
     });
 
-    test('createMachine creates valid machine', () => {
-      const machine = cjsModule.createMachine('test');
-      expect(machine.name).toBe('test');
-      expect(typeof machine.state).toBe('function');
-      expect(typeof machine.initial).toBe('function');
-      expect(typeof machine.start).toBe('function');
-    });
-
-    test('action helper works correctly', () => {
-      const testAction = cjsModule.action('test', (ctx) => {
-        ctx.tested = true;
-      });
-      expect(testAction.actionName).toBe('test');
-      expect(typeof testAction.actionFn).toBe('function');
-    });
-
-    test('full workflow functionality', async () => {
-      const machine = cjsModule.createMachine('workflow-test');
-      const idle = machine.state('idle');
-      const active = machine.state('active');
+    test('UMD file has source map', () => {
+      const sourceMapPath = umdPath + '.map';
+      expect(fs.existsSync(sourceMapPath)).toBe(true);
       
-      idle.on('START', active);
-      machine.initial(idle);
-      
-      const instance = machine.start();
-      expect(instance.current).toBe('idle');
-      
-      await instance.send('START');
-      expect(instance.current).toBe('active');
-    });
-
-    test('action execution in workflow', async () => {
-      const machine = cjsModule.createMachine('action-test');
-      let actionExecuted = false;
-      
-      const testAction = cjsModule.action('setFlag', (ctx) => {
-        actionExecuted = true;
-        ctx.flag = true;
-      });
-      
-      const idle = machine.state('idle');
-      const active = machine.state('active');
-      
-      idle.on('START', active, testAction);
-      machine.initial(idle);
-      
-      const instance = machine.start();
-      await instance.send('START');
-      
-      expect(actionExecuted).toBe(true);
-      expect(instance.context.flag).toBe(true);
+      const content = fs.readFileSync(umdPath, 'utf8');
+      expect(content).toMatch(/\/\/# sourceMappingURL=/);
     });
   });
 
-  describe('ES Module Build', () => {
-    let esModule;
-
-    beforeAll(async () => {
-      // Dynamic import for ES modules
-      esModule = await import(esPath);
+  describe('Source Files Available', () => {
+    test('source directory exists for npm users', () => {
+      const srcPath = path.join(__dirname, '../src');
+      expect(fs.existsSync(srcPath)).toBe(true);
     });
 
-    test('exports createMachine function', () => {
-      expect(typeof esModule.createMachine).toBe('function');
+    test('main entry point exists in source', () => {
+      const mainPath = path.join(__dirname, '../src/index.js');
+      expect(fs.existsSync(mainPath)).toBe(true);
     });
 
-    test('exports action function', () => {
-      expect(typeof esModule.action).toBe('function');
-    });
-
-    test('createMachine creates valid machine', () => {
-      const machine = esModule.createMachine('test');
-      expect(machine.name).toBe('test');
-      expect(typeof machine.state).toBe('function');
-      expect(typeof machine.initial).toBe('function');
-      expect(typeof machine.start).toBe('function');
-    });
-
-    test('action helper works correctly', () => {
-      const testAction = esModule.action('test', (ctx) => {
-        ctx.tested = true;
-      });
-      expect(testAction.actionName).toBe('test');
-      expect(typeof testAction.actionFn).toBe('function');
-    });
-
-    test('full workflow functionality', async () => {
-      const machine = esModule.createMachine('workflow-test');
-      const idle = machine.state('idle');
-      const active = machine.state('active');
+    test('source files are structured correctly', () => {
+      const corePath = path.join(__dirname, '../src/core');
+      const actionsPath = path.join(__dirname, '../src/actions');
+      const instancePath = path.join(__dirname, '../src/instance');
       
-      idle.on('START', active);
-      machine.initial(idle);
-      
-      const instance = machine.start();
-      expect(instance.current).toBe('idle');
-      
-      await instance.send('START');
-      expect(instance.current).toBe('active');
-    });
-
-    test('action execution in workflow', async () => {
-      const machine = esModule.createMachine('action-test');
-      let actionExecuted = false;
-      
-      const testAction = esModule.action('setFlag', (ctx) => {
-        actionExecuted = true;
-        ctx.flag = true;
-      });
-      
-      const idle = machine.state('idle');
-      const active = machine.state('active');
-      
-      idle.on('START', active, testAction);
-      machine.initial(idle);
-      
-      const instance = machine.start();
-      await instance.send('START');
-      
-      expect(actionExecuted).toBe(true);
-      expect(instance.context.flag).toBe(true);
+      expect(fs.existsSync(corePath)).toBe(true);
+      expect(fs.existsSync(actionsPath)).toBe(true);
+      expect(fs.existsSync(instancePath)).toBe(true);
     });
   });
 
-  describe('Cross-Format Compatibility', () => {
-    let cjsModule, esModule;
-
-    beforeAll(async () => {
-      cjsModule = require(cjsPath);
-      esModule = await import(esPath);
+  describe('TypeScript Support', () => {
+    test('TypeScript definitions exist', () => {
+      const typesPath = path.join(__dirname, '../types/index.d.ts');
+      expect(fs.existsSync(typesPath)).toBe(true);
     });
 
-    test('both formats export same API', () => {
-      const cjsKeys = Object.keys(cjsModule).sort();
-      const esKeys = Object.keys(esModule).sort();
-      expect(cjsKeys).toEqual(esKeys);
-    });
-
-    test('both formats create compatible machines', () => {
-      const cjsMachine = cjsModule.createMachine('test');
-      const esMachine = esModule.createMachine('test');
-      
-      expect(cjsMachine.name).toBe(esMachine.name);
-      expect(typeof cjsMachine.state).toBe(typeof esMachine.state);
-      expect(typeof cjsMachine.initial).toBe(typeof esMachine.initial);
-      expect(typeof cjsMachine.start).toBe(typeof esMachine.start);
-    });
-
-    test('both formats create compatible actions', () => {
-      const cjsAction = cjsModule.action('test', () => {});
-      const esAction = esModule.action('test', () => {});
-      
-      expect(cjsAction.actionName).toBe(esAction.actionName);
-      expect(typeof cjsAction.actionFn).toBe(typeof esAction.actionFn);
-    });
-
-    test('both formats produce same runtime behavior', async () => {
-      // Test with CommonJS
-      const cjsMachine = cjsModule.createMachine('compat-test');
-      const cjsIdle = cjsMachine.state('idle');
-      const cjsActive = cjsMachine.state('active');
-      cjsIdle.on('START', cjsActive);
-      cjsMachine.initial(cjsIdle);
-      const cjsInstance = cjsMachine.start();
-      await cjsInstance.send('START');
-      
-      // Test with ES modules
-      const esMachine = esModule.createMachine('compat-test');
-      const esIdle = esMachine.state('idle');
-      const esActive = esMachine.state('active');
-      esIdle.on('START', esActive);
-      esMachine.initial(esIdle);
-      const esInstance = esMachine.start();
-      await esInstance.send('START');
-      
-      // Both should have same behavior
-      expect(cjsInstance.current).toBe(esInstance.current);
-      expect(cjsInstance.current).toBe('active');
-    });
-  });
-
-  describe('Package.json Configuration', () => {
-    test('dist directories have correct package.json files', () => {
-      const cjsPkgPath = path.join(distPath, 'cjs', 'package.json');
-      const esPkgPath = path.join(distPath, 'es', 'package.json');
-      
-      expect(fs.existsSync(cjsPkgPath)).toBeTruthy();
-      expect(fs.existsSync(esPkgPath)).toBeTruthy();
-      
-      const cjsPkg = JSON.parse(fs.readFileSync(cjsPkgPath, 'utf8'));
-      const esPkg = JSON.parse(fs.readFileSync(esPkgPath, 'utf8'));
-      
-      expect(cjsPkg.type).toBe('commonjs');
-      expect(esPkg.type).toBe('module');
-    });
-
-    test('main package.json has correct exports', () => {
-      const mainPkgPath = path.join(__dirname, '..', 'package.json');
-      const mainPkg = JSON.parse(fs.readFileSync(mainPkgPath, 'utf8'));
-      
-      expect(mainPkg.main).toBe('dist/cjs/index.js');
-      expect(mainPkg.module).toBe('dist/es/index.js');
-      expect(mainPkg.exports).toEqual({
-        '.': {
-          import: './dist/es/index.js',
-          require: './dist/cjs/index.js'
-        }
-      });
-    });
-  });
-
-  describe('Build Integrity', () => {
-    test('all required files exist in both builds', () => {
-      const requiredFiles = [
-        'index.js',
-        'core/create-machine.js',
-        'core/machine.js',
-        'core/state.js',
-        'core/transition.js',
-        'core/history-manager.js',
-        'core/circular-buffer.js',
-        'actions/action.js',
-        'instance/instance.js'
-      ];
-
-      requiredFiles.forEach(file => {
-        const cjsFile = path.join(distPath, 'cjs', file);
-        const esFile = path.join(distPath, 'es', file);
-        
-        expect(fs.existsSync(cjsFile)).toBeTruthy();
-        expect(fs.existsSync(esFile)).toBeTruthy();
-      });
-    });
-
-    test('build files are not empty', () => {
-      const buildFiles = [
-        path.join(distPath, 'cjs', 'index.js'),
-        path.join(distPath, 'es', 'index.js')
-      ];
-
-      buildFiles.forEach(file => {
-        const stats = fs.statSync(file);
-        expect(stats.size).toBeGreaterThan(0);
-      });
+    test('TypeScript definitions are copied to dist', () => {
+      const distTypesPath = path.join(__dirname, '../dist/types/index.d.ts');
+      expect(fs.existsSync(distTypesPath)).toBe(true);
     });
   });
 });

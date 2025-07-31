@@ -2,7 +2,7 @@
  * Test ES6 (ESM) import compatibility
  */
 
-import { createMachine, action } from '../../dist/es/index.js';
+import { createMachine, action } from '../../src/index.js';
 
 console.log('Testing ES6 imports...');
 

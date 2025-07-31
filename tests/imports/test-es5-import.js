@@ -2,7 +2,7 @@
  * Test ES5 (CommonJS) import compatibility
  */
 
-const { createMachine, action } = require('../../dist/cjs/index.js')
+const { createMachine, action } = require('../../src/index.js')
 
 console.log('Testing ES5 imports...')
 
