@@ -256,7 +256,7 @@ describe('TypeScript Integration Tests', () => {
     const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
     
     expect(packageJson.types).toBe('dist/types/index.d.ts');
-    expect(packageJson.files).toContain('types/');
+    expect(packageJson.files).toContain('dist/types/');
   });
 
   test('Build scripts include type generation', () => {

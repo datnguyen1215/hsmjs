@@ -3,24 +3,25 @@
   "version": "1.1.4",
   "type": "module",
   "description": "A lightweight, imperative state machine library with hierarchical states and async action support",
-  "main": "src/index.js",
-  "browser": "dist/hsmjs.min.js",
-  "unpkg": "dist/hsmjs.min.js",
-  "jsdelivr": "dist/hsmjs.min.js",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "browser": "dist/umd/hsmjs.min.js",
+  "unpkg": "dist/umd/hsmjs.min.js",
+  "jsdelivr": "dist/umd/hsmjs.min.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "src/",
-    "dist/hsmjs.min.js",
-    "dist/types/",
-    "types/"
+    "dist/cjs/",
+    "dist/esm/",
+    "dist/umd/",
+    "dist/types/"
   ],
   "scripts": {
-    "build": "npm run clean && npm run build:umd && npm run build:types",
+    "build": "npm run clean && npm run build:cjs && npm run build:esm && npm run build:umd && npm run build:pkg && npm run build:types",
     "build:types": "mkdir -p dist/types && cp types/index.d.ts dist/types/index.d.ts",
     "build:types:validate": "npx tsc --noEmit types/index.d.ts",
     "build:cjs": "babel src --out-dir dist/cjs --presets=@babel/preset-env",
-    "build:es": "babel src --out-dir dist/es --no-babelrc --presets=@babel/preset-modules",
-    "build:pkg": "echo '{\"type\":\"module\"}' > dist/es/package.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
+    "build:esm": "babel src --out-dir dist/esm --no-babelrc --presets=@babel/preset-modules",
+    "build:pkg": "echo '{\"type\":\"module\"}' > dist/esm/package.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "build:umd": "rollup -c",
     "build:min:cjs": "babel src --out-dir dist/cjs --presets=@babel/preset-env --minified --no-comments",
     "build:min:es": "babel src --out-dir dist/es --no-babelrc --presets=@babel/preset-modules --minified --no-comments",
@@ -74,16 +75,17 @@
   },
   "exports": {
     ".": {
-      "import": "./src/index.js",
-      "require": "./src/index.js",
-      "browser": "./dist/hsmjs.min.js"
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "browser": "./dist/umd/hsmjs.min.js"
     },
-    "./min": "./dist/hsmjs.min.js",
+    "./min": "./dist/umd/hsmjs.min.js",
     "./package.json": "./package.json"
   },
   "bundlesize": [
     {
-      "path": "dist/hsmjs.min.js",
+      "path": "dist/umd/hsmjs.min.js",
       "maxSize": "15 kB",
       "compression": "gzip"
     }

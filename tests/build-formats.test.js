@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 describe('Build Formats', () => {
-  const umdPath = path.join(__dirname, '../dist/hsmjs.min.js');
+  const umdPath = path.join(__dirname, '../dist/umd/hsmjs.min.js');
 
   describe('UMD Build', () => {
     test('UMD file exists', () => {

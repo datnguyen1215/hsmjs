@@ -8,7 +8,7 @@ const { gzipSync } = require('zlib');
 const path = require('path');
 
 // File path for minimalist distribution
-const umdPath = path.join(__dirname, '../dist/hsmjs.min.js');
+const umdPath = path.join(__dirname, '../dist/umd/hsmjs.min.js');
 
 // Size thresholds (bytes) for minified UMD
 const UMD_SIZE_THRESHOLD = 35 * 1024; // 35KB for minified UMD

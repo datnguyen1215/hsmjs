@@ -9,7 +9,7 @@ const path = require('path');
 describe('Performance Benchmarks', () => {
   const distPath = path.join(__dirname, '..', 'dist');
   const srcPath = path.join(__dirname, '..', 'src', 'index.js');
-  const umdPath = path.join(distPath, 'hsmjs.min.js');
+  const umdPath = path.join(distPath, 'umd', 'hsmjs.min.js');
 
   // Performance thresholds (in milliseconds)
   // Adjusted for CI environment which can be 2-3x slower than local development

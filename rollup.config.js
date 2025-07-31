@@ -38,7 +38,7 @@ const commonPlugins = [
 export default {
   input: 'src/index.js',
   output: {
-    file: 'dist/hsmjs.min.js',
+    file: 'dist/umd/hsmjs.min.js',
     format: 'umd',
     name: 'HSM',
     banner,

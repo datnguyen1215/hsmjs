@@ -10,7 +10,7 @@ const { gzipSync } = require('zlib');
 describe('Size Regression Tests', () => {
   const distPath = path.join(__dirname, '..', 'dist');
   const srcPath = path.join(__dirname, '..', 'src', 'index.js');
-  const umdPath = path.join(distPath, 'hsmjs.min.js');
+  const umdPath = path.join(distPath, 'umd', 'hsmjs.min.js');
 
   // Baseline sizes for minimalist distribution architecture (updated to actual)
   const BASELINE_SIZES = {

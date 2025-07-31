@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UMD Browser Test - @datnguyen1215/hsmjs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 UMD Browser Test - @datnguyen1215/hsmjs</h1>
+        <p>Testing browser UMD import: <code>&lt;script src="dist/umd/hsmjs.min.js"&gt;&lt;/script&gt;</code></p>
+        
+        <div id="test-results"></div>
+        
+        <h2>Test Output:</h2>
+        <pre id="console-output"></pre>
+    </div>
+
+    <!-- Load the UMD build -->
+    <script src="dist/umd/hsmjs.min.js"></script>
+    
+    <script>
+        // Capture console output
+        let consoleOutput = '';
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            consoleOutput += args.join(' ') + '\n';
+            originalLog.apply(console, args);
+            updateOutput();
+        };
+        
+        console.error = function(...args) {
+            consoleOutput += 'ERROR: ' + args.join(' ') + '\n';
+            originalError.apply(console, args);
+            updateOutput();
+        };
+        
+        function updateOutput() {
+            document.getElementById('console-output').textContent = consoleOutput;
+        }
+        
+        function addTestResult(message, isSuccess) {
+            const resultsDiv = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-result ${isSuccess ? 'success' : 'error'}`;
+            div.textContent = message;
+            resultsDiv.appendChild(div);
+        }
+        
+        function addInfo(message) {
+            const resultsDiv = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = 'test-result info';
+            div.textContent = message;
+            resultsDiv.appendChild(div);
+        }
+        
+        // Run tests
+        console.log('=== Testing UMD Browser Import ===\n');
+        
+        async function runTests() {
+        try {
+            // Test 1: Check if HSMjs is available globally
+            addInfo('1. Testing global HSMjs availability...');
+            if (typeof HSMjs !== 'undefined') {
+                addTestResult('✅ HSMjs global object available', true);
+                console.log('✅ HSMjs global object available:', typeof HSMjs);
+                console.log('   Available properties:', Object.keys(HSMjs).join(', '));
+            } else {
+                throw new Error('HSMjs global object not found');
+            }
+            
+            // Test 2: Test destructured access
+            addInfo('2. Testing destructured access...');
+            const { createMachine, action } = HSMjs;
+            addTestResult('✅ Destructured access successful', true);
+            console.log('✅ Destructured access successful');
+            console.log('   createMachine:', typeof createMachine);
+            console.log('   action:', typeof action);
+            
+            // Test 3: Create a simple machine to verify functionality
+            addInfo('3. Testing basic functionality...');
+            const machine = createMachine('test-browser-machine');
+            
+            // Use machine API to create states
+            const idle = machine.state('idle');
+            const active = machine.state('active');
+            
+            // Set initial state and create transition
+            machine.initial(idle);
+            idle.on('activate', active);
+            
+            // Start the machine (returns instance)
+            const instance = machine.start();
+            
+            addTestResult('✅ Basic functionality working', true);
+            console.log('✅ Basic functionality working');
+            console.log('   Machine name:', machine.name);
+            console.log('   Current state:', instance.current.id);
+            
+            // Test 4: Fire transition
+            addInfo('4. Testing state transitions...');
+            await instance.send('activate');
+            addTestResult('✅ State transition successful', true);
+            console.log('   After transition:', instance.current.id);
+            
+            // Test 5: Test machine methods
+            addInfo('5. Testing machine methods...');
+            const states = Array.from(machine.states.values());
+            addTestResult(`✅ Machine methods working (${states.length} states created)`, true);
+            console.log('   States:', states.map(s => s.id).join(', '));
+            console.log('   Machine states count:', states.length);
+            
+            addTestResult('🎉 UMD browser test PASSED!', true);
+            console.log('\n🎉 UMD browser test PASSED!\n');
+            
+        } catch (error) {
+            addTestResult('❌ UMD browser test FAILED: ' + error.message, false);
+            console.error('❌ UMD browser test FAILED:');
+            console.error('Error:', error.message);
+            console.error('Stack:', error.stack);
+        }
+        }
+        
+        runTests();
+    </script>
+</body>
+</html>
