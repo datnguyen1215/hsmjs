@@ -44,13 +44,13 @@ export function createStateMachineStore(machine, initialContext = {}) {
   const saving = machine.state('saving');
 
   editing
-    .on('SAVE', saving)
+    .on('SAVE', 'saving')
     .do((ctx, event) => {
       ctx.text = event.text;
     });
 
   saving
-    .on('SUCCESS', editing)
+    .on('SUCCESS', 'editing')
     .do(async (ctx) => {
       await fetch('/api/save', {
         method: 'POST',
@@ -58,7 +58,7 @@ export function createStateMachineStore(machine, initialContext = {}) {
       });
       ctx.saved = true;
     })
-    .on('ERROR', editing);
+    .on('ERROR', 'editing');
 
   machine.initial('editing');
 

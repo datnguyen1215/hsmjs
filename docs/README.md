@@ -201,7 +201,8 @@ console.log(instance.current);  // Current state ID
 console.log(instance.context);  // Current context
 
 // Visualize the machine
-await machine.visualizer().preview();
+const diagram = machine.visualizer().visualize()
+console.log(diagram);
 ```
 
 ## License

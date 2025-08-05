@@ -20,9 +20,9 @@ describe('Transition Guards', () => {
       error = machine.state('error')
 
       // Guard based on context
-      idle.on('START', active).if(ctx => ctx.canStart === true)
+      idle.on('START', 'active').if(ctx => ctx.canStart === true)
 
-      idle.on('START', error).if(ctx => ctx.canStart === false)
+      idle.on('START', 'error').if(ctx => ctx.canStart === false)
 
       machine.initial(idle)
     })
@@ -61,11 +61,11 @@ describe('Transition Guards', () => {
 
       // Guard based on event payload
       pending
-        .on('REVIEW', approved)
+        .on('REVIEW', 'approved')
         .if((ctx, event) => event.decision === 'approve')
 
       pending
-        .on('REVIEW', rejected)
+        .on('REVIEW', 'rejected')
         .if((ctx, event) => event.decision === 'reject')
 
       machine.initial(pending)
@@ -104,11 +104,11 @@ describe('Transition Guards', () => {
       stateC = machine.state('stateC')
 
       // Guards are evaluated in order
-      idle.on('GO', stateA).if(ctx => ctx.priority === 1)
+      idle.on('GO', 'stateA').if(ctx => ctx.priority === 1)
 
-      idle.on('GO', stateB).if(ctx => ctx.priority === 2)
+      idle.on('GO', 'stateB').if(ctx => ctx.priority === 2)
 
-      idle.on('GO', stateC) // No guard - fallback
+      idle.on('GO', 'stateC') // No guard - fallback
 
       machine.initial(idle)
     })
@@ -148,17 +148,17 @@ describe('Transition Guards', () => {
       invalid = machine.state('invalid')
 
       // Complex validation guard
-      form.on('SUBMIT', validating).if(ctx => {
+      form.on('SUBMIT', 'validating').if(ctx => {
         return ctx.form && ctx.form.email && ctx.form.password
       })
 
-      validating.on('VALIDATED', submitting).if(ctx => {
+      validating.on('VALIDATED', 'submitting').if(ctx => {
         const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ctx.form.email)
         const passwordValid = ctx.form.password.length >= 8
         return emailValid && passwordValid
       })
 
-      validating.on('VALIDATED', invalid).if(ctx => {
+      validating.on('VALIDATED', 'invalid').if(ctx => {
         const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ctx.form.email)
         const passwordValid = ctx.form.password.length >= 8
         return !emailValid || !passwordValid
@@ -213,7 +213,7 @@ describe('Transition Guards', () => {
       active = machine.state('active')
 
       // Guard that throws error
-      idle.on('START', active).if(() => {
+      idle.on('START', 'active').if(() => {
         throw new Error('Guard error')
       })
 
@@ -244,18 +244,18 @@ describe('Transition Guards', () => {
 
       // Multiple guards on same transition - all must pass
       idle
-        .on('PROCESS', processing)
+        .on('PROCESS', 'processing')
         .if(ctx => ctx.isAuthenticated === true)
         .if(ctx => ctx.hasPermission === true)
         .if(ctx => ctx.quotaAvailable > 0)
 
       // Alternative transition with different guards
       idle
-        .on('PROCESS', error)
+        .on('PROCESS', 'error')
         .if(ctx => ctx.isAuthenticated === true)
         .if(ctx => ctx.hasPermission === false)
 
-      processing.on('DONE', complete)
+      processing.on('DONE', 'complete')
 
       machine.initial(idle)
     })
@@ -326,13 +326,13 @@ describe('Transition Guards', () => {
 
       // Guards using both context and event data
       idle
-        .on('SUBMIT', approved)
+        .on('SUBMIT', 'approved')
         .if(ctx => ctx.isActive === true)
         .if((ctx, event) => event.amount > 0)
         .if((ctx, event) => event.amount <= ctx.maxAmount)
 
       idle
-        .on('SUBMIT', rejected)
+        .on('SUBMIT', 'rejected')
         .if(ctx => ctx.isActive === true)
         .if((ctx, event) => event.amount > ctx.maxAmount)
 
@@ -393,7 +393,7 @@ describe('Transition Guards', () => {
 
       // Premium user flow
       idle
-        .on('ACTIVATE', premium)
+        .on('ACTIVATE', 'premium')
         .if(ctx => ctx.user !== null)
         .if(ctx => ctx.user.verified === true)
         .if(ctx => ctx.user.subscription === 'premium')
@@ -401,14 +401,14 @@ describe('Transition Guards', () => {
 
       // Basic user flow
       idle
-        .on('ACTIVATE', basic)
+        .on('ACTIVATE', 'basic')
         .if(ctx => ctx.user !== null)
         .if(ctx => ctx.user.verified === true)
         .if(ctx => ctx.user.subscription === 'basic')
 
       // Trial user flow
       idle
-        .on('ACTIVATE', trial)
+        .on('ACTIVATE', 'trial')
         .if(ctx => ctx.user !== null)
         .if(ctx => ctx.user.verified === false)
 

@@ -46,21 +46,19 @@ graph TD
   classDef initial fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
 ```
 
-### Browser Preview
-
-```javascript
-// Open diagram in browser for immediate visualization
-await machine.visualizer().preview()
-```
 
 ### Save to File
 
 ```javascript
 // Save as HTML file (auto-detected from extension)
-await machine.visualizer().save('my-state-machine.html')
+// Save diagram to file using Node.js fs module
+const diagram = machine.visualizer().visualize()
+fs.writeFileSync('my-state-machine.html', diagram)
 
 // Save as Mermaid text file
-await machine.visualizer().save('my-state-machine.mmd')
+// Save diagram to file using Node.js fs module
+const diagram = machine.visualizer().visualize()
+fs.writeFileSync('my-state-machine.mmd', diagram)
 ```
 
 ## API Reference
@@ -95,10 +93,12 @@ Returns a visualizer object with preview and save methods.
 const viz = machine.visualizer()
 
 // Preview in browser
-await viz.preview()
+// Use the diagram text with external tools
+console.log(viz.visualize())
 
 // Save to file
-await viz.save('diagram.html')
+// Save diagram to file
+fs.writeFileSync('diagram.html', viz.visualize())
 ```
 
 ### Instance Methods
@@ -241,7 +241,9 @@ const diagram = visualizer.visualize()
 When saving with `.html` extension, generates a complete HTML page with embedded Mermaid:
 
 ```javascript
-await machine.visualizer().save('state-machine.html')
+// Save diagram to file using Node.js fs module
+const diagram = machine.visualizer().visualize()
+fs.writeFileSync('state-machine.html', diagram)
 ```
 
 **Generated HTML includes:**
@@ -255,7 +257,9 @@ await machine.visualizer().save('state-machine.html')
 When saving with `.mmd` or `.md` extension, saves raw Mermaid syntax:
 
 ```javascript
-await machine.visualizer().save('state-machine.mmd')
+// Save diagram to file using Node.js fs module
+const diagram = machine.visualizer().visualize()
+fs.writeFileSync('state-machine.mmd', diagram)
 ```
 
 **Generated file contains:**

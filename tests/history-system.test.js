@@ -18,12 +18,12 @@ describe('History System', () => {
     const complete = machine.state('complete')
     const error = machine.state('error')
 
-    idle.on('start', processing)
-    processing.on('finish', complete)
-    processing.on('fail', error)
-    complete.on('reset', idle)
-    error.on('retry', processing)
-    error.on('reset', idle)
+    idle.on('start', 'processing')
+    processing.on('finish', 'complete')
+    processing.on('fail', 'error')
+    complete.on('reset', 'idle')
+    error.on('retry', 'processing')
+    error.on('reset', 'idle')
 
     machine.initial(idle)
 

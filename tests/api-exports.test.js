@@ -64,8 +64,8 @@ describe('API Exports', () => {
         ctx.finished = true;
       };
 
-      idle.on('START', active).do(startAction);
-      active.on('FINISH', complete).do(finishAction);
+      idle.on('START', 'active').do(startAction);
+      active.on('FINISH', 'complete').do(finishAction);
 
       machine.initial(idle);
 
@@ -107,8 +107,8 @@ describe('API Exports', () => {
         ctx.counter = (ctx.counter || 0) + 1;
       };
 
-      s1.on('TOGGLE', s2).do(testAction);
-      s2.on('TOGGLE', s1).do(testAction);
+      s1.on('TOGGLE', 's2').do(testAction);
+      s2.on('TOGGLE', 's1').do(testAction);
       machine.initial(s1);
 
       const instance = machine.start();

@@ -34,9 +34,9 @@ const processing = machine.state('processing');
 const completed = machine.state('completed');
 
 // Define transitions
-idle.on('START', processing);
-processing.on('COMPLETE', completed);
-completed.on('RESET', idle);
+idle.on('START', 'processing');
+processing.on('COMPLETE', 'completed');
+completed.on('RESET', 'idle');
 
 // Set initial state
 machine.initial(idle);

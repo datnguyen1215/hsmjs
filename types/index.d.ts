@@ -168,7 +168,7 @@ export interface InstanceOptions {
 export interface Transition<TContext = BaseContext, TEvent = BaseEvent> {
 
   readonly event: string;
-  readonly target: string | State<TContext> | TargetResolver<TContext, TEvent>;
+  readonly target: string | TargetResolver<TContext, TEvent>;
   readonly source: State<TContext> | null;
 
   /**
@@ -255,7 +255,7 @@ export interface State<TContext = BaseContext> {
    */
   on<TEvent = BaseEvent>(
     event: string,
-    target: string | State<TContext> | TargetResolver<TContext, TEvent>
+    target: string | TargetResolver<TContext, TEvent>
   ): Transition<TContext, TEvent>;
 
   /**
@@ -443,7 +443,7 @@ export interface Machine<TContext = BaseContext> {
    */
   on<TEvent = BaseEvent>(
     event: string,
-    target: string | State<TContext> | TargetResolver<TContext, TEvent>
+    target: string | TargetResolver<TContext, TEvent>
   ): Transition<TContext, TEvent>;
 
   /**

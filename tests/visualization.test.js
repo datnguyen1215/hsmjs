@@ -12,8 +12,8 @@ describe('State Machine Visualization', () => {
     const off = machine.state('off')
     const on = machine.state('on')
 
-    off.on('TOGGLE', on)
-    on.on('TOGGLE', off)
+    off.on('TOGGLE', 'on')
+    on.on('TOGGLE', 'off')
 
     machine.initial(off)
 
@@ -39,10 +39,10 @@ describe('State Machine Visualization', () => {
     const fastForward = playing.state('fast-forward')
 
     // Transitions
-    stopped.on('PLAY', normal)
-    normal.on('FF', fastForward)
-    fastForward.on('NORMAL', normal)
-    playing.on('STOP', stopped)
+    stopped.on('PLAY', 'playing.normal')
+    normal.on('FF', 'fast-forward')
+    fastForward.on('NORMAL', 'normal')
+    playing.on('STOP', 'stopped')
 
     machine.initial(stopped)
 
@@ -54,7 +54,8 @@ describe('State Machine Visualization', () => {
     expect(diagram).toContain('playing_normal("normal")')
     expect(diagram).toContain('playing_fast_forward("fast-forward")')
     expect(diagram).toContain('stopped -->|PLAY| playing_normal')
-    expect(diagram).toContain('playing_normal -->|FF| playing_fast_forward')
+    expect(diagram).toContain('playing_normal -->|FF| fast_forward')
+    expect(diagram).toContain('playing_fast_forward -->|NORMAL| normal')
     expect(diagram).toContain('class stopped initial')
   })
 
@@ -74,10 +75,10 @@ describe('State Machine Visualization', () => {
     const privacy = settings.state('privacy')
 
     // Transitions across levels
-    loggedOut.on('LOGIN', profile)
-    profile.on('SETTINGS', account)
-    account.on('PRIVACY', privacy)
-    loggedIn.on('LOGOUT', loggedOut)
+    loggedOut.on('LOGIN', 'profile')
+    profile.on('SETTINGS', 'account')
+    account.on('PRIVACY', 'privacy')
+    loggedIn.on('LOGOUT', 'logged-out')
 
     machine.initial(loggedOut)
 
@@ -99,9 +100,9 @@ describe('State Machine Visualization', () => {
     const yellow = machine.state('yellow')
     const green = machine.state('green')
 
-    red.on('TIMER', green)
-    green.on('TIMER', yellow)
-    yellow.on('TIMER', red)
+    red.on('TIMER', 'green')
+    green.on('TIMER', 'yellow')
+    yellow.on('TIMER', 'red')
 
     machine.initial(red)
 
@@ -133,11 +134,12 @@ describe('State Machine Visualization', () => {
     const working = active.state('working')
     const paused = active.state('paused')
 
-    idle.on('START', working)
-    working.on('PAUSE', paused)
-    paused.on('RESUME', working)
-    active.on('STOP', idle)
+    idle.on('START', 'active.working')
+    working.on('PAUSE', 'paused')
+    paused.on('RESUME', 'working')
+    active.on('STOP', 'idle')
 
+    active.initial(working)
     machine.initial(idle)
 
     const instance = machine.start()
@@ -166,11 +168,11 @@ describe('State Machine Visualization', () => {
     const state2 = machine.state('state2')
     const error = machine.state('error')
 
-    state1.on('NEXT', state2)
-    state2.on('BACK', state1)
+    state1.on('NEXT', 'state2')
+    state2.on('BACK', 'state1')
 
     // Global transition that works from any state
-    machine.on('ERROR', error)
+    machine.on('ERROR', 'error')
 
     machine.initial(state1)
 
@@ -189,8 +191,8 @@ describe('State Machine Visualization', () => {
     const state2 = machine.state('state.with.dots')
     const state3 = machine.state('state with spaces')
 
-    state1.on('EVENT', state2)
-    state2.on('EVENT', state3)
+    state1.on('EVENT', 'state.with.dots')
+    state2.on('EVENT', 'state with spaces')
 
     machine.initial(state1)
 
@@ -236,8 +238,8 @@ describe('State Machine Visualization', () => {
       const idle = machine.state('idle')
       const active = machine.state('active')
 
-      idle.on('START', active)
-      active.on('STOP', idle)
+      idle.on('START', 'active')
+      active.on('STOP', 'idle')
 
       machine.initial(idle)
     })
@@ -272,8 +274,8 @@ describe('State Machine Visualization', () => {
       const idle = machine.state('idle')
       const active = machine.state('active')
 
-      idle.on('START', active)
-      active.on('STOP', idle)
+      idle.on('START', 'active')
+      active.on('STOP', 'idle')
 
       machine.initial(idle)
       instance = machine.start()

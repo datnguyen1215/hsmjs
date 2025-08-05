@@ -73,22 +73,22 @@ const loading = machine.state('loading');
 const success = machine.state('success');
 const error = machine.state('error');
 
-idle.on('FETCH', loading);
+idle.on('FETCH', 'loading');
 
 loading
   .enter(() => console.log('Fetching data...'))
-  .on('SUCCESS', success)
+  .on('SUCCESS', 'success')
   .do(async (ctx) => {
     const res = await fetch('/api/data');
     ctx.data = await res.json();
   })
-  .on('ERROR', error)
+  .on('ERROR', 'error')
   .do((ctx, event) => {
     ctx.error = event.message;
   });
 
-success.on('RESET', idle);
-error.on('RETRY', loading);
+success.on('RESET', 'idle');
+error.on('RETRY', 'loading');
 
 machine.initial('idle');
 

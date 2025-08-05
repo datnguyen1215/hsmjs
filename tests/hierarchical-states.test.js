@@ -25,10 +25,10 @@ describe('Hierarchical States', () => {
 
       unauth.initial(login)
 
-      login.on('REGISTER', register)
-      register.on('BACK', login)
-      unauth.on('LOGIN_SUCCESS', auth)
-      auth.on('LOGOUT', unauth)
+      login.on('REGISTER', 'register')
+      register.on('BACK', 'login')
+      unauth.on('LOGIN_SUCCESS', 'authenticated')
+      auth.on('LOGOUT', 'unauthenticated')
 
       machine.initial(unauth)
       instance = machine.start()
@@ -80,10 +80,10 @@ describe('Hierarchical States', () => {
       settings.initial(profile)
       profile.initial(basic)
 
-      dashboard.on('SETTINGS', settings)
-      settings.on('BACK', dashboard)
-      basic.on('ADVANCED', advanced)
-      advanced.on('BASIC', basic)
+      dashboard.on('SETTINGS', 'settings')
+      settings.on('BACK', 'dashboard')
+      basic.on('ADVANCED', 'advanced')
+      advanced.on('BASIC', 'basic')
 
       machine.initial(app)
       instance = machine.start()
@@ -127,12 +127,12 @@ describe('Hierarchical States', () => {
       offline.initial(disconnected)
 
       // Parent-level transitions
-      machine.on('NETWORK_DOWN', offline)
-      machine.on('NETWORK_UP', online)
+      machine.on('NETWORK_DOWN', 'offline')
+      machine.on('NETWORK_UP', 'online')
 
       // Child transitions
-      connected.on('CONNECTION_LOST', reconnecting)
-      reconnecting.on('RECONNECTED', connected)
+      connected.on('CONNECTION_LOST', 'reconnecting')
+      reconnecting.on('RECONNECTED', 'connected')
 
       machine.initial(online)
       instance = machine.start()
@@ -233,8 +233,8 @@ describe('Hierarchical States', () => {
         .exit(() => lifecycleLog.push('child2-exit'))
 
       parent.initial(child1)
-      child1.on('NEXT', child2)
-      child2.on('PREV', child1)
+      child1.on('NEXT', 'child2')
+      child2.on('PREV', 'child1')
 
       machine.initial(parent)
       instance = machine.start()
@@ -254,7 +254,7 @@ describe('Hierarchical States', () => {
 
     it('should exit child before parent', async () => {
       const other = machine.state('other')
-      parent.on('LEAVE', other)
+      parent.on('LEAVE', 'other')
 
       lifecycleLog = []
       await instance.send('LEAVE')
@@ -287,12 +287,12 @@ describe('Hierarchical States', () => {
       b.initial(b1)
 
       // Cross-hierarchy transitions
-      a1.on('CROSS', b2)
-      b2.on('BACK', a1)
+      a1.on('CROSS', 'b.2')
+      b2.on('BACK', 'a.1')
 
       // Parent transitions
-      a.on('SWITCH', b)
-      b.on('SWITCH', a)
+      a.on('SWITCH', 'b')
+      b.on('SWITCH', 'a')
 
       machine.initial(a)
       instance = machine.start()

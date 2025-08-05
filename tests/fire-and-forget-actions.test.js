@@ -19,7 +19,7 @@ describe('Fire-and-Forget Actions', () => {
       active = machine.state('active')
       fireLog = []
 
-      idle.on('START', active).fire(() => {
+      idle.on('START', 'active').fire(() => {
         fireLog.push('fired')
       })
 
@@ -37,7 +37,7 @@ describe('Fire-and-Forget Actions', () => {
     it('should not block transition', async () => {
       const startTime = Date.now()
 
-      idle.on('SLOW', active).fire(async () => {
+      idle.on('SLOW', 'active').fire(async () => {
         await new Promise(resolve => setTimeout(resolve, 100))
         fireLog.push('slow-fired')
       })
@@ -65,7 +65,7 @@ describe('Fire-and-Forget Actions', () => {
       executionLog = []
 
       idle
-        .on('GO', active)
+        .on('GO', 'active')
         .do(() => {
           executionLog.push('sync1')
         })
@@ -134,11 +134,11 @@ describe('Fire-and-Forget Actions', () => {
         errorLog.push(msg)
       }
 
-      idle.on('ERROR', active).fire(() => {
+      idle.on('ERROR', 'active').fire(() => {
         throw new Error('Fire action error')
       })
 
-      idle.on('ASYNC_ERROR', active).fire(async () => {
+      idle.on('ASYNC_ERROR', 'active').fire(async () => {
         await new Promise(resolve => setTimeout(resolve, 10))
         throw new Error('Async fire action error')
       })
@@ -193,7 +193,7 @@ describe('Fire-and-Forget Actions', () => {
       contextLog = []
 
       idle
-        .on('UPDATE', active)
+        .on('UPDATE', 'active')
         .do(ctx => {
           ctx.count = 1
         })
@@ -263,7 +263,7 @@ describe('Fire-and-Forget Actions', () => {
       }
 
       idle
-        .on('PURCHASE', active)
+        .on('PURCHASE', 'active')
         .do((ctx, event) => {
           ctx.lastPurchase = event.itemId
         })
@@ -309,7 +309,7 @@ describe('Fire-and-Forget Actions', () => {
       fireOrder = []
 
       idle
-        .on('MULTI', active)
+        .on('MULTI', 'active')
         .fire(() => {
           fireOrder.push(1)
         })

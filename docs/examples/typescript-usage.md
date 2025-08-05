@@ -42,25 +42,25 @@ const error = machine.state('error');
 
 // Type-safe transitions
 idle
-  .on('START', loading)
+  .on('START', 'loading')
   .do((ctx: Context) => {
     ctx.count = 0;
   });
 
 loading
-  .on('LOGIN', active)
+  .on('LOGIN', 'active')
   .do(async (ctx: Context, event: Extract<Events, { type: 'LOGIN' }>) => {
     const response = await api.login(event.email, event.password);
     ctx.user = response.user;
     return { userId: response.user.id };
   })
-  .on('ERROR', error)
+  .on('ERROR', 'error')
   .do((ctx: Context, event: Extract<Events, { type: 'ERROR' }>) => {
     console.error(event.message);
   });
 
 active
-  .on('INCREMENT', active)
+  .on('INCREMENT', 'active')
   .do((ctx: Context) => {
     ctx.count++;
   });

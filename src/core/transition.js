@@ -4,7 +4,7 @@
 
 /**
  * @param {string} event
- * @param {string|Object|Function} target
+ * @param {string|Function} target
  * @param {Object|null} source
  * @returns {import('../../types/index.js').Transition}
  */
@@ -76,7 +76,7 @@ export const createTransition = (event, target, source) => {
         if (typeof result === 'string') {
           return stateResolver(result)
         }
-        return result
+        throw new Error(`Dynamic target function must return a string, got ${typeof result}`)
       }
 
       if (typeof target === 'string') {
@@ -86,7 +86,7 @@ export const createTransition = (event, target, source) => {
         return stateResolver(target)
       }
 
-      return target
+      throw new Error(`Transition target must be a string or function, got ${typeof target}`)
     }
   }
 

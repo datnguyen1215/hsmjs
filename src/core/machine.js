@@ -172,7 +172,25 @@ export const createMachine = (name) => {
     const targetState = transition.resolveTarget(
       context,
       event,
-      id => machine.findState(id)
+      id => {
+        // First try direct lookup
+        let found = machine.findState(id)
+        if (found) return found
+
+        // If not found and source state exists, try relative to source
+        if (transition.source && transition.source.parent) {
+          // Try as sibling
+          const sibling = transition.source.parent.children.get(id)
+          if (sibling) return sibling
+
+          // Try with parent path prefix
+          const parentPath = transition.source.parent.path
+          found = machine.findState(`${parentPath}.${id}`)
+          if (found) return found
+        }
+
+        return null
+      }
     )
 
     if (!targetState) {
@@ -248,6 +266,9 @@ export const createMachine = (name) => {
     },
 
     on(event, target) {
+      if (typeof target !== 'string' && typeof target !== 'function') {
+        throw new Error(`State transition target must be a string or function, got ${typeof target}`)
+      }
       if (!globalTransitions.has(event)) {
         globalTransitions.set(event, [])
       }

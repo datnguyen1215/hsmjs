@@ -270,7 +270,7 @@ const providers = ['google', 'github', 'facebook'];
 
 providers.forEach(provider => {
   login
-    .on(`LOGIN_${provider.toUpperCase()}`, socialAuth)
+    .on(`LOGIN_${provider.toUpperCase()}`, 'socialAuth')
     .do((ctx) => {
       ctx.provider = provider;
       // Redirect to OAuth provider
@@ -312,8 +312,8 @@ socialCallback
       }
     }
   })
-  .on('SUCCESS', authenticated)
-  .on('ERROR', login);
+  .on('SUCCESS', 'authenticated')
+  .on('ERROR', 'login');
 ```
 
 ## Session Management

@@ -16,8 +16,8 @@ const machine = createMachine('toggle-switch')
 const off = machine.state('off')
 const on = machine.state('on')
 
-off.on('TOGGLE', on)
-on.on('TOGGLE', off)
+off.on('TOGGLE', 'on')
+on.on('TOGGLE', 'off')
 machine.initial(off)
 
 // Generate and preview
@@ -48,18 +48,21 @@ const red = machine.state('red')
 const yellow = machine.state('yellow')
 const green = machine.state('green')
 
-red.on('TIMER', green)
-green.on('TIMER', yellow)
-yellow.on('TIMER', red)
+red.on('TIMER', 'green')
+green.on('TIMER', 'yellow')
+yellow.on('TIMER', 'red')
 
 machine.initial(red)
 
 // Preview with current state tracking
 const instance = machine.start()
-await instance.visualizer().preview() // Shows red as current
+const diagram = instance.visualizer().visualize()
+console.log(diagram) // Shows red as current
 
 await instance.send('TIMER')
-await instance.visualizer().save('traffic-green.html') // Shows green
+// Save diagram to file using Node.js fs module
+const diagram = instance.visualizer().visualize()
+fs.writeFileSync('traffic-green.html', diagram) // Shows green
 ```
 
 ## Hierarchical Examples
@@ -91,16 +94,17 @@ playing.initial(normal)
 paused.initial(shortPause)
 
 // Transitions
-stopped.on('PLAY', normal)
-normal.on('FF', fastForward).on('REWIND', rewind).on('PAUSE', shortPause)
-fastForward.on('NORMAL', normal).on('PAUSE', shortPause)
-rewind.on('NORMAL', normal).on('PAUSE', shortPause)
-shortPause.on('RESUME', normal).on('LONG_PAUSE', longPause)
-longPause.on('RESUME', normal)
-playing.on('STOP', stopped)
-paused.on('STOP', stopped)
+stopped.on('PLAY', 'normal')
+normal.on('FF', 'fast-forward').on('REWIND', 'rewind').on('PAUSE', 'short-pause')
+fastForward.on('NORMAL', 'normal').on('PAUSE', 'short-pause')
+rewind.on('NORMAL', 'normal').on('PAUSE', 'short-pause')
+shortPause.on('RESUME', 'normal').on('LONG_PAUSE', 'long-pause')
+longPause.on('RESUME', 'normal')
+playing.on('STOP', 'stopped')
+paused.on('STOP', 'stopped')
 
-await machine.visualizer().preview()
+const diagram = machine.visualizer().visualize()
+console.log(diagram)
 ```
 
 **Key Features Shown:**
@@ -148,30 +152,32 @@ settings.initial(account)
 profile.initial(viewing)
 
 // Cross-level transitions
-login.on('LOGIN_SUCCESS', dashboard)
-register.on('REGISTER_SUCCESS', dashboard)
-forgotPassword.on('RESET_SUCCESS', login)
+login.on('LOGIN_SUCCESS', 'dashboard')
+register.on('REGISTER_SUCCESS', 'dashboard')
+forgotPassword.on('RESET_SUCCESS', 'login')
 
 // Within-level transitions
-login.on('REGISTER', register).on('FORGOT_PASSWORD', forgotPassword)
-register.on('BACK_TO_LOGIN', login)
-forgotPassword.on('BACK_TO_LOGIN', login)
+login.on('REGISTER', 'register').on('FORGOT_PASSWORD', 'forgot-password')
+register.on('BACK_TO_LOGIN', 'login')
+forgotPassword.on('BACK_TO_LOGIN', 'login')
 
-dashboard.on('VIEW_PROFILE', viewing).on('SETTINGS', account)
-viewing.on('EDIT', editing).on('DASHBOARD', dashboard)
-editing.on('SAVE', viewing).on('CANCEL', viewing)
+dashboard.on('VIEW_PROFILE', 'viewing').on('SETTINGS', 'account')
+viewing.on('EDIT', 'editing').on('DASHBOARD', 'dashboard')
+editing.on('SAVE', 'viewing').on('CANCEL', 'viewing')
 
-account.on('PRIVACY', privacy).on('SECURITY', security)
-privacy.on('ACCOUNT', account)
-security.on('ACCOUNT', account)
+account.on('PRIVACY', 'privacy').on('SECURITY', 'security')
+privacy.on('ACCOUNT', 'account')
+security.on('ACCOUNT', 'account')
 
 // Global transitions
-authenticated.on('LOGOUT', login)
-machine.on('SUSPEND_ACCOUNT', suspended)
-suspended.on('REACTIVATE', login)
+authenticated.on('LOGOUT', 'login')
+machine.on('SUSPEND_ACCOUNT', 'suspended')
+suspended.on('REACTIVATE', 'login')
 
 // Generate documentation
-await machine.visualizer().save('auth-flow-documentation.html')
+// Save diagram to file using Node.js fs module
+const diagram = machine.visualizer().visualize()
+fs.writeFileSync('auth-flow-documentation.html', diagram)
 ```
 
 ## Real-World Application Examples
@@ -214,28 +220,28 @@ payment.initial(processing)
 error.initial(networkError)
 
 // Main flow
-cart.on('CHECKOUT', shipping)
-shipping.on('CONTINUE', billing)
-billing.on('CONTINUE', review)
-review.on('SUBMIT_ORDER', processing)
-processing.on('APPROVED', approved)
-approved.on('CONFIRM', confirmation)
-confirmation.on('COMPLETE', completed)
+cart.on('CHECKOUT', 'shipping')
+shipping.on('CONTINUE', 'billing')
+billing.on('CONTINUE', 'review')
+review.on('SUBMIT_ORDER', 'processing')
+processing.on('APPROVED', 'approved')
+approved.on('CONFIRM', 'confirmation')
+confirmation.on('COMPLETE', 'completed')
 
 // Error flows
-processing.on('DECLINED', declined)
-declined.on('RETRY', retry)
-retry.on('SUBMIT', processing)
+processing.on('DECLINED', 'declined')
+declined.on('RETRY', 'retry')
+retry.on('SUBMIT', 'processing')
 
 // Global error handling
-machine.on('NETWORK_ERROR', networkError)
-machine.on('VALIDATION_ERROR', validationError)
-machine.on('PAYMENT_ERROR', paymentError)
+machine.on('NETWORK_ERROR', 'network-error')
+machine.on('VALIDATION_ERROR', 'validation-error')
+machine.on('PAYMENT_ERROR', 'payment-error')
 
 // Recovery flows
 networkError.on('RETRY', ctx => ctx.previousState || 'cart')
 validationError.on('FIX', ctx => ctx.previousState || 'cart')
-paymentError.on('RETRY', processing)
+paymentError.on('RETRY', 'processing')
 
 // Track user journey
 const instance = machine.start()
@@ -248,7 +254,9 @@ instance.subscribe(async ({ to }) => {
 // Start checkout process
 await instance.send('CHECKOUT')
 await instance.send('CONTINUE') // shipping -> billing
-await instance.visualizer().save('current-checkout-state.html')
+// Save diagram to file using Node.js fs module
+const diagram = instance.visualizer().visualize()
+fs.writeFileSync('current-checkout-state.html', diagram)
 ```
 
 ### Task Management System
@@ -288,30 +296,32 @@ review.initial(codeReview)
 blocked.initial(waitingDependency)
 
 // Workflow transitions
-backlog.on('START_WORK', assigned)
-assigned.on('BEGIN', active)
-active.on('SUBMIT_REVIEW', codeReview)
-  .on('BLOCK', waitingDependency)
+backlog.on('START_WORK', 'assigned')
+assigned.on('BEGIN', 'active')
+active.on('SUBMIT_REVIEW', 'code-review')
+  .on('BLOCK', 'waiting-dependency')
 
-codeReview.on('APPROVE', qaReview)
-  .on('REQUEST_CHANGES', active)
-qaReview.on('APPROVE', approved)
-  .on('REQUEST_CHANGES', active)
-approved.on('DEPLOY', done)
-rejected.on('REWORK', active)
+codeReview.on('APPROVE', 'qa-review')
+  .on('REQUEST_CHANGES', 'active')
+qaReview.on('APPROVE', 'approved')
+  .on('REQUEST_CHANGES', 'active')
+approved.on('DEPLOY', 'done')
+rejected.on('REWORK', 'active')
 
 // Unblocking flows
-waitingDependency.on('DEPENDENCY_READY', active)
-waitingClarification.on('CLARIFIED', active)
-waitingResources.on('RESOURCES_AVAILABLE', active)
+waitingDependency.on('DEPENDENCY_READY', 'active')
+waitingClarification.on('CLARIFIED', 'active')
+waitingResources.on('RESOURCES_AVAILABLE', 'active')
 
 // Administrative transitions
-done.on('ARCHIVE', archived)
-machine.on('CANCEL', archived)
-archived.on('RESTORE', backlog)
+done.on('ARCHIVE', 'archived')
+machine.on('CANCEL', 'archived')
+archived.on('RESTORE', 'backlog')
 
 // Generate project documentation
-await machine.visualizer().save('task-workflow.html')
+// Save diagram to file using Node.js fs module
+const diagram = machine.visualizer().visualize()
+fs.writeFileSync('task-workflow.html', diagram)
 
 // Track specific task
 const taskInstance = machine.start({ taskId: 'TASK-123' })
@@ -319,7 +329,9 @@ await taskInstance.send('START_WORK')
 await taskInstance.send('BEGIN')
 
 // Save current state for project dashboard
-await taskInstance.visualizer().save('task-123-status.html')
+// Save diagram to file using Node.js fs module
+const diagram = taskInstance.visualizer().visualize()
+fs.writeFileSync('task-123-status.html', diagram)
 ```
 
 ## Development Workflow Examples
@@ -367,38 +379,40 @@ deploy.initial(staging)
 failed.initial(buildFailed)
 
 // Success flow
-triggered.on('START_BUILD', installing)
-installing.on('SUCCESS', compiling)
-compiling.on('SUCCESS', packaging)
-packaging.on('SUCCESS', unitTests)
-unitTests.on('SUCCESS', integrationTests)
-integrationTests.on('SUCCESS', e2eTests)
-e2eTests.on('SUCCESS', staging)
-staging.on('SUCCESS', production)
-production.on('SUCCESS', monitoring)
-monitoring.on('STABLE', completed)
+triggered.on('START_BUILD', 'installing-dependencies')
+installing.on('SUCCESS', 'compiling')
+compiling.on('SUCCESS', 'packaging')
+packaging.on('SUCCESS', 'unit-tests')
+unitTests.on('SUCCESS', 'integration-tests')
+integrationTests.on('SUCCESS', 'e2e-tests')
+e2eTests.on('SUCCESS', 'staging')
+staging.on('SUCCESS', 'production')
+production.on('SUCCESS', 'monitoring')
+monitoring.on('STABLE', 'completed')
 
 // Failure flows
-installing.on('FAILURE', buildFailed)
-compiling.on('FAILURE', buildFailed)
-packaging.on('FAILURE', buildFailed)
-unitTests.on('FAILURE', testFailed)
-integrationTests.on('FAILURE', testFailed)
-e2eTests.on('FAILURE', testFailed)
-staging.on('FAILURE', deployFailed)
-production.on('FAILURE', deployFailed)
+installing.on('FAILURE', 'build-failed')
+compiling.on('FAILURE', 'build-failed')
+packaging.on('FAILURE', 'build-failed')
+unitTests.on('FAILURE', 'test-failed')
+integrationTests.on('FAILURE', 'test-failed')
+e2eTests.on('FAILURE', 'test-failed')
+staging.on('FAILURE', 'deploy-failed')
+production.on('FAILURE', 'deploy-failed')
 
 // Recovery flows
-buildFailed.on('RETRY', installing)
-testFailed.on('RETRY', unitTests)
-deployFailed.on('RETRY', staging)
+buildFailed.on('RETRY', 'installing-dependencies')
+testFailed.on('RETRY', 'unit-tests')
+deployFailed.on('RETRY', 'staging')
 
 // Manual interventions
-machine.on('ABORT', failed)
-failed.on('RESET', triggered)
+machine.on('ABORT', 'failed')
+failed.on('RESET', 'triggered')
 
 // Generate CI/CD documentation
-await machine.visualizer().save('cicd-pipeline.html')
+// Save diagram to file using Node.js fs module
+const diagram = machine.visualizer().visualize()
+fs.writeFileSync('cicd-pipeline.html', diagram)
 ```
 
 ## Debugging and Monitoring Examples
@@ -418,10 +432,10 @@ const tutorial = machine.state('tutorial')
 const completed = machine.state('completed')
 
 // Setup transitions...
-welcome.on('START', profile)
-profile.on('CONTINUE', preferences)
-preferences.on('CONTINUE', tutorial)
-tutorial.on('FINISH', completed)
+welcome.on('START', 'profile-setup')
+profile.on('CONTINUE', 'preferences')
+preferences.on('CONTINUE', 'tutorial')
+tutorial.on('FINISH', 'completed')
 
 machine.initial(welcome)
 
@@ -445,7 +459,9 @@ try {
   await instance.send('FINISH')
 } catch (error) {
   console.error('Onboarding failed:', error)
-  await instance.visualizer().save('onboarding-error-state.html')
+  // Save diagram to file using Node.js fs module
+const diagram = instance.visualizer().visualize()
+fs.writeFileSync('onboarding-error-state.html', diagram)
 }
 ```
 
@@ -461,9 +477,9 @@ const checkoutA = machineA.state('checkout')
 const paymentA = machineA.state('payment')
 const completeA = machineA.state('complete')
 
-cartA.on('CHECKOUT', checkoutA)
-checkoutA.on('PAY', paymentA)
-paymentA.on('SUCCESS', completeA)
+cartA.on('CHECKOUT', 'checkout')
+checkoutA.on('PAY', 'payment')
+paymentA.on('SUCCESS', 'complete')
 machineA.initial(cartA)
 
 // Version B - Enhanced flow
@@ -475,16 +491,20 @@ const paymentB = machineB.state('payment')
 const confirmationB = machineB.state('confirmation')
 const completeB = machineB.state('complete')
 
-cartB.on('REVIEW', reviewB)
-reviewB.on('CHECKOUT', checkoutB)
-checkoutB.on('PAY', paymentB)
-paymentB.on('SUCCESS', confirmationB)
-confirmationB.on('CONFIRM', completeB)
+cartB.on('REVIEW', 'review')
+reviewB.on('CHECKOUT', 'checkout')
+checkoutB.on('PAY', 'payment')
+paymentB.on('SUCCESS', 'confirmation')
+confirmationB.on('CONFIRM', 'complete')
 machineB.initial(cartB)
 
 // Generate comparison documentation
-await machineA.visualizer().save('checkout-flow-a.html')
-await machineB.visualizer().save('checkout-flow-b.html')
+// Save diagram to file using Node.js fs module
+const diagram = machineA.visualizer().visualize()
+fs.writeFileSync('checkout-flow-a.html', diagram)
+// Save diagram to file using Node.js fs module
+const diagram = machineB.visualizer().visualize()
+fs.writeFileSync('checkout-flow-b.html', diagram)
 
 // Track conversion rates
 const instanceA = machineA.start({ variant: 'A' })
@@ -509,17 +529,19 @@ const success = machine.state('success')
 const error = machine.state('error')
 const retrying = machine.state('retrying')
 
-idle.on('REQUEST', pending)
-pending.on('SUCCESS', success).on('ERROR', error)
-error.on('RETRY', retrying)
-retrying.on('REQUEST', pending).on('GIVE_UP', error)
-success.on('RESET', idle)
-error.on('RESET', idle)
+idle.on('REQUEST', 'pending')
+pending.on('SUCCESS', 'success').on('ERROR', 'error')
+error.on('RETRY', 'retrying')
+retrying.on('REQUEST', 'pending').on('GIVE_UP', 'error')
+success.on('RESET', 'idle')
+error.on('RESET', 'idle')
 
 machine.initial(idle)
 
 // Save as Mermaid for documentation
-await machine.visualizer().save('api-request-lifecycle.mmd')
+// Save diagram to file using Node.js fs module
+const diagram = machine.visualizer().visualize()
+fs.writeFileSync('api-request-lifecycle.mmd', diagram)
 
 // Create documentation template
 const documentation = `
@@ -565,7 +587,9 @@ const machine = createMachine('development-workflow')
 // ... (detailed state machine definition)
 
 // Generate onboarding materials
-await machine.visualizer().save('development-workflow-guide.html')
+// Save diagram to file using Node.js fs module
+const diagram = machine.visualizer().visualize()
+fs.writeFileSync('development-workflow-guide.html', diagram)
 
 // Create interactive tutorials
 const tutorialInstance = machine.start({ developer: 'new-hire' })
@@ -585,7 +609,8 @@ const diagram = visualizer.visualize()
 console.timeEnd('visualization-generation')
 
 console.time('preview-generation')
-await largeMachine.visualizer().preview()
+const diagram = largeMachine.visualizer().visualize()
+console.log(diagram)
 console.timeEnd('preview-generation')
 ```
 

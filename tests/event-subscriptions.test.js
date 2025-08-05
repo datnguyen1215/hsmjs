@@ -19,8 +19,8 @@ describe('Event Subscriptions', () => {
       active = machine.state('active')
       notifications = []
 
-      idle.on('ACTIVATE', active)
-      active.on('DEACTIVATE', idle)
+      idle.on('ACTIVATE', 'active')
+      active.on('DEACTIVATE', 'idle')
 
       machine.initial(idle)
       instance = machine.start()
@@ -77,7 +77,7 @@ describe('Event Subscriptions', () => {
       subscriber2Events = []
       subscriber3Events = []
 
-      idle.on('GO', active)
+      idle.on('GO', 'active')
       machine.initial(idle)
       instance = machine.start()
 
@@ -136,8 +136,8 @@ describe('Event Subscriptions', () => {
       active = machine.state('active')
       events = []
 
-      idle.on('GO', active)
-      active.on('BACK', idle)
+      idle.on('GO', 'active')
+      active.on('BACK', 'idle')
 
       machine.initial(idle)
       instance = machine.start()
@@ -200,8 +200,8 @@ describe('Event Subscriptions', () => {
       events = []
 
       parent.initial(child1)
-      child1.on('NEXT', child2)
-      child2.on('PREV', child1)
+      child1.on('NEXT', 'child2')
+      child2.on('PREV', 'child1')
 
       machine.initial(parent)
       instance = machine.start()
@@ -223,7 +223,7 @@ describe('Event Subscriptions', () => {
 
     it('should handle parent state transitions', async () => {
       const other = machine.state('other')
-      parent.on('LEAVE', other)
+      parent.on('LEAVE', 'other')
 
       await instance.send('LEAVE')
 
@@ -251,7 +251,7 @@ describe('Event Subscriptions', () => {
       goodEvents = []
       errorEvents = []
 
-      idle.on('GO', active)
+      idle.on('GO', 'active')
       machine.initial(idle)
       instance = machine.start()
 
@@ -312,7 +312,7 @@ describe('Event Subscriptions', () => {
       active = machine.state('active')
       events = []
 
-      active.on('REFRESH', active)
+      active.on('REFRESH', 'active')
       machine.initial(active)
       instance = machine.start()
 
@@ -351,7 +351,7 @@ describe('Event Subscriptions', () => {
       actionOrder = []
 
       idle
-        .on('LOAD', loading)
+        .on('LOAD', 'loading')
         .do(() => {
           actionOrder.push('sync-action')
         })
@@ -360,7 +360,7 @@ describe('Event Subscriptions', () => {
           await new Promise(resolve => setTimeout(resolve, 10))
         })
 
-      loading.on('DONE', loaded)
+      loading.on('DONE', 'loaded')
 
       machine.initial(idle)
       instance = machine.start()
