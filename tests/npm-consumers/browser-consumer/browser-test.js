@@ -123,9 +123,9 @@
             log('  ✅ States created successfully', 'success');
 
             // Test 3: Transitions
-            idle.on('START', active);
-            active.on('COMPLETE', completed);
-            completed.on('RESET', idle);
+            idle.on('START', 'active');
+            active.on('COMPLETE', 'completed');
+            completed.on('RESET', 'idle');
             machine.initial(idle);
 
             log('  ✅ Transitions configured', 'success');
@@ -235,8 +235,8 @@
             const machine = machines[0];
             const state1 = machine.state('state1');
             const state2 = machine.state('state2');
-            state1.on('TOGGLE', state2);
-            state2.on('TOGGLE', state1);
+            state1.on('TOGGLE', 'state2');
+            state2.on('TOGGLE', 'state1');
             machine.initial(state1);
 
             const instance = machine.start();

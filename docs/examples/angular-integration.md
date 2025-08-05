@@ -94,17 +94,17 @@ export class AuthComponent implements OnInit {
     const authenticating = machine.state('authenticating');
     const loggedIn = machine.state('loggedIn');
 
-    loggedOut.on('LOGIN', authenticating);
+    loggedOut.on('LOGIN', 'authenticating');
 
     authenticating
-      .on('SUCCESS', loggedIn)
+      .on('SUCCESS', 'loggedIn')
       .do(async (ctx, event) => {
         const user = await this.authService.login(event.email, event.password);
         ctx.user = user;
       })
-      .on('ERROR', loggedOut);
+      .on('ERROR', 'loggedOut');
 
-    loggedIn.on('LOGOUT', loggedOut);
+    loggedIn.on('LOGOUT', 'loggedOut');
 
     machine.initial('loggedOut');
 

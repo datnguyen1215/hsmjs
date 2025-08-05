@@ -17,13 +17,13 @@ const complete = machine.state('complete');
 const cancelled = machine.state('cancelled');
 
 // Define transitions
-idle.on('start', processing);
-processing.on('pay', payment);
-processing.on('cancel', cancelled);
-payment.on('success', complete);
-payment.on('fail', processing);
-complete.on('reset', idle);
-cancelled.on('reset', idle);
+idle.on('start', 'processing');
+processing.on('pay', 'payment');
+processing.on('cancel', 'cancelled');
+payment.on('success', 'complete');
+payment.on('fail', 'processing');
+complete.on('reset', 'idle');
+cancelled.on('reset', 'idle');
 
 machine.initial(idle);
 

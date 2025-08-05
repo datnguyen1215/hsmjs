@@ -40,14 +40,14 @@ const machine = createMachine('counter');
 const idle = machine.state('idle');
 const counting = machine.state('counting');
 
-idle.on('START', counting);
+idle.on('START', 'counting');
 
 counting
-  .on('INCREMENT', counting)
+  .on('INCREMENT', 'counting')
   .do((ctx) => { ctx.count++; })
-  .on('DECREMENT', counting)
+  .on('DECREMENT', 'counting')
   .do((ctx) => { ctx.count--; })
-  .on('RESET', idle)
+  .on('RESET', 'idle')
   .do((ctx) => { ctx.count = 0; });
 
 machine.initial('idle');

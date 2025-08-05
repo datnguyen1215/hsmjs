@@ -45,7 +45,7 @@ Building complex stateful applications is hard. Traditional state management oft
 - 🧪 **Battle Tested** - Comprehensive test suite with real-world scenarios
 - 📚 **Extensive Documentation** - Examples for every feature
 - 🔧 **Framework Agnostic** - Works with React, Vue, Angular, Svelte, or vanilla JS
-- 🎨 **Built-in Visualization** - Generate Mermaid diagrams with browser preview
+- 🎨 **Built-in Visualization** - Generate Mermaid diagrams for documentation
 
 ## Installation
 
@@ -74,10 +74,10 @@ const machine = createMachine('toggle')
 const off = machine.state('off')
 const on = machine.state('on')
 
-off.on('TOGGLE', on)
-on.on('TOGGLE', off)
+off.on('TOGGLE', 'on')
+on.on('TOGGLE', 'off')
 
-machine.initial(off)
+machine.initial('off')
 
 // Start the machine
 const toggle = machine.start()
@@ -111,11 +111,11 @@ const increment = ctx => {
   console.log(`Count: ${ctx.count}`)
 }
 
-idle.on('START', counting).do(increment)
+idle.on('START', 'counting').do(increment)
 
-counting.on('INCREMENT', counting).do(increment).on('STOP', idle)
+counting.on('INCREMENT', 'counting').do(increment).on('STOP', 'idle')
 
-machine.initial(idle)
+machine.initial('idle')
 
 // Start with initial context
 const counter = machine.start({ count: 0 })
@@ -158,14 +158,15 @@ const playing = machine.state('playing')
 const normal = playing.state('normal')
 const fastForward = playing.state('fast-forward')
 
-stopped.on('PLAY', normal)
-normal.on('FF', fastForward)
-playing.on('STOP', stopped)
+stopped.on('PLAY', 'normal')
+normal.on('FF', 'fast-forward')
+playing.on('STOP', 'stopped')
 
-machine.initial(stopped)
+machine.initial('stopped')
 
-// Generates clean hierarchical diagram
-await machine.visualizer().preview()
+// Generate Mermaid diagram
+const diagram = machine.visualizer().visualize()
+console.log(diagram)
 ```
 
 ### Current State Highlighting
@@ -196,7 +197,7 @@ const loading = machine.state('loading')
 const success = machine.state('success')
 const error = machine.state('error')
 
-idle.on('FETCH', loading)
+idle.on('FETCH', 'loading')
 
 loading
   .enter(async ctx => {
@@ -208,13 +209,13 @@ loading
       ctx.instance.send('ERROR')
     }
   })
-  .on('SUCCESS', success)
-  .on('ERROR', error)
+  .on('SUCCESS', 'success')
+  .on('ERROR', 'error')
 
-error.on('RETRY', loading)
-success.on('REFRESH', loading)
+error.on('RETRY', 'loading')
+success.on('REFRESH', 'loading')
 
-machine.initial(idle)
+machine.initial('idle')
 
 const fetcher = machine.start({
   url: 'https://api.example.com/data',
@@ -248,24 +249,24 @@ const dashboard = auth.state('dashboard')
 const profile = auth.state('profile')
 
 // Set initial states
-unauth.initial(login)
-auth.initial(dashboard)
+unauth.initial('login')
+auth.initial('dashboard')
 
 // Transitions between child states
-login.on('REGISTER', register).on('FORGOT_PASSWORD', forgotPassword)
+login.on('REGISTER', 'register').on('FORGOT_PASSWORD', 'forgot-password')
 
-register.on('BACK', login)
-forgotPassword.on('BACK', login)
+register.on('BACK', 'login')
+forgotPassword.on('BACK', 'login')
 
 // Transitions between parent states
-unauth.on('LOGIN_SUCCESS', auth)
-auth.on('LOGOUT', unauth)
+unauth.on('LOGIN_SUCCESS', 'authenticated')
+auth.on('LOGOUT', 'unauthenticated')
 
 // Navigation within authenticated state
-dashboard.on('VIEW_PROFILE', profile)
-profile.on('BACK', dashboard)
+dashboard.on('VIEW_PROFILE', 'profile')
+profile.on('BACK', 'dashboard')
 
-machine.initial(unauth)
+machine.initial('unauthenticated')
 
 const app = machine.start()
 console.log(app.current) // 'unauthenticated.login'
@@ -279,7 +280,7 @@ const machine = createMachine('notification')
 const idle = machine.state('idle')
 const showing = machine.state('showing')
 
-idle.on('SHOW', showing).fire(async (ctx, event) => {
+idle.on('SHOW', 'showing').fire(async (ctx, event) => {
   // Non-blocking analytics call
   await analytics.track('notification_shown', {
     message: event.payload.message
@@ -290,7 +291,7 @@ showing
   .enter((ctx, event) => {
     ctx.message = event.payload.message
   })
-  .on('DISMISS', idle)
+  .on('DISMISS', 'idle')
   .fire(async () => {
     // Non-blocking cleanup
     await api.markAsRead()
@@ -310,11 +311,11 @@ const reviewing = machine.state('reviewing')
 const submitting = machine.state('submitting')
 const success = machine.state('success')
 
-editing.on('CONTINUE', reviewing).if(ctx => ctx.form.isValid) // Only transition if form is valid
+editing.on('CONTINUE', 'reviewing').if(ctx => ctx.form.isValid) // Only transition if form is valid
 
 reviewing
-  .on('BACK', editing)
-  .on('SUBMIT', submitting)
+  .on('BACK', 'editing')
+  .on('SUBMIT', 'submitting')
   .if(ctx => ctx.form.agreeToTerms) // Must agree to terms
 
 submitting
@@ -322,7 +323,7 @@ submitting
     await api.submitForm(ctx.form)
     ctx.instance.send('SUCCESS')
   })
-  .on('SUCCESS', success)
+  .on('SUCCESS', 'success')
 ```
 
 ### Traffic Light with Timers
@@ -342,7 +343,7 @@ red
     }, 3000) // 3 seconds
   })
   .exit(ctx => clearTimeout(ctx.timer))
-  .on('NEXT', green)
+  .on('NEXT', 'green')
 
 green
   .enter(ctx => {
@@ -351,7 +352,7 @@ green
     }, 3000)
   })
   .exit(ctx => clearTimeout(ctx.timer))
-  .on('NEXT', yellow)
+  .on('NEXT', 'yellow')
 
 yellow
   .enter(ctx => {
@@ -360,9 +361,9 @@ yellow
     }, 1000) // 1 second
   })
   .exit(ctx => clearTimeout(ctx.timer))
-  .on('NEXT', red)
+  .on('NEXT', 'red')
 
-machine.initial(red)
+machine.initial('red')
 ```
 
 ## Advanced Patterns
@@ -378,7 +379,7 @@ const normal = machine.state('normal')
 const emergency = machine.state('emergency')
 
 // Handle emergency from any state
-machine.on('EMERGENCY', emergency).do(ctx => {
+machine.on('EMERGENCY', 'emergency').do(ctx => {
   ctx.previousState = ctx.instance.current
 })
 
@@ -523,12 +524,12 @@ const editing = machine.state('editing')
 const preview = machine.state('preview')
 const published = machine.state('published')
 
-editing.on('preview', preview)
-preview.on('edit', editing)
-preview.on('publish', published)
-published.on('edit', editing)
+editing.on('preview', 'preview')
+preview.on('edit', 'editing')
+preview.on('publish', 'published')
+published.on('edit', 'editing')
 
-machine.initial(editing)
+machine.initial('editing')
 
 // Start with history enabled
 const editor = machine.start(
@@ -627,7 +628,7 @@ See [RELEASE.md](./RELEASE.md) for the complete user guide.
 const machine = createMachine('name')
 const state = machine.state('stateName')
 const childState = parentState.state('childName')
-machine.initial(state)
+machine.initial('stateName')
 ```
 
 ### State Configuration
@@ -636,7 +637,7 @@ machine.initial(state)
 state
   .enter((ctx, event) => {}) // Entry action
   .exit((ctx, event) => {}) // Exit action
-  .on('EVENT', targetState) // Transition
+  .on('EVENT', 'targetState') // Transition
   .do((ctx, event) => {}) // Transition action
   .if((ctx, event) => true) // Guard condition
   .fire((ctx, event) => {}) // Fire-and-forget action

@@ -21,7 +21,7 @@ const loading = machine.state('loading');
 Transitions define how your machine moves from one state to another in response to events.
 
 ```javascript
-idle.on('FETCH', loading);  // When FETCH event occurs, go from idle to loading
+idle.on('FETCH', 'loading');  // When FETCH event occurs, go from idle to loading
 ```
 
 ## Events

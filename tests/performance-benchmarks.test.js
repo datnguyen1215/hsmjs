@@ -36,7 +36,7 @@ describe('Performance Benchmarks', () => {
         const machine = srcModule.createMachine(`test-${i}`);
         const idle = machine.state('idle');
         const active = machine.state('active');
-        idle.on('START', active);
+        idle.on('START', 'active');
         machine.initial(idle);
       }
 
@@ -53,8 +53,8 @@ describe('Performance Benchmarks', () => {
       const idle = machine.state('idle');
       const active = machine.state('active');
 
-      idle.on('START', active);
-      active.on('STOP', idle);
+      idle.on('START', 'active');
+      active.on('STOP', 'idle');
       machine.initial(idle);
 
       const instance = machine.start();
@@ -85,8 +85,8 @@ describe('Performance Benchmarks', () => {
       const idle = machine.state('idle');
       const active = machine.state('active');
 
-      idle.on('START', active).do(perfAction);
-      active.on('TRIGGER', active).do(perfAction);
+      idle.on('START', 'active').do(perfAction);
+      active.on('TRIGGER', 'active').do(perfAction);
       machine.initial(idle);
 
       const instance = machine.start();
@@ -128,15 +128,15 @@ describe('Performance Benchmarks', () => {
       };
 
       // Set up transitions
-      stateObjects.idle.on('LOAD', stateObjects.loading).do(actions.load);
-      stateObjects.loading.on('PROCESS', stateObjects.processing).do(actions.process);
-      stateObjects.processing.on('VALIDATE', stateObjects.validating).do(actions.validate);
-      stateObjects.validating.on('COMPLETE', stateObjects.complete).do(actions.complete);
-      stateObjects.validating.on('ERROR', stateObjects.error).do(actions.error);
-      stateObjects.complete.on('RESET', stateObjects.idle);
-      stateObjects.error.on('RESET', stateObjects.idle);
+      stateObjects.idle.on('LOAD', 'loading').do(actions.load);
+      stateObjects.loading.on('PROCESS', 'processing').do(actions.process);
+      stateObjects.processing.on('VALIDATE', 'validating').do(actions.validate);
+      stateObjects.validating.on('COMPLETE', 'complete').do(actions.complete);
+      stateObjects.validating.on('ERROR', 'error').do(actions.error);
+      stateObjects.complete.on('RESET', 'idle');
+      stateObjects.error.on('RESET', 'idle');
 
-      machine.initial(stateObjects.idle);
+      machine.initial('idle');
 
       const instance = machine.start();
       const iterations = 200;
@@ -180,7 +180,7 @@ describe('Performance Benchmarks', () => {
         const machine = srcModule.createMachine(`memory-test-${i}`);
         const s1 = machine.state('s1');
         const s2 = machine.state('s2');
-        s1.on('GO', s2);
+        s1.on('GO', 's2');
         machine.initial(s1);
         machines.push(machine.start());
       }
@@ -251,7 +251,7 @@ describe('Performance Benchmarks', () => {
       const state1 = machine.state('state1');
       const state2 = machine.state('state2');
 
-      state1.on('GO', state2);
+      state1.on('GO', 'state2');
       machine.initial(state1);
 
       const instance = machine.start();

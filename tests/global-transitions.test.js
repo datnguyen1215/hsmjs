@@ -20,12 +20,12 @@ describe('Global Transitions', () => {
       error = machine.state('error')
 
       // Normal transitions
-      idle.on('LOAD', loading)
-      loading.on('SUCCESS', idle)
+      idle.on('LOAD', 'loading')
+      loading.on('SUCCESS', 'idle')
 
       // Global error handling
-      machine.on('ERROR', error)
-      error.on('RETRY', idle)
+      machine.on('ERROR', 'error')
+      error.on('RETRY', 'idle')
 
       machine.initial(idle)
       instance = machine.start()
@@ -49,7 +49,7 @@ describe('Global Transitions', () => {
 
     it('should prioritize local transitions over global', async () => {
       // Add local ERROR handler
-      idle.on('ERROR', loading)
+      idle.on('ERROR', 'loading')
 
       await instance.send('ERROR')
       expect(instance.current).toBe('loading') // Local wins
@@ -70,9 +70,9 @@ describe('Global Transitions', () => {
       emergency = machine.state('emergency')
 
       // Global shutdown with guards
-      machine.on('SHUTDOWN', emergency).if(ctx => ctx.emergency === true)
+      machine.on('SHUTDOWN', 'emergency').if(ctx => ctx.emergency === true)
 
-      machine.on('SHUTDOWN', maintenance).if(ctx => ctx.emergency === false)
+      machine.on('SHUTDOWN', 'maintenance').if(ctx => ctx.emergency === false)
 
       machine.initial(working)
     })
@@ -111,12 +111,12 @@ describe('Global Transitions', () => {
       stateC = machine.state('stateC')
       actionLog = []
 
-      stateA.on('NEXT', stateB)
-      stateB.on('NEXT', stateC)
+      stateA.on('NEXT', 'stateB')
+      stateB.on('NEXT', 'stateC')
 
       // Global reset with actions
       machine
-        .on('RESET', stateA)
+        .on('RESET', 'stateA')
         .do(ctx => {
           actionLog.push('reset-action')
           ctx.resetCount = (ctx.resetCount || 0) + 1
@@ -165,11 +165,11 @@ describe('Global Transitions', () => {
       error = machine.state('error')
 
       parent.initial(child1)
-      child1.on('NEXT', child2)
+      child1.on('NEXT', 'child2')
 
       // Global error from any level
-      machine.on('PANIC', error)
-      error.on('RECOVER', parent)
+      machine.on('PANIC', 'error')
+      error.on('RECOVER', 'parent')
 
       machine.initial(parent)
       instance = machine.start()
@@ -215,11 +215,11 @@ describe('Global Transitions', () => {
       stateC = machine.state('stateC')
 
       // Multiple global handlers for same event
-      machine.on('SWITCH', stateA).if(ctx => ctx.target === 'A')
+      machine.on('SWITCH', 'stateA').if(ctx => ctx.target === 'A')
 
-      machine.on('SWITCH', stateB).if(ctx => ctx.target === 'B')
+      machine.on('SWITCH', 'stateB').if(ctx => ctx.target === 'B')
 
-      machine.on('SWITCH', stateC) // No guard - fallback
+      machine.on('SWITCH', 'stateC') // No guard - fallback
 
       machine.initial(idle)
       instance = machine.start({})
@@ -262,9 +262,9 @@ describe('Global Transitions', () => {
       parent.initial(child)
 
       // Different levels of EVENT handler
-      machine.on('EVENT', globalTarget)
-      parent.on('EVENT', parentTarget)
-      child.on('EVENT', localTarget)
+      machine.on('EVENT', 'global')
+      parent.on('EVENT', 'parent-target')
+      child.on('EVENT', 'local')
 
       machine.initial(parent)
       instance = machine.start()
@@ -278,7 +278,7 @@ describe('Global Transitions', () => {
     it('should use parent handler when no local handler', async () => {
       // Remove local handler by transitioning to parent level
       const child2 = parent.state('child2')
-      child.on('MOVE', child2)
+      child.on('MOVE', 'child2')
       await instance.send('MOVE')
 
       await instance.send('EVENT')
@@ -291,7 +291,7 @@ describe('Global Transitions', () => {
       const otherChild = other.state('child')
       other.initial(otherChild)
 
-      parent.on('GO', other)
+      parent.on('GO', 'other')
       await instance.send('GO')
 
       await instance.send('EVENT')

@@ -18,32 +18,32 @@ describe('Simple Transitions', () => {
     })
 
     it('should create transition with event name', () => {
-      const transition = idle.on('START', active)
+      const transition = idle.on('START', 'active')
       expect(transition).toBeDefined()
     })
 
     it('should create transition with target state', () => {
-      const transition = idle.on('START', active)
-      expect(transition.target).toBe(active)
+      const transition = idle.on('START', 'active')
+      expect(transition.target).toBe('active')
     })
 
     it('should store transition in source state', () => {
-      idle.on('START', active)
+      idle.on('START', 'active')
       const transitions = idle.getTransitions('START')
       expect(transitions.length).toBe(1)
     })
 
     it('should allow multiple events to same target', () => {
-      idle.on('START', active)
-      idle.on('ACTIVATE', active)
+      idle.on('START', 'active')
+      idle.on('ACTIVATE', 'active')
       expect(idle.getTransitions('START').length).toBe(1)
       expect(idle.getTransitions('ACTIVATE').length).toBe(1)
     })
 
     it('should allow same event to different targets with guards', () => {
       const error = machine.state('error')
-      idle.on('START', active)
-      idle.on('START', error)
+      idle.on('START', 'active')
+      idle.on('START', 'error')
       const transitions = idle.getTransitions('START')
       expect(transitions.length).toBe(2)
     })
@@ -59,8 +59,8 @@ describe('Simple Transitions', () => {
       machine = createMachine('toggle')
       off = machine.state('off')
       on = machine.state('on')
-      off.on('TOGGLE', on)
-      on.on('TOGGLE', off)
+      off.on('TOGGLE', 'on')
+      on.on('TOGGLE', 'off')
       machine.initial(off)
       instance = machine.start()
     })
@@ -103,8 +103,8 @@ describe('Simple Transitions', () => {
       running = machine.state('running')
       stopped = machine.state('stopped')
 
-      idle.on('START', running)
-      running.on('STOP', stopped)
+      idle.on('START', 'running')
+      running.on('STOP', 'stopped')
 
       machine.initial(idle)
       instance = machine.start()
@@ -141,7 +141,7 @@ describe('Simple Transitions', () => {
     beforeEach(() => {
       machine = createMachine('refresh')
       active = machine.state('active')
-      active.on('REFRESH', active)
+      active.on('REFRESH', 'active')
       machine.initial(active)
       instance = machine.start()
     })

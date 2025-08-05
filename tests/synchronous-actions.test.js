@@ -19,7 +19,7 @@ describe('Synchronous Actions', () => {
       active = machine.state('active')
       actionCalled = false
 
-      idle.on('START', active).do(() => {
+      idle.on('START', 'active').do(() => {
         actionCalled = true
       })
 
@@ -35,7 +35,7 @@ describe('Synchronous Actions', () => {
     it('should execute action before state change', async () => {
       let stateWhenActionRan
 
-      idle.on('CHECK', active).do(() => {
+      idle.on('CHECK', 'active').do(() => {
         stateWhenActionRan = instance.current
       })
 
@@ -57,11 +57,11 @@ describe('Synchronous Actions', () => {
       idle = machine.state('idle')
       counting = machine.state('counting')
 
-      idle.on('INCREMENT', counting).do(ctx => {
+      idle.on('INCREMENT', 'counting').do(ctx => {
         ctx.count = (ctx.count || 0) + 1
       })
 
-      counting.on('INCREMENT', counting).do(ctx => {
+      counting.on('INCREMENT', 'counting').do(ctx => {
         ctx.count++
       })
 
@@ -100,7 +100,7 @@ describe('Synchronous Actions', () => {
       idle = machine.state('idle')
       active = machine.state('active')
 
-      idle.on('COMPUTE', active).do((ctx, event) => {
+      idle.on('COMPUTE', 'active').do((ctx, event) => {
         const result = event.a + event.b
         ctx.result = result
         return { sum: result }
@@ -136,7 +136,7 @@ describe('Synchronous Actions', () => {
       callOrder = []
 
       idle
-        .on('START', active)
+        .on('START', 'active')
         .do(() => {
           callOrder.push('first')
         })
@@ -160,7 +160,7 @@ describe('Synchronous Actions', () => {
       const done = machine.state('done')
 
       active
-        .on('MULTI', done)
+        .on('MULTI', 'done')
         .do(() => ({ a: 1 }))
         .do(() => ({ b: 2 }))
         .do(() => ({ c: 3 }))
@@ -194,7 +194,7 @@ describe('Synchronous Actions', () => {
         actionLog.push({ name: 'update' })
       }
 
-      idle.on('START', active).do(logAction).do(updateAction)
+      idle.on('START', 'active').do(logAction).do(updateAction)
 
       machine.initial(idle)
       instance = machine.start({})
@@ -226,12 +226,12 @@ describe('Synchronous Actions', () => {
       active = machine.state('active')
       error = machine.state('error')
 
-      idle.on('FAIL', active).do(() => {
+      idle.on('FAIL', 'active').do(() => {
         throw new Error('Action failed')
       })
 
       idle
-        .on('SAFE', active)
+        .on('SAFE', 'active')
         .do(ctx => {
           ctx.step1 = true
         })

@@ -224,7 +224,7 @@ const emergency = machine.state('emergency');
 
 // Global emergency handler from any state
 machine
-  .on('EMERGENCY', emergency)
+  .on('EMERGENCY', 'emergency')
   .do((ctx) => {
     ctx.previousState = ctx.instance.current;
     ctx.emergencyActive = true;

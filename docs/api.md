@@ -117,20 +117,35 @@ Sets the default child state. When entering a parent state, the machine automati
 auth.initial('login'); // When entering 'auth', also enter 'auth.login'
 ```
 
-### Parent State References
+### Relative State Navigation
 
-Use `^` notation to reference parent states in transitions:
+Use relative path notation to reference states relative to the current state:
 
 ```javascript
 // Go to parent state
 loginForm.on('CANCEL', '^');
 
-// Go to grandparent state
+// Go to grandparent state (two levels up)
 deepChild.on('HOME', '^^');
 
-// Go to sibling via parent
+// Go to great-grandparent (three levels up)
+deeplyNested.on('TOP', '^^^');
+
+// Go to sibling (parent's child)
 login.on('REGISTER', '^.register');
+
+// Go to cousin (grandparent's descendant)
+deepChild.on('COUSIN', '^^.otherParent.cousin');
+
+// Note: ^.^ is NOT valid syntax - use ^^ instead
 ```
+
+**Path Resolution:**
+- `^` - Navigate to parent state
+- `^^` - Navigate to grandparent (NOT `^.^`)
+- `^^^` - Navigate to great-grandparent
+- `^.sibling` - Navigate to parent, then to its child named 'sibling'
+- `^^.uncle.cousin` - Navigate to grandparent, then through its descendants
 
 ## State Lifecycle
 
@@ -176,27 +191,23 @@ loading
 
 ## Transitions
 
-### `state.on(event: string, target: State | string | Function): Transition`
+### `state.on(event: string, target: string | Function): Transition`
 
 Defines a transition from this state to another when an event occurs.
 
 **Parameters:**
 - `event` - Event name that triggers the transition
-- `target` - Target state (can be State instance, state ID, or function)
+- `target` - Target state ID or function returning state ID
 
 **Returns:** A `Transition` instance for chaining modifiers
 
 **Target Types:**
-- **State instance:** `on('EVENT', targetState)`
-- **State ID:** `on('EVENT', 'targetId')`
-- **Dynamic target:** `on('EVENT', (ctx, event) => ctx.premium ? 'premium' : 'basic')`
-- **Parent reference:** `on('EVENT', '^')` or `on('EVENT', '^^')`
+- **State ID:** `on('EVENT', 'targetId')` - Simple string reference
+- **Dynamic target:** `on('EVENT', (ctx, event) => ctx.premium ? 'premium' : 'basic')` - Function returning string
+- **Parent reference:** `on('EVENT', '^')` or `on('EVENT', '^^')` - Relative navigation
 
 **Example:**
 ```javascript
-// Direct state reference
-idle.on('START', loading);
-
 // State ID
 idle.on('START', 'loading');
 

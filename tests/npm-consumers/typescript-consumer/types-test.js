@@ -28,9 +28,9 @@ const processingState = machine.state('processing');
 const completedState = machine.state('completed');
 
 // TypeScript should enforce correct method signatures
-idleState.on('START', processingState);
-processingState.on('COMPLETE', completedState);
-completedState.on('RESET', idleState);
+idleState.on('START', 'processing');
+processingState.on('COMPLETE', 'completed');
+completedState.on('RESET', 'idle');
 
 machine.initial(idleState);
 

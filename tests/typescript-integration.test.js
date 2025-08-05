@@ -65,7 +65,7 @@ describe('TypeScript Integration Tests', () => {
     expect(machine.initialState).toBe(state1);
 
     // Test global transitions
-    const globalTransition = machine.on('GLOBAL', state2);
+    const globalTransition = machine.on('GLOBAL', 'state2');
     expect(typeof globalTransition.if).toBe('function');
     expect(typeof globalTransition.do).toBe('function');
     expect(typeof globalTransition.fire).toBe('function');
@@ -100,7 +100,7 @@ describe('TypeScript Integration Tests', () => {
     expect(parent.exitActions.length).toBe(1);
 
     // Test transitions
-    const transition = parent.on('TEST', child);
+    const transition = parent.on('TEST', 'child');
     expect(parent.transitions.has('TEST')).toBe(true);
     expect(parent.getTransitions('TEST')).toContain(transition);
   });
@@ -110,7 +110,7 @@ describe('TypeScript Integration Tests', () => {
     const idle = machine.state('idle');
     const active = machine.state('active');
 
-    idle.on('START', active);
+    idle.on('START', 'active');
     machine.initial(idle);
 
     const instance = machine.start({ count: 0 });
@@ -139,7 +139,7 @@ describe('TypeScript Integration Tests', () => {
     const from = machine.state('from');
     const to = machine.state('to');
 
-    const transition = from.on('TEST', to);
+    const transition = from.on('TEST', 'to');
 
     // Test method chaining
     const chainResult = transition
@@ -170,8 +170,8 @@ describe('TypeScript Integration Tests', () => {
     const state1 = machine.state('state1');
     const state2 = machine.state('state2');
 
-    state1.on('NEXT', state2);
-    state2.on('BACK', state1);
+    state1.on('NEXT', 'state2');
+    state2.on('BACK', 'state1');
     machine.initial(state1);
 
     const instance = machine.start({ step: 0 }, {

@@ -30,8 +30,8 @@ describe('State Lifecycle', () => {
         ctx.entryEvent = event ? event.type : null
       })
 
-      idle.on('ACTIVATE', active)
-      active.on('DEACTIVATE', idle)
+      idle.on('ACTIVATE', 'active')
+      active.on('DEACTIVATE', 'idle')
 
       machine.initial(idle)
     })
@@ -82,8 +82,8 @@ describe('State Lifecycle', () => {
         ctx.exitEvent = event ? event.type : null
       })
 
-      idle.on('ACTIVATE', active)
-      active.on('DEACTIVATE', idle)
+      idle.on('ACTIVATE', 'active')
+      active.on('DEACTIVATE', 'idle')
 
       machine.initial(idle)
       instance = machine.start({})
@@ -134,9 +134,9 @@ describe('State Lifecycle', () => {
         .enter(() => lifecycleLog.push('C-enter'))
         .exit(() => lifecycleLog.push('C-exit'))
 
-      stateA.on('TO_B', stateB)
-      stateB.on('TO_C', stateC)
-      stateC.on('TO_A', stateA)
+      stateA.on('TO_B', 'stateB')
+      stateB.on('TO_C', 'stateC')
+      stateC.on('TO_A', 'stateA')
 
       machine.initial(stateA)
       instance = machine.start()
@@ -190,7 +190,7 @@ describe('State Lifecycle', () => {
         .enter(() => actionOrder.push('active-enter-1'))
         .enter(() => actionOrder.push('active-enter-2'))
 
-      idle.on('GO', active)
+      idle.on('GO', 'active')
 
       machine.initial(idle)
     })
@@ -235,7 +235,7 @@ describe('State Lifecycle', () => {
           ctx.exitCount = (ctx.exitCount || 0) + 1
         })
 
-      active.on('REFRESH', active)
+      active.on('REFRESH', 'active')
 
       machine.initial(active)
       instance = machine.start({})
@@ -285,7 +285,7 @@ describe('State Lifecycle', () => {
       idle.exit(cleanup)
       active.enter(logEntry)
 
-      idle.on('START', active)
+      idle.on('START', 'active')
 
       machine.initial(idle)
       instance = machine.start({})

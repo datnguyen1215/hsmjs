@@ -51,11 +51,11 @@ describe('Context Management', () => {
       idle = machine.state('idle')
       active = machine.state('active')
 
-      idle.on('INCREMENT', active).do(ctx => {
+      idle.on('INCREMENT', 'active').do(ctx => {
         ctx.count = (ctx.count || 0) + 1
       })
 
-      active.on('RESET', idle)
+      active.on('RESET', 'idle')
 
       machine.initial(idle)
     })
@@ -65,13 +65,13 @@ describe('Context Management', () => {
       const machine1 = createMachine('separate1')
       const idle1 = machine1.state('idle')
       const counting1 = machine1.state('counting')
-      idle1.on('INCREMENT', counting1).do((ctx) => { ctx.count = (ctx.count || 0) + 1 })
+      idle1.on('INCREMENT', 'counting').do((ctx) => { ctx.count = (ctx.count || 0) + 1 })
       machine1.initial(idle1)
 
       const machine2 = createMachine('separate2')
       const idle2 = machine2.state('idle')
       const counting2 = machine2.state('counting')
-      idle2.on('INCREMENT', counting2).do((ctx) => { ctx.count = (ctx.count || 0) + 1 })
+      idle2.on('INCREMENT', 'counting').do((ctx) => { ctx.count = (ctx.count || 0) + 1 })
       machine2.initial(idle2)
 
       const instance1 = machine1.start()
@@ -98,7 +98,7 @@ describe('Context Management', () => {
       idle = machine.state('idle')
       processing = machine.state('processing')
 
-      idle.on('UPDATE', processing).do((ctx, event) => {
+      idle.on('UPDATE', 'processing').do((ctx, event) => {
         // Direct mutation
         ctx.value = event.value
         // Nested object update
@@ -143,11 +143,11 @@ describe('Context Management', () => {
       denied = machine.state('denied')
 
       idle
-        .on('ACCESS', allowed)
+        .on('ACCESS', 'allowed')
         .if(ctx => ctx.user && ctx.user.role === 'admin')
 
       idle
-        .on('ACCESS', denied)
+        .on('ACCESS', 'denied')
         .if(ctx => !ctx.user || ctx.user.role !== 'admin')
 
       machine.initial(idle)
@@ -199,8 +199,8 @@ describe('Context Management', () => {
         ctx.enteredFrom = event ? event.type : 'initial'
       })
 
-      state1.on('NEXT', state2)
-      state2.on('BACK', state1)
+      state1.on('NEXT', 'state2')
+      state2.on('BACK', 'state1')
 
       machine.initial(state1)
       instance = machine.start({})
@@ -239,13 +239,13 @@ describe('Context Management', () => {
       processing = machine.state('processing')
       complete = machine.state('complete')
 
-      idle.on('START', processing).do((ctx, event) => {
+      idle.on('START', 'processing').do((ctx, event) => {
         ctx.items = event.items || []
         ctx.results = []
       })
 
       processing
-        .on('PROCESS_ITEM', processing)
+        .on('PROCESS_ITEM', 'processing')
         .do((ctx, event) => {
           const item = ctx.items.shift()
           if (item) {
@@ -258,7 +258,7 @@ describe('Context Management', () => {
         })
         .if(ctx => ctx.items.length > 0)
 
-      processing.on('PROCESS_ITEM', complete).if(ctx => ctx.items.length === 0)
+      processing.on('PROCESS_ITEM', 'complete').if(ctx => ctx.items.length === 0)
 
       machine.initial(idle)
     })

@@ -63,6 +63,9 @@ export const createState = (id, parent = null) => {
     },
 
     on(event, target) {
+      if (typeof target !== 'string' && typeof target !== 'function') {
+        throw new Error(`State transition target must be a string or function, got ${typeof target}`)
+      }
       const transition = createTransition(event, target, state)
       if (!transitions.has(event)) {
         transitions.set(event, [])

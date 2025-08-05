@@ -19,13 +19,13 @@ describe('Async Actions', () => {
       loading = machine.state('loading')
       loaded = machine.state('loaded')
 
-      idle.on('LOAD', loading).do(async ctx => {
+      idle.on('LOAD', 'loading').do(async ctx => {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 10))
         ctx.data = { id: 1, name: 'Test' }
       })
 
-      loading.on('DONE', loaded)
+      loading.on('DONE', 'loaded')
 
       machine.initial(idle)
       instance = machine.start({})
@@ -63,7 +63,7 @@ describe('Async Actions', () => {
       fetching = machine.state('fetching')
       done = machine.state('done')
 
-      idle.on('FETCH', fetching).do(async (ctx, event) => {
+      idle.on('FETCH', 'fetching').do(async (ctx, event) => {
         const response = await Promise.resolve({
           data: { userId: event.userId, items: [1, 2, 3] }
         })
@@ -71,7 +71,7 @@ describe('Async Actions', () => {
         return { itemCount: response.data.items.length }
       })
 
-      fetching.on('COMPLETE', done)
+      fetching.on('COMPLETE', 'done')
 
       machine.initial(idle)
       instance = machine.start({})
@@ -107,7 +107,7 @@ describe('Async Actions', () => {
       actionOrder = []
 
       idle
-        .on('PROCESS', processing)
+        .on('PROCESS', 'processing')
         .do(ctx => {
           actionOrder.push('sync1')
           ctx.step1 = true
@@ -127,7 +127,7 @@ describe('Async Actions', () => {
           ctx.step4 = true
         })
 
-      processing.on('DONE', complete)
+      processing.on('DONE', 'complete')
 
       machine.initial(idle)
       instance = machine.start({})
@@ -160,12 +160,12 @@ describe('Async Actions', () => {
       processing = machine.state('processing')
       error = machine.state('error')
 
-      idle.on('FAIL', processing).do(async () => {
+      idle.on('FAIL', 'processing').do(async () => {
         throw new Error('Async action failed')
       })
 
       idle
-        .on('PARTIAL', processing)
+        .on('PARTIAL', 'processing')
         .do(ctx => {
           ctx.step1 = true
         })
@@ -217,7 +217,7 @@ describe('Async Actions', () => {
       busy = machine.state('busy')
 
       idle
-        .on('SEQUENTIAL', busy)
+        .on('SEQUENTIAL', 'busy')
         .do(async ctx => {
           await new Promise(resolve => setTimeout(resolve, 20))
           ctx.first = Date.now()
@@ -261,7 +261,7 @@ describe('Async Actions', () => {
         return { fetched: 'posts' }
       }
 
-      idle.on('LOAD', busy).do(fetchUser).do(fetchPosts)
+      idle.on('LOAD', 'busy').do(fetchUser).do(fetchPosts)
 
       machine.initial(idle)
       instance = machine.start({})
