@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.0](https://github.com/datnguyen1215/hsmjs/compare/v1.2.0...v1.3.0) (2025-08-05)
+
+### Changes
+
+* Merge pull request #13 from datnguyen1215/redesign-syntax ([024e382](https://github.com/datnguyen1215/hsmjs/commit/024e38263dc3424e037104a3558ae1817a12d0e7))
+* optimize for minified size. ([d3c5cb7](https://github.com/datnguyen1215/hsmjs/commit/d3c5cb7b45320615d955e5d757d3d5802a025b6c))
+* redesign syntax and optimize. ([1f3c193](https://github.com/datnguyen1215/hsmjs/commit/1f3c19322eeb18900f0617bf547887c5b9e52fd0))
+
+
 ## [1.2.0](https://github.com/datnguyen1215/hsmjs/compare/v1.1.4...v1.2.0) (2025-07-31)
 
 ### Changes
