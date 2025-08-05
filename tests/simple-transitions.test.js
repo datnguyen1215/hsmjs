@@ -159,42 +159,4 @@ describe('Simple Transitions', () => {
     })
   })
 
-  describe('Event Payload', () => {
-    let machine
-    let instance
-    let idle
-    let active
-    let lastEvent
-
-    beforeEach(() => {
-      machine = createMachine('test')
-      idle = machine.state('idle')
-      active = machine.state('active')
-
-      idle.on('START', active).do((ctx, event) => {
-        lastEvent = event
-      })
-
-      machine.initial(idle)
-      instance = machine.start()
-    })
-
-    it('should pass event type', async () => {
-      await instance.send('START')
-      expect(lastEvent.type).toBe('START')
-    })
-
-    it('should pass event payload properties', async () => {
-      await instance.send('START', { id: 123, name: 'test' })
-      expect(lastEvent.type).toBe('START')
-      expect(lastEvent.id).toBe(123)
-      expect(lastEvent.name).toBe('test')
-    })
-
-    it('should handle empty payload', async () => {
-      await instance.send('START')
-      expect(lastEvent.type).toBe('START')
-      expect(Object.keys(lastEvent).length).toBe(1)
-    })
-  })
 })

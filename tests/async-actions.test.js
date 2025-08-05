@@ -1,9 +1,9 @@
 /**
  * Asynchronous action tests
- * Tests the .doAsync() modifier for async actions
+ * Tests the .do() modifier for async actions
  */
 
-import { createMachine, action } from '../src/index.js'
+import { createMachine } from '../src/index.js'
 
 describe('Async Actions', () => {
   describe('Basic Async Actions', () => {
@@ -19,7 +19,7 @@ describe('Async Actions', () => {
       loading = machine.state('loading')
       loaded = machine.state('loaded')
 
-      idle.on('LOAD', loading).doAsync(async ctx => {
+      idle.on('LOAD', loading).do(async ctx => {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 10))
         ctx.data = { id: 1, name: 'Test' }
@@ -63,7 +63,7 @@ describe('Async Actions', () => {
       fetching = machine.state('fetching')
       done = machine.state('done')
 
-      idle.on('FETCH', fetching).doAsync(async (ctx, event) => {
+      idle.on('FETCH', fetching).do(async (ctx, event) => {
         const response = await Promise.resolve({
           data: { userId: event.userId, items: [1, 2, 3] }
         })
@@ -112,7 +112,7 @@ describe('Async Actions', () => {
           actionOrder.push('sync1')
           ctx.step1 = true
         })
-        .doAsync(async ctx => {
+        .do(async ctx => {
           actionOrder.push('async1')
           await new Promise(resolve => setTimeout(resolve, 5))
           ctx.step2 = true
@@ -121,7 +121,7 @@ describe('Async Actions', () => {
           actionOrder.push('sync2')
           ctx.step3 = true
         })
-        .doAsync(async ctx => {
+        .do(async ctx => {
           actionOrder.push('async2')
           await new Promise(resolve => setTimeout(resolve, 5))
           ctx.step4 = true
@@ -160,7 +160,7 @@ describe('Async Actions', () => {
       processing = machine.state('processing')
       error = machine.state('error')
 
-      idle.on('FAIL', processing).doAsync(async () => {
+      idle.on('FAIL', processing).do(async () => {
         throw new Error('Async action failed')
       })
 
@@ -169,7 +169,7 @@ describe('Async Actions', () => {
         .do(ctx => {
           ctx.step1 = true
         })
-        .doAsync(async () => {
+        .do(async () => {
           await new Promise(resolve => setTimeout(resolve, 10))
           throw new Error('Step 2 failed')
         })
@@ -218,11 +218,11 @@ describe('Async Actions', () => {
 
       idle
         .on('SEQUENTIAL', busy)
-        .doAsync(async ctx => {
+        .do(async ctx => {
           await new Promise(resolve => setTimeout(resolve, 20))
           ctx.first = Date.now()
         })
-        .doAsync(async ctx => {
+        .do(async ctx => {
           await new Promise(resolve => setTimeout(resolve, 20))
           ctx.second = Date.now()
         })
@@ -249,19 +249,19 @@ describe('Async Actions', () => {
       idle = machine.state('idle')
       busy = machine.state('busy')
 
-      const fetchUser = action('fetchUser', async (ctx, event) => {
+      const fetchUser = async (ctx, event) => {
         await new Promise(resolve => setTimeout(resolve, 10))
         ctx.user = { id: event.userId, name: 'John' }
         return { fetched: 'user' }
-      })
+      }
 
-      const fetchPosts = action('fetchPosts', async ctx => {
+      const fetchPosts = async ctx => {
         await new Promise(resolve => setTimeout(resolve, 10))
         ctx.posts = [1, 2, 3]
         return { fetched: 'posts' }
-      })
+      }
 
-      idle.on('LOAD', busy).doAsync(fetchUser).doAsync(fetchPosts)
+      idle.on('LOAD', busy).do(fetchUser).do(fetchPosts)
 
       machine.initial(idle)
       instance = machine.start({})

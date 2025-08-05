@@ -21,8 +21,9 @@ on.on('TOGGLE', off)
 machine.initial(off)
 
 // Generate and preview
-const diagram = machine.visualize()
-await machine.visualizer().preview()
+const visualizer = machine.visualizer()
+const diagram = visualizer.visualize()
+await visualizer.preview()
 ```
 
 **Generated Diagram:**
@@ -44,7 +45,7 @@ Shows state transitions with timing:
 const machine = createMachine('traffic-light')
 
 const red = machine.state('red')
-const yellow = machine.state('yellow')  
+const yellow = machine.state('yellow')
 const green = machine.state('green')
 
 red.on('TIMER', green)
@@ -257,7 +258,7 @@ Project workflow visualization:
 ```javascript
 const machine = createMachine('task-management')
 
-// Main workflow states  
+// Main workflow states
 const backlog = machine.state('backlog')
 const inProgress = machine.state('in-progress')
 const review = machine.state('review')
@@ -430,7 +431,7 @@ const instance = machine.start({ userId: 'user123' })
 // Real-time visualization updates
 instance.subscribe(async ({ from, to, event }) => {
   console.log(`State change: ${from} → ${to} (${event})`)
-  
+
   // Save snapshot for each state change
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
   await instance.visualizer().save(`onboarding-${timestamp}.html`)
@@ -529,7 +530,7 @@ This document describes the state machine that manages API request lifecycles.
 ## State Diagram
 
 \`\`\`mermaid
-${machine.visualize()}
+${machine.visualizer().visualize()}
 \`\`\`
 
 ## States
@@ -579,7 +580,8 @@ Track visualization generation performance:
 
 ```javascript
 console.time('visualization-generation')
-const diagram = largeMachine.visualize()
+const visualizer = largeMachine.visualizer()
+const diagram = visualizer.visualize()
 console.timeEnd('visualization-generation')
 
 console.time('preview-generation')

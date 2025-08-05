@@ -87,20 +87,18 @@ await toggle.send('TOGGLE')
 console.log(toggle.current) // 'on'
 
 // Visualize your state machine
-const diagram = machine.visualize()
+const visualizer = machine.visualizer()
+const diagram = visualizer.visualize()
 console.log(diagram) // Mermaid diagram syntax
 
-// Open in browser for interactive viewing
-await machine.visualizer().preview()
-
-// Save as HTML file
-await machine.visualizer().save('toggle-machine.html')
+// Use with external tools like GitHub, Mermaid Live Editor, etc.
+// Copy diagram text to use in documentation or visualization tools
 ```
 
 ### With Actions and Context
 
 ```javascript
-import { createMachine, action } from '@datnguyen1215/hsmjs'
+import { createMachine } from '@datnguyen1215/hsmjs'
 
 const machine = createMachine('counter')
 
@@ -108,10 +106,10 @@ const idle = machine.state('idle')
 const counting = machine.state('counting')
 
 // Define an action
-const increment = action('increment', ctx => {
+const increment = ctx => {
   ctx.count++
   console.log(`Count: ${ctx.count}`)
-})
+}
 
 idle.on('START', counting).do(increment)
 
@@ -133,16 +131,17 @@ HSMJS includes powerful built-in visualization capabilities:
 
 ```javascript
 // Generate Mermaid diagram of any state machine
-const diagram = machine.visualize()
+const visualizer = machine.visualizer()
+const diagram = visualizer.visualize()
 
 // Preview in browser with interactive navigation
-await machine.visualizer().preview()
+await visualizer.preview()
 
 // Save as HTML file with embedded Mermaid
-await machine.visualizer().save('my-state-machine.html')
+await visualizer.save('my-state-machine.html')
 
 // Save as raw Mermaid text file
-await machine.visualizer().save('my-state-machine.mmd')
+await visualizer.save('my-state-machine.mmd')
 ```
 
 ### Hierarchical State Visualization
@@ -178,8 +177,9 @@ const instance = machine.start()
 await instance.send('PLAY')
 
 // Shows current state highlighted in blue
-const diagram = instance.visualize()
-await instance.visualizer().preview()
+const visualizer = instance.visualizer()
+const diagram = visualizer.visualize()
+await visualizer.preview()
 ```
 
 [📖 Complete Visualization Guide →](./docs/visualization.md)
@@ -614,7 +614,7 @@ This project uses an automated **manual-trigger release system** for controlled,
 - ⚡ **One-Click Publishing** - NPM + GitHub releases simultaneously
 - 📊 **98.6% Success Rate** - Thoroughly tested and production-ready
 
-**Success Metrics:** 70/71 comprehensive tests passed  
+**Success Metrics:** 70/71 comprehensive tests passed
 **Status:** ✅ Production Ready
 
 See [RELEASE.md](./RELEASE.md) for the complete user guide.
@@ -655,13 +655,15 @@ instance.stop()
 
 ```javascript
 // Generate Mermaid diagram
-const diagram = machine.visualize()
-const instanceDiagram = instance.visualize() // With current state
+const machineVisualizer = machine.visualizer()
+const diagram = machineVisualizer.visualize()
+const instanceVisualizer = instance.visualizer()
+const instanceDiagram = instanceVisualizer.visualize() // With current state
 
 // Browser preview and file export
-await machine.visualizer().preview()
-await machine.visualizer().save('diagram.html')
-await instance.visualizer().save('current-state.html')
+await machineVisualizer.preview()
+await machineVisualizer.save('diagram.html')
+await instanceVisualizer.save('current-state.html')
 ```
 
 ## Contributing

@@ -5,11 +5,10 @@
  * Tests the dual package 'require' export from package.json
  */
 
-const { createMachine, action } = require('@datnguyen1215/hsmjs');
+const { createMachine } = require('@datnguyen1215/hsmjs');
 
 // Test 1: Verify requires are functions
 console.assert(typeof createMachine === 'function', 'createMachine should be a function');
-console.assert(typeof action === 'function', 'action should be a function');
 
 // Test 2: Test different require patterns
 
@@ -20,7 +19,6 @@ console.assert(typeof createMachineDestructured === 'function', 'Destructured re
 // Pattern 2: Full module require
 const hsmjs = require('@datnguyen1215/hsmjs');
 console.assert(typeof hsmjs.createMachine === 'function', 'Full module require should work');
-console.assert(typeof hsmjs.action === 'function', 'Full module require should include action');
 
 // Pattern 3: Individual property access
 const createMachineFromModule = hsmjs.createMachine;
@@ -59,15 +57,13 @@ async function testTransitions() {
   console.assert(instance.current === 'idle', 'Should reset to idle');
 }
 
-// Test 5: Action helper functionality
+// Test 5: Action execution (without action helper)
 let actionExecuted = false;
-const testAction = action('cjs-test-action', (ctx) => {
+const testAction = (ctx) => {
   actionExecuted = true;
   ctx.cjsTestCompleted = true;
   return { success: true, module: 'commonjs' };
-});
-
-console.assert(testAction.actionName === 'cjs-test-action', 'Action should have correct name');
+};
 
 // Test 6: CommonJS specific features
 // Test module.exports compatibility
@@ -85,7 +81,7 @@ console.assert(typeof __filename === 'string', '__filename should be available')
 // Execute async tests
 async function runAsyncTests() {
   await testTransitions();
-  
+
   // Test action execution
   const actionContext = {};
   const actionResult = await testAction(actionContext);

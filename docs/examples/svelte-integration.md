@@ -39,19 +39,19 @@ export function createStateMachineStore(machine, initialContext = {}) {
 
   // Define machine
   const machine = createMachine('todo');
-  
+
   const editing = machine.state('editing');
   const saving = machine.state('saving');
-  
+
   editing
     .on('SAVE', saving)
     .do((ctx, event) => {
       ctx.text = event.text;
     });
-  
+
   saving
     .on('SUCCESS', editing)
-    .doAsync(async (ctx) => {
+    .do(async (ctx) => {
       await fetch('/api/save', {
         method: 'POST',
         body: JSON.stringify({ text: ctx.text })
@@ -59,17 +59,17 @@ export function createStateMachineStore(machine, initialContext = {}) {
       ctx.saved = true;
     })
     .on('ERROR', editing);
-  
-  machine.initial(editing);
-  
+
+  machine.initial('editing');
+
   // Create store
-  const sm = createStateMachineStore(machine, { 
-    text: '', 
-    saved: false 
+  const sm = createStateMachineStore(machine, {
+    text: '',
+    saved: false
   });
-  
+
   let inputValue = '';
-  
+
   async function handleSave() {
     await sm.send('SAVE', { text: inputValue });
   }
@@ -77,7 +77,7 @@ export function createStateMachineStore(machine, initialContext = {}) {
 
 <div>
   <h2>State: {$sm.current}</h2>
-  
+
   {#if $sm.current === 'editing'}
     <input bind:value={inputValue} placeholder="Enter todo..." />
     <button on:click={handleSave}>Save</button>
@@ -85,7 +85,7 @@ export function createStateMachineStore(machine, initialContext = {}) {
       <span>✓ Saved</span>
     {/if}
   {/if}
-  
+
   {#if $sm.current === 'saving'}
     <p>Saving...</p>
   {/if}

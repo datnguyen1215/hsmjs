@@ -16,22 +16,22 @@ A traffic light system that cycles through red, yellow, and green states with pr
 ## Basic Implementation
 
 ```javascript
-import { createMachine, action } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('traffic-light');
 
 // Define states
-const red = machine.state('red');
-const yellow = machine.state('yellow');
-const green = machine.state('green');
+machine.state('red');
+machine.state('yellow');
+machine.state('green');
 
 // Define transitions
-red.on('TIMER', green);
-green.on('TIMER', yellow);
-yellow.on('TIMER', red);
+machine.state('red').on('TIMER', 'green');
+machine.state('green').on('TIMER', 'yellow');
+machine.state('yellow').on('TIMER', 'red');
 
 // Set initial state
-machine.initial(red);
+machine.initial('red');
 
 // Create instance
 const light = machine.start();
@@ -45,98 +45,82 @@ await light.send('TIMER'); // yellow -> red
 ## With Automatic Timing
 
 ```javascript
-import { createMachine, action } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('traffic-light');
 
-const red = machine.state('red');
-const yellow = machine.state('yellow');
-const green = machine.state('green');
+// Define states
+machine.state('red');
+machine.state('yellow');
+machine.state('green');
 
-// Store timer references in context
-const startTimer = action('startTimer', (ctx, event, duration) => {
-  ctx.timer = setTimeout(() => {
-    ctx.instance.send('TIMER');
-  }, duration);
-});
+// Configure automatic transitions with after() method
+machine.state('red').after(3000, 'green');   // 3 seconds
+machine.state('green').after(3000, 'yellow'); // 3 seconds
+machine.state('yellow').after(1000, 'red');   // 1 second
 
-const stopTimer = action('stopTimer', (ctx) => {
-  if (ctx.timer) {
-    clearTimeout(ctx.timer);
-    ctx.timer = null;
-  }
-});
-
-// Configure states with different durations
-red
-  .enter((ctx) => startTimer(ctx, null, 3000)) // 3 seconds
-  .exit(stopTimer);
-
-green
-  .enter((ctx) => startTimer(ctx, null, 3000)) // 3 seconds
-  .exit(stopTimer);
-
-yellow
-  .enter((ctx) => startTimer(ctx, null, 1000)) // 1 second
-  .exit(stopTimer);
-
-red.on('TIMER', green);
-green.on('TIMER', yellow);
-yellow.on('TIMER', red);
-
-machine.initial(red);
+// Set initial state
+machine.initial('red');
 
 // Start the traffic light
-const light = machine.start({ timer: null });
-
-// Store instance reference for timer callbacks
-light.context.instance = light;
+const light = machine.start();
 
 // The light will now cycle automatically
+// No manual timer management needed!
 ```
 
 ## With Light Control
 
 ```javascript
-import { createMachine, action } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('traffic-light');
 
 // Define states
-const red = machine.state('red');
-const yellow = machine.state('yellow');
-const green = machine.state('green');
+machine.state('red');
+machine.state('yellow');
+machine.state('green');
 
-// Light control actions
-const updateLights = action('updateLights', (ctx, event, color) => {
-  // Turn off all lights
-  ctx.lights.red = false;
-  ctx.lights.yellow = false;
-  ctx.lights.green = false;
-  
-  // Turn on the appropriate light
-  ctx.lights[color] = true;
-  
-  // Notify observers
-  if (ctx.onLightChange) {
-    ctx.onLightChange(ctx.lights);
-  }
-});
+// Configure states with entry actions
+machine.state('red')
+  .enter((ctx) => {
+    // Turn off all lights
+    ctx.lights.red = true;
+    ctx.lights.yellow = false;
+    ctx.lights.green = false;
 
-// Configure states
-red
-  .enter((ctx) => updateLights(ctx, null, 'red'))
-  .on('TIMER', green);
+    // Notify observers
+    if (ctx.onLightChange) {
+      ctx.onLightChange(ctx.lights);
+    }
+  })
+  .after(3000, 'green');
 
-green
-  .enter((ctx) => updateLights(ctx, null, 'green'))
-  .on('TIMER', yellow);
+machine.state('green')
+  .enter((ctx) => {
+    ctx.lights.red = false;
+    ctx.lights.yellow = false;
+    ctx.lights.green = true;
 
-yellow
-  .enter((ctx) => updateLights(ctx, null, 'yellow'))
-  .on('TIMER', red);
+    if (ctx.onLightChange) {
+      ctx.onLightChange(ctx.lights);
+    }
+  })
+  .after(3000, 'yellow');
 
-machine.initial(red);
+machine.state('yellow')
+  .enter((ctx) => {
+    ctx.lights.red = false;
+    ctx.lights.yellow = true;
+    ctx.lights.green = false;
+
+    if (ctx.onLightChange) {
+      ctx.onLightChange(ctx.lights);
+    }
+  })
+  .after(1000, 'red');
+
+machine.initial('red');
 
 // Create instance with light state
 const light = machine.start({
@@ -157,7 +141,7 @@ const light = machine.start({
 A more complex example with pedestrian crossing support:
 
 ```javascript
-import { createMachine, action } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('intersection');
 
@@ -171,23 +155,23 @@ const pedWait = vehicleRed.state('wait');
 const pedWalk = vehicleRed.state('walk');
 const pedFlash = vehicleRed.state('flash');
 
-vehicleRed.initial(pedWait);
+vehicleRed.initial('wait');
 
 // Vehicle transitions
 vehicleGreen
-  .on('TIMER', vehicleYellow)
-  .on('PED_REQUEST', vehicleYellow); // Pedestrian can request crossing
+  .on('TIMER', 'vehicleYellow')
+  .on('PED_REQUEST', 'vehicleYellow'); // Pedestrian can request crossing
 
-vehicleYellow.on('TIMER', vehicleRed);
+vehicleYellow.on('TIMER', 'vehicleRed');
 
 // Pedestrian transitions within red light
-pedWait.on('TIMER', pedWalk);
-pedWalk.on('TIMER', pedFlash);
+pedWait.on('TIMER', 'walk');
+pedWalk.on('TIMER', 'flash');
 pedFlash.on('TIMER', '^.^.vehicleGreen'); // Go back to vehicle green
 
 // Add pedestrian request handling
 vehicleGreen
-  .on('PED_REQUEST', vehicleGreen)
+  .on('PED_REQUEST', 'vehicleGreen')
   .do((ctx) => {
     ctx.pedRequested = true;
   })
@@ -249,7 +233,7 @@ machine
 emergency
   .enter((ctx) => {
     // All lights red except emergency direction
-    ctx.lights = { 
+    ctx.lights = {
       all: 'red',
       emergency: 'green'
     };

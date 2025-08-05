@@ -30,7 +30,7 @@ A form submission flow with validation, error handling, and async submission.
 ## Basic Form Validation
 
 ```javascript
-import { createMachine, action } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('form');
 
@@ -41,32 +41,32 @@ const submitting = machine.state('submitting');
 const success = machine.state('success');
 const error = machine.state('error');
 
-// Validation action
-const validateForm = action('validateForm', (ctx, event) => {
+// Validation function
+const validateForm = (ctx, event) => {
   const errors = [];
   const { email, password } = event.data;
-  
+
   if (!email) {
     errors.push({ field: 'email', message: 'Email is required' });
   } else if (!email.includes('@')) {
     errors.push({ field: 'email', message: 'Invalid email format' });
   }
-  
+
   if (!password) {
     errors.push({ field: 'password', message: 'Password is required' });
   } else if (password.length < 8) {
     errors.push({ field: 'password', message: 'Password must be at least 8 characters' });
   }
-  
+
   ctx.errors = errors;
   ctx.formData = event.data;
-  
+
   return { valid: errors.length === 0, errors };
-});
+};
 
 // Define transitions
 editing
-  .on('SUBMIT', validating)
+  .on('SUBMIT', 'validating')
   .do(validateForm);
 
 // Auto-transition based on validation result
@@ -78,31 +78,31 @@ validating
       ctx.instance.send(event);
     }, 0);
   })
-  .on('VALID', submitting)
-  .on('INVALID', editing);
+  .on('VALID', 'submitting')
+  .on('INVALID', 'editing');
 
 // Handle submission
 submitting
-  .on('SUCCESS', success)
-    .doAsync(async (ctx) => {
+  .on('SUCCESS', 'success')
+    .do(async (ctx) => {
       const response = await api.submitForm(ctx.formData);
       ctx.submissionId = response.id;
       return { id: response.id };
     })
-  .on('ERROR', error)
+  .on('ERROR', 'error')
     .do((ctx, event) => {
       ctx.errorMessage = event.error.message;
     });
 
 // Allow retry from error state
-error.on('RETRY', editing);
-success.on('NEW_FORM', editing);
+error.on('RETRY', 'editing');
+success.on('NEW_FORM', 'editing');
 
-machine.initial(editing);
+machine.initial('editing');
 
 // Usage
-const form = machine.start({ 
-  errors: [], 
+const form = machine.start({
+  errors: [],
   formData: null,
   instance: null // Will be set after creation
 });
@@ -121,7 +121,7 @@ await form.send('SUBMIT', {
 ## Advanced Form with Field-Level Validation
 
 ```javascript
-import { createMachine, action } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('advanced-form');
 
@@ -138,86 +138,86 @@ const validatePassword = validating.state('password');
 const validateTerms = validating.state('terms');
 const validationComplete = validating.state('complete');
 
-validating.initial(validateEmail);
+validating.initial('email');
 
 // Field validators
 const validators = {
-  email: action('validateEmail', async (ctx) => {
+  email: async (ctx) => {
     const email = ctx.formData.email;
-    
+
     if (!email) {
       ctx.errors.email = 'Email is required';
       return { valid: false };
     }
-    
+
     if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       ctx.errors.email = 'Invalid email format';
       return { valid: false };
     }
-    
+
     // Check if email exists (async validation)
     const exists = await api.checkEmailExists(email);
     if (exists) {
       ctx.errors.email = 'Email already registered';
       return { valid: false };
     }
-    
+
     delete ctx.errors.email;
     return { valid: true };
-  }),
-  
-  password: action('validatePassword', (ctx) => {
+  },
+
+  password: (ctx) => {
     const password = ctx.formData.password;
     const confirmPassword = ctx.formData.confirmPassword;
-    
+
     if (!password) {
       ctx.errors.password = 'Password is required';
       return { valid: false };
     }
-    
+
     if (password.length < 8) {
       ctx.errors.password = 'Password must be at least 8 characters';
       return { valid: false };
     }
-    
+
     if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
       ctx.errors.password = 'Password must contain uppercase and numbers';
       return { valid: false };
     }
-    
+
     if (password !== confirmPassword) {
       ctx.errors.confirmPassword = 'Passwords do not match';
       return { valid: false };
     }
-    
+
     delete ctx.errors.password;
     delete ctx.errors.confirmPassword;
     return { valid: true };
-  }),
-  
-  terms: action('validateTerms', (ctx) => {
+  },
+
+  terms: (ctx) => {
     if (!ctx.formData.acceptTerms) {
       ctx.errors.terms = 'You must accept the terms and conditions';
       return { valid: false };
     }
-    
+
     delete ctx.errors.terms;
     return { valid: true };
-  })
+  }
 };
 
 // Validation transitions
 validateEmail
   .enter(validators.email)
-  .on('NEXT', validatePassword);
+  .on('NEXT', 'password');
 
 validatePassword
   .enter(validators.password)
-  .on('NEXT', validateTerms);
+  .on('NEXT', 'terms');
 
 validateTerms
   .enter(validators.terms)
-  .on('NEXT', validationComplete);
+  .on('NEXT', 'complete');
 
 validationComplete
   .enter((ctx) => {
@@ -229,15 +229,15 @@ validationComplete
 
 // Main transitions
 idle
-  .on('SUBMIT', validating)
+  .on('SUBMIT', 'validating')
   .do((ctx, event) => {
     ctx.formData = event.data;
     ctx.errors = {};
   });
 
 validating
-  .on('VALID', submitting)
-  .on('INVALID', idle)
+  .on('VALID', 'submitting')
+  .on('INVALID', 'idle')
     .do((ctx) => {
       ctx.showErrors = true;
     });
@@ -248,8 +248,8 @@ submitting
     ctx.retryCount = 0;
     ctx.maxRetries = 3;
   })
-  .on('SUCCESS', success)
-    .doAsync(async (ctx) => {
+  .on('SUCCESS', 'success')
+    .do(async (ctx) => {
       try {
         const result = await api.submitForm(ctx.formData);
         return { confirmationNumber: result.confirmationNumber };
@@ -261,9 +261,9 @@ submitting
         throw error;
       }
     })
-  .on('ERROR', error);
+  .on('ERROR', 'error');
 
-machine.initial(idle);
+machine.initial('idle');
 
 // Usage with field updates
 const form = machine.start({ errors: {}, formData: {}, showErrors: false });
@@ -272,7 +272,7 @@ form.context.instance = form;
 // Real-time field validation
 const validateField = async (fieldName, value) => {
   form.context.formData[fieldName] = value;
-  
+
   if (fieldName === 'email' && value.includes('@')) {
     const result = await validators.email(form.context);
     updateFieldError('email', form.context.errors.email);
@@ -292,10 +292,10 @@ const addressInfo = steps.state('addressInfo');
 const paymentInfo = steps.state('paymentInfo');
 const review = steps.state('review');
 
-steps.initial(personalInfo);
+steps.initial('personalInfo');
 
 // Progress tracking
-const updateProgress = action('updateProgress', (ctx) => {
+const updateProgress = (ctx) => {
   const totalSteps = 4;
   const currentStep = {
     'steps.personalInfo': 1,
@@ -303,7 +303,7 @@ const updateProgress = action('updateProgress', (ctx) => {
     'steps.paymentInfo': 3,
     'steps.review': 4
   }[ctx.instance.current] || 0;
-  
+
   ctx.progress = {
     current: currentStep,
     total: totalSteps,
@@ -311,7 +311,7 @@ const updateProgress = action('updateProgress', (ctx) => {
     canGoBack: currentStep > 1,
     canGoNext: currentStep < totalSteps
   };
-});
+};
 
 // Add progress tracking to each step
 [personalInfo, addressInfo, paymentInfo, review].forEach(state => {
@@ -320,22 +320,22 @@ const updateProgress = action('updateProgress', (ctx) => {
 
 // Step transitions with validation
 personalInfo
-  .on('NEXT', addressInfo)
+  .on('NEXT', 'addressInfo')
     .if((ctx) => ctx.personalData?.firstName && ctx.personalData?.email)
   .on('SAVE_DRAFT', '^.^.drafts');
 
 addressInfo
-  .on('BACK', personalInfo)
-  .on('NEXT', paymentInfo)
+  .on('BACK', 'personalInfo')
+  .on('NEXT', 'paymentInfo')
     .if((ctx) => ctx.addressData?.street && ctx.addressData?.city);
 
 paymentInfo
-  .on('BACK', addressInfo)
-  .on('NEXT', review)
+  .on('BACK', 'addressInfo')
+  .on('NEXT', 'review')
     .if((ctx) => ctx.paymentData?.cardNumber);
 
 review
-  .on('BACK', paymentInfo)
+  .on('BACK', 'paymentInfo')
   .on('SUBMIT', '^.^.submitting');
 
 // Form-wide states
@@ -345,8 +345,8 @@ const complete = machine.state('complete');
 
 // Save draft functionality
 machine
-  .on('SAVE_DRAFT', drafts)
-  .doAsync(async (ctx) => {
+  .on('SAVE_DRAFT', 'drafts')
+  .do(async (ctx) => {
     const draftId = await api.saveDraft({
       personal: ctx.personalData,
       address: ctx.addressData,

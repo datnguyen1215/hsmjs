@@ -1,164 +1,146 @@
 /**
- * State class representing a state in the state machine
- * Supports hierarchical states, transitions, and lifecycle actions
+ * State factory for hierarchical state machines
  */
 
-import { Transition } from './transition.js'
+import { createTransition } from './transition.js'
 
-export class State {
-  /**
-   * Create a new state
-   * @param {string} id - State identifier
-   * @param {State|null} parent - Parent state for hierarchical states
-   */
-  constructor(id, parent = null) {
-    if (!id || typeof id !== 'string') {
-      throw new Error('State ID is required')
-    }
-    this.id = id
-    this.parent = parent
-    this.children = new Map()
-    this.transitions = new Map()
-    this.entryActions = []
-    this.exitActions = []
-    this.initialChild = null
+/**
+ * @typedef {Object} State
+ * @property {string} id - State identifier
+ * @property {State|null} parent - Parent state
+ * @property {string} path - Full path from root
+ * @property {Map<string, State>} children - Child states
+ * @property {Map<string, Array>} transitions - State transitions
+ * @property {Array<Function>} entryActions - Entry actions
+ * @property {Array<Function>} exitActions - Exit actions
+ * @property {string|null} initialChild - Initial child state
+ * @property {(id: string) => State} state - Create or get child state
+ * @property {(child: State|string) => State} initial - Set initial child state
+ * @property {(action: Function) => State} enter - Add entry action
+ * @property {(action: Function) => State} exit - Add exit action
+ * @property {(event: string, target: string|State|Function) => Transition} on - Create transition
+ * @property {(event: string) => Array<Transition>} getTransitions - Get transitions for event
+ * @property {(ancestor: State) => boolean} isChildOf - Check if descendant of ancestor
+ * @property {(path: string) => State|null} findRelative - Find state by relative path
+ * @property {() => Array<State>} getAncestors - Get all ancestor states
+ */
 
-    // Compute full path
-    this.path = parent ? `${parent.path}.${id}` : id
+/**
+ * @param {string} id
+ * @param {State|null} [parent=null]
+ * @returns {State}
+ */
+export const createState = (id, parent = null) => {
+  if (!id || typeof id !== 'string') {
+    throw new Error('State ID is required')
   }
 
-  /**
-   * Create or retrieve a child state
-   * @param {string} id - Child state identifier
-   * @returns {State} Child state
-   */
-  state(id) {
-    if (!this.children.has(id)) {
-      const child = new State(id, this)
-      this.children.set(id, child)
-    }
-    return this.children.get(id)
-  }
+  // Private state via closure
+  const children = new Map()
+  const transitions = new Map()
+  const entryActions = []
+  const exitActions = []
+  let initialChild = null
 
-  /**
-   * Set initial child state
-   * @param {State|string} stateOrId - Initial state or its ID
-   * @returns {State} This state for chaining
-   */
-  initial(stateOrId) {
-    if (typeof stateOrId === 'string') {
-      this.initialChild = stateOrId
-    } else {
-      this.initialChild = stateOrId.id
-    }
-    return this
-  }
+  // Public interface
+  const state = {
+    id,
+    parent,
+    path: parent ? `${parent.path}.${id}` : id,
+    children,
+    transitions,
+    entryActions,
+    exitActions,
 
-  /**
-   * Add entry action
-   * @param {Function} action - Action to execute on entry
-   * @returns {State} This state for chaining
-   */
-  enter(action) {
-    this.entryActions.push(action)
-    return this
-  }
+    get initialChild() {
+      return initialChild
+    },
 
-  /**
-   * Add exit action
-   * @param {Function} action - Action to execute on exit
-   * @returns {State} This state for chaining
-   */
-  exit(action) {
-    this.exitActions.push(action)
-    return this
-  }
+    state(childId) {
+      if (!children.has(childId)) {
+        const child = createState(childId, state)
+        children.set(childId, child)
+      }
+      return children.get(childId)
+    },
 
-  /**
-   * Define a transition
-   * @param {string} event - Event name
-   * @param {State|string|Function} target - Target state
-   * @returns {Transition} Transition for configuration
-   */
-  on(event, target) {
-    const transition = new Transition(event, target, this)
+    initial(stateOrId) {
+      if (typeof stateOrId === 'string') {
+        initialChild = stateOrId
+      } else {
+        initialChild = stateOrId.id
+      }
+      return state
+    },
 
-    if (!this.transitions.has(event)) {
-      this.transitions.set(event, [])
-    }
-    this.transitions.get(event).push(transition)
+    enter(action) {
+      entryActions.push(action)
+      return state
+    },
 
-    return transition
-  }
+    exit(action) {
+      exitActions.push(action)
+      return state
+    },
 
-  /**
-   * Get all transitions for an event
-   * @param {string} event - Event name
-   * @returns {Array} Transitions for the event
-   */
-  getTransitions(event) {
-    return this.transitions.get(event) || []
-  }
+    on(event, target) {
+      const transition = createTransition(event, target, state)
+      if (!transitions.has(event)) {
+        transitions.set(event, [])
+      }
+      transitions.get(event).push(transition)
+      return transition
+    },
 
-  /**
-   * Check if state is child of another state
-   * @param {State} ancestor - Potential ancestor
-   * @returns {boolean} True if child of ancestor
-   */
-  isChildOf(ancestor) {
-    let current = this.parent
-    while (current) {
-      if (current === ancestor) return true
-      current = current.parent
-    }
-    return false
-  }
+    getTransitions(event) {
+      return transitions.get(event) || []
+    },
 
-  /**
-   * Find a state by relative path
-   * @param {string} path - Relative path (e.g., '^', '^^', '^.sibling')
-   * @returns {State|null} Found state or null
-   */
-  findRelative(path) {
-    if (!path.startsWith('^')) {
-      return null
-    }
-
-    let current = this
-    const parts = path.split('.')
-
-    // Process parent references
-    for (const part of parts) {
-      if (part === '^') {
+    isChildOf(ancestor) {
+      let current = parent
+      while (current) {
+        if (current === ancestor) return true
         current = current.parent
-        if (!current) return null
-      } else if (part.match(/^\^+$/)) {
-        // Multiple parent refs like ^^
-        const levels = part.length
-        for (let i = 0; i < levels; i++) {
+      }
+      return false
+    },
+
+    findRelative(path) {
+      if (!path.startsWith('^')) {
+        return null
+      }
+
+      let current = state
+      const parts = path.split('.')
+
+      for (const part of parts) {
+        if (part === '^') {
           current = current.parent
           if (!current) return null
+        } else if (part.match(/^\^+$/)) {
+          const levels = part.length
+          for (let i = 0; i < levels; i++) {
+            current = current.parent
+            if (!current) return null
+          }
+        } else {
+          return current.children.get(part) || null
         }
-      } else {
-        // Child reference after parent refs
-        return current.children.get(part) || null
       }
-    }
 
-    return current
+      return current
+    },
+
+    getAncestors() {
+      const ancestors = []
+      let current = parent
+      while (current) {
+        ancestors.push(current)
+        current = current.parent
+      }
+      return ancestors.reverse()
+    }
   }
 
-  /**
-   * Get all ancestor states
-   * @returns {Array} Ancestor states from root to immediate parent
-   */
-  getAncestors() {
-    const ancestors = []
-    let current = this.parent
-    while (current) {
-      ancestors.push(current)
-      current = current.parent
-    }
-    return ancestors.reverse()
-  }
+  return state
 }

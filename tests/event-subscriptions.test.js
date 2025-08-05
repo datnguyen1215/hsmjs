@@ -356,7 +356,7 @@ describe('Event Subscriptions', () => {
         .do(() => {
           actionOrder.push('sync-action')
         })
-        .doAsync(async () => {
+        .do(async () => {
           actionOrder.push('async-action')
           await new Promise(resolve => setTimeout(resolve, 10))
         })

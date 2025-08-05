@@ -27,7 +27,7 @@ The package includes comprehensive `.d.ts` files that provide full type support 
 ## Basic Usage
 
 ```typescript
-import { createMachine, action } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 // Define your context interface
 interface MyContext {
@@ -38,17 +38,18 @@ interface MyContext {
 // Create a typed machine
 const machine = createMachine<MyContext>('my-machine');
 
-const idle = machine.state('idle');
-const active = machine.state('active');
+// Define states
+machine.state('idle');
+machine.state('active');
 
 // Type-safe transitions and actions
-idle
-  .on('START', active)
+machine.state('idle')
+  .on('START', 'active')
   .do((ctx: MyContext) => {
     ctx.count = 0; // TypeScript knows ctx.count exists
   });
 
-machine.initial(idle);
+machine.initial('idle');
 
 // Create instance with typed context
 const instance = machine.start({
@@ -126,7 +127,7 @@ const transition: Transition<MyContext, MyEvent> = state.on('EVENT', target);
 Use discriminated unions for complete event type safety:
 
 ```typescript
-type AppEvents = 
+type AppEvents =
   | { type: 'LOGIN'; email: string; password: string }
   | { type: 'LOGOUT' }
   | { type: 'UPDATE_PROFILE'; name: string; avatar?: string }
@@ -139,16 +140,16 @@ state
     // TypeScript knows event has email and password properties
     return event.email.includes('@') && event.password.length > 0;
   })
-  .doAsync(async (ctx, event: EventPayload<AppEvents, 'LOGIN'>) => {
+  .do(async (ctx, event: EventPayload<AppEvents, 'LOGIN'>) => {
     // Full type safety in async actions
     const response = await api.login(event.email, event.password);
     return response.data;
   });
 
 // Type-safe event sending
-await instance.send('LOGIN', { 
-  email: 'user@example.com', 
-  password: 'secret' 
+await instance.send('LOGIN', {
+  email: 'user@example.com',
+  password: 'secret'
 });
 ```
 
@@ -164,8 +165,7 @@ state
   .exit((ctx) => { /* Full context type info */ })
   .on('EVENT', target)
     .if((ctx, event) => { /* Guard with typed parameters */ true })
-    .do((ctx, event) => { /* Sync action with types */ })
-    .doAsync(async (ctx, event) => { /* Async action with types */ })
+    .do((ctx, event) => { /* Sync or async action with types */ })
     .fire((ctx, event) => { /* Fire action with types */ });
 ```
 
@@ -300,9 +300,10 @@ Recommended `tsconfig.json` settings:
 
 ## API Reference
 
-### Core Classes
+### Core Factory Functions and Types
 
-#### `Machine<TContext>`
+#### `createMachine<TContext>(name: string)`
+Returns a machine object with:
 - `state(id: string): State<TContext>`
 - `initial(state: State<TContext> | string): this`
 - `on<TEvent>(event: string, target: string | State<TContext> | TargetResolver<TContext, TEvent>): Transition<TContext, TEvent>`
@@ -323,18 +324,13 @@ Recommended `tsconfig.json` settings:
 
 #### `Transition<TContext, TEvent>`
 - `if(guard: Guard<TContext, TEvent>): this`
-- `do(action: Action<TContext, TEvent>): this`
-- `doAsync(action: AsyncAction<TContext, TEvent>): this`
+- `do(action: Action<TContext, TEvent> | AsyncAction<TContext, TEvent>): this`
 - `fire(action: Action<TContext, TEvent> | AsyncAction<TContext, TEvent>): this`
 
 ### Factory Functions
 
 ```typescript
 function createMachine<TContext = BaseContext>(name: string): Machine<TContext>
-function action<TContext = BaseContext, TEvent = BaseEvent>(
-  name: string, 
-  fn: Action<TContext, TEvent> | AsyncAction<TContext, TEvent>
-): Action<TContext, TEvent> | AsyncAction<TContext, TEvent>
 ```
 
 ## Examples
@@ -342,7 +338,7 @@ function action<TContext = BaseContext, TEvent = BaseEvent>(
 See the following files for comprehensive examples:
 
 - `tests/typescript/type-validation.test.ts` - Complete API validation
-- `tests/typescript/usage-examples.test.ts` - Practical usage patterns  
+- `tests/typescript/usage-examples.test.ts` - Practical usage patterns
 - `tests/typescript/intellisense-demo.ts` - Advanced IntelliSense demonstration
 - `docs/examples/typescript-usage.md` - Getting started guide
 
@@ -380,7 +376,7 @@ The library includes comprehensive tests that validate:
 // ❌ Error: Type mismatch
 await instance.send('LOGIN', { email: 'test' }); // Missing password
 
-// ✅ Correct: Complete event payload  
+// ✅ Correct: Complete event payload
 await instance.send('LOGIN', { email: 'test@example.com', password: 'secret' });
 
 // ❌ Error: Property doesn't exist
