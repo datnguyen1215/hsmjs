@@ -285,13 +285,12 @@ describe('Event Subscriptions', () => {
       expect(goodEvents).toHaveLength(1)
     })
 
-    it('should log subscriber errors', async () => {
+    it('should handle subscriber errors silently', async () => {
+      // Error handling is now silent - no console.error calls
       await instance.send('GO')
 
-      expect(console.error).toHaveBeenCalledWith(
-        'Listener error:',
-        expect.any(Error)
-      )
+      // Verify the error subscriber was called but didn't crash the system
+      expect(goodEvents).toHaveLength(1)
     })
 
     it('should isolate subscriber errors', async () => {
@@ -356,7 +355,7 @@ describe('Event Subscriptions', () => {
         .do(() => {
           actionOrder.push('sync-action')
         })
-        .doAsync(async () => {
+        .do(async () => {
           actionOrder.push('async-action')
           await new Promise(resolve => setTimeout(resolve, 10))
         })

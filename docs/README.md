@@ -11,6 +11,7 @@ A lightweight, powerful JavaScript state machine library with hierarchical state
 - 🛡️ **Type Safe** - Full TypeScript support (coming soon)
 - 🪶 **Lightweight** - Zero dependencies, ~10KB minified
 - 🧪 **Battle Tested** - Comprehensive test suite with 100% coverage
+- 📊 **Visualization** - Built-in Mermaid diagram generation for debugging
 
 ## Installation
 
@@ -34,13 +35,16 @@ const { createMachine } = require('@datnguyen1215/hsmjs');
 // Define your machine
 const machine = createMachine('toggle');
 
-const off = machine.state('off');
-const on = machine.state('on');
+// Define states
+machine.state('off');
+machine.state('on');
 
-off.on('TOGGLE', on);
-on.on('TOGGLE', off);
+// Define transitions with string references
+machine.state('off').on('TOGGLE', 'on');
+machine.state('on').on('TOGGLE', 'off');
 
-machine.initial(off);
+// Set initial state
+machine.initial('off');
 
 // Create an instance and use it
 const toggle = machine.start();
@@ -70,34 +74,34 @@ Context is the data associated with your machine instance. It persists across st
 ## Real-World Example: Form Submission
 
 ```javascript
-import { createMachine, action } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('form');
 
 // Define states
-const idle = machine.state('idle');
-const validating = machine.state('validating');
-const submitting = machine.state('submitting');
-const success = machine.state('success');
-const error = machine.state('error');
+machine.state('idle');
+machine.state('validating');
+machine.state('submitting');
+machine.state('success');
+machine.state('error');
 
 // Define transitions with actions
-idle
-  .on('SUBMIT', validating)
+machine.state('idle')
+  .on('SUBMIT', 'validating')
   .do((ctx, event) => {
     // Validate form data
     ctx.errors = validateForm(event.data);
   });
 
-validating
-  .on('VALID', submitting)
+machine.state('validating')
+  .on('VALID', 'submitting')
     .if(ctx => ctx.errors.length === 0)
-  .on('INVALID', idle)
+  .on('INVALID', 'idle')
     .if(ctx => ctx.errors.length > 0);
 
-submitting
-  .on('SUCCESS', success)
-    .doAsync(async (ctx, event) => {
+machine.state('submitting')
+  .on('SUCCESS', 'success')
+    .do(async (ctx, event) => {
       // Submit to API
       const result = await api.submitForm(event.data);
       ctx.result = result;
@@ -107,20 +111,20 @@ submitting
       // Fire analytics event (non-blocking)
       analytics.track('form_submitted', { formId: ctx.result.id });
     })
-  .on('FAILURE', error);
+  .on('FAILURE', 'error');
 
 // Set initial state
-machine.initial(idle);
+machine.initial('idle');
 
 // Use the machine
 const form = machine.start({ errors: [] });
 
 // Submit form
 try {
-  const result = await form.send('SUBMIT', { 
-    data: { email: 'user@example.com', name: 'John' } 
+  const result = await form.send('SUBMIT', {
+    data: { email: 'user@example.com', name: 'John' }
   });
-  
+
   if (form.current === 'success') {
     console.log('Form submitted!', result.id);
   }
@@ -160,21 +164,24 @@ HSM provides:
 const machine = createMachine('name');
 
 // Define states
-const state = machine.state('stateName');
-const child = state.state('childName'); // Nested state
+machine.state('stateName');
+machine.state('parent').state('child'); // Nested state
 
 // Set initial state
-machine.initial(state);
+machine.initial('stateName');
 
 // Define transitions
-state.on('EVENT', targetState)
+machine.state('stateName')
+  .on('EVENT', 'targetState')          // String reference
   .if((ctx, event) => condition)      // Guard
-  .do((ctx, event) => {})             // Sync action
-  .doAsync(async (ctx, event) => {})  // Async action
+  .do((ctx, event) => {})             // Sync or async action
   .fire((ctx, event) => {});          // Non-blocking action
 
+// Automatic timers
+machine.state('loading').after(5000, 'timeout');
+
 // Lifecycle hooks
-state
+machine.state('stateName')
   .enter((ctx, event) => {})          // On state entry
   .exit((ctx, event) => {});          // On state exit
 
@@ -192,6 +199,9 @@ const unsubscribe = instance.subscribe(({ from, to, event }) => {
 // Access state and context
 console.log(instance.current);  // Current state ID
 console.log(instance.context);  // Current context
+
+// Visualize the machine
+await machine.visualizer().preview();
 ```
 
 ## License

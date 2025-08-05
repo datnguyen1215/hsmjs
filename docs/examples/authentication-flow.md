@@ -21,7 +21,7 @@ A complete authentication system with login, registration, password reset, and t
 ## Complete Authentication System
 
 ```javascript
-import { createMachine, action } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('auth');
 
@@ -38,87 +38,87 @@ const forgotPassword = unauthenticated.state('forgotPassword');
 const resetPassword = unauthenticated.state('resetPassword');
 const twoFactor = unauthenticated.state('twoFactor');
 
-unauthenticated.initial(login);
+unauthenticated.initial('login');
 
 // Authenticated substates
 const dashboard = authenticated.state('dashboard');
 const profile = authenticated.state('profile');
 const settings = authenticated.state('settings');
 
-authenticated.initial(dashboard);
+authenticated.initial('dashboard');
 
 // Authentication actions
-const authenticate = action('authenticate', async (ctx, event) => {
+const authenticate = async (ctx, event) => {
   try {
     const response = await api.login({
       email: event.email,
       password: event.password
     });
-    
+
     ctx.user = response.user;
     ctx.tokens = {
       access: response.accessToken,
       refresh: response.refreshToken
     };
     ctx.tokenExpiry = Date.now() + response.expiresIn * 1000;
-    
+
     // Store tokens securely
     await tokenStorage.save(ctx.tokens);
-    
-    return { 
+
+    return {
       userId: response.user.id,
-      requires2FA: response.requires2FA 
+      requires2FA: response.requires2FA
     };
   } catch (error) {
     ctx.authError = error.message;
     throw error;
   }
-});
+};
 
-const refreshToken = action('refreshToken', async (ctx) => {
+const refreshToken = async (ctx) => {
   const response = await api.refreshToken(ctx.tokens.refresh);
   ctx.tokens.access = response.accessToken;
   ctx.tokenExpiry = Date.now() + response.expiresIn * 1000;
   await tokenStorage.save(ctx.tokens);
-});
+};
 
 // Login flow
 login
-  .on('SUBMIT', authenticating)
+  .on('SUBMIT', 'authenticating')
     .do(authenticate)
-  .on('REGISTER', register)
-  .on('FORGOT_PASSWORD', forgotPassword);
+  .on('REGISTER', 'register')
+  .on('FORGOT_PASSWORD', 'forgotPassword');
 
 // Registration flow
 register
-  .on('SUBMIT', authenticating)
-    .doAsync(async (ctx, event) => {
+  .on('SUBMIT', 'authenticating')
+    .do(async (ctx, event) => {
       // Validate registration data
       const errors = validateRegistration(event);
       if (errors.length > 0) {
         ctx.errors = errors;
         throw new Error('Validation failed');
       }
-      
+
       // Create account
       const response = await api.register({
         email: event.email,
         password: event.password,
         name: event.name
       });
-      
+
       // Auto-login after registration
       return authenticate(ctx, {
         email: event.email,
         password: event.password
       });
     })
-  .on('LOGIN', login);
+  .on('LOGIN', 'login');
 
 // Forgot password flow
 forgotPassword
-  .on('SUBMIT', forgotPassword)
-    .doAsync(async (ctx, event) => {
+  .on('SUBMIT', 'forgotPassword')
+    .do(async (ctx, event) => {
       await api.requestPasswordReset(event.email);
       ctx.resetEmailSent = true;
       ctx.resetEmail = event.email;
@@ -127,57 +127,57 @@ forgotPassword
       // Analytics
       analytics.track('password_reset_requested');
     })
-  .on('RESET_TOKEN', resetPassword)
-  .on('BACK', login);
+  .on('RESET_TOKEN', 'resetPassword')
+  .on('BACK', 'login');
 
 // Reset password with token
 resetPassword
-  .on('SUBMIT', login)
-    .doAsync(async (ctx, event) => {
+  .on('SUBMIT', 'login')
+    .do(async (ctx, event) => {
       await api.resetPassword({
         token: event.token,
         newPassword: event.password
       });
       ctx.passwordReset = true;
     })
-  .on('EXPIRED', forgotPassword);
+  .on('EXPIRED', 'forgotPassword');
 
 // Two-factor authentication
 twoFactor
   .enter((ctx) => {
     ctx.attemptsRemaining = 3;
   })
-  .on('VERIFY', authenticated)
+  .on('VERIFY', 'authenticated')
     .if((ctx) => ctx.attemptsRemaining > 0)
-    .doAsync(async (ctx, event) => {
+    .do(async (ctx, event) => {
       const response = await api.verify2FA({
         userId: ctx.pendingUserId,
         code: event.code
       });
-      
+
       ctx.user = response.user;
       ctx.tokens = {
         access: response.accessToken,
         refresh: response.refreshToken
       };
-      
+
       return { verified: true };
     })
-  .on('RESEND', twoFactor)
-    .doAsync(async (ctx) => {
+  .on('RESEND', 'twoFactor')
+    .do(async (ctx) => {
       await api.resend2FACode(ctx.pendingUserId);
       ctx.lastCodeSent = Date.now();
     })
-  .on('CANCEL', login);
+  .on('CANCEL', 'login');
 
 // Handle authentication results
 authenticating
-  .on('SUCCESS', authenticated)
-  .on('NEEDS_2FA', twoFactor)
+  .on('SUCCESS', 'authenticated')
+  .on('NEEDS_2FA', 'twoFactor')
     .do((ctx, event) => {
       ctx.pendingUserId = event.userId;
     })
-  .on('ERROR', login)
+  .on('ERROR', 'login')
     .do((ctx, event) => {
       ctx.loginError = event.error;
       ctx.loginAttempts = (ctx.loginAttempts || 0) + 1;
@@ -189,7 +189,7 @@ authenticated
     // Start token refresh timer
     const timeUntilExpiry = ctx.tokenExpiry - Date.now();
     const refreshTime = timeUntilExpiry - 60000; // Refresh 1 minute before expiry
-    
+
     ctx.refreshTimer = setTimeout(() => {
       ctx.instance.send('REFRESH_TOKEN');
     }, refreshTime);
@@ -204,41 +204,41 @@ authenticated
 
 // Global logout handler
 machine
-  .on('LOGOUT', unauthenticated)
-  .do(action('logout', async (ctx) => {
+  .on('LOGOUT', 'unauthenticated')
+  .do(async (ctx) => {
     // Call logout API
     try {
       await api.logout(ctx.tokens.access);
     } catch (error) {
       console.error('Logout API error:', error);
     }
-    
+
     // Clear local state
     ctx.user = null;
     ctx.tokens = null;
     ctx.tokenExpiry = null;
-    
+
     // Clear stored tokens
     await tokenStorage.clear();
-  }))
+  })
   .fire(() => {
     analytics.track('user_logout');
   });
 
 // Token refresh
 authenticated
-  .on('REFRESH_TOKEN', refreshing);
+  .on('REFRESH_TOKEN', 'refreshing');
 
 refreshing
-  .on('SUCCESS', authenticated)
-    .doAsync(refreshToken)
-  .on('ERROR', unauthenticated)
+  .on('SUCCESS', 'authenticated')
+    .do(refreshToken)
+  .on('ERROR', 'unauthenticated')
     .do((ctx) => {
       ctx.sessionExpired = true;
     });
 
 // Initialize
-machine.initial(unauthenticated);
+machine.initial('unauthenticated');
 
 // Usage
 const auth = machine.start({
@@ -285,7 +285,7 @@ socialCallback
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const state = params.get('state');
-    
+
     if (code) {
       try {
         const response = await api.exchangeOAuthCode({
@@ -293,13 +293,13 @@ socialCallback
           code,
           state
         });
-        
+
         ctx.user = response.user;
         ctx.tokens = {
           access: response.accessToken,
           refresh: response.refreshToken
         };
-        
+
         // Transition to authenticated
         setTimeout(() => {
           ctx.instance.send('SUCCESS');
@@ -320,36 +320,36 @@ socialCallback
 
 ```javascript
 // Add session monitoring
-const sessionMonitor = action('sessionMonitor', (ctx) => {
+const sessionMonitor = (ctx) => {
   // Monitor user activity
   const activityHandler = () => {
     ctx.lastActivity = Date.now();
-    
+
     // Reset inactivity timer
     if (ctx.inactivityTimer) {
       clearTimeout(ctx.inactivityTimer);
     }
-    
+
     ctx.inactivityTimer = setTimeout(() => {
       ctx.instance.send('INACTIVE_TIMEOUT');
     }, 15 * 60 * 1000); // 15 minutes
   };
-  
+
   // Listen for user activity
   ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
     document.addEventListener(event, activityHandler);
   });
-  
+
   // Store cleanup function
   ctx.cleanupActivity = () => {
     ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
       document.removeEventListener(event, activityHandler);
     });
   };
-  
+
   // Start inactivity timer
   activityHandler();
-});
+};
 
 authenticated
   .enter(sessionMonitor)
@@ -365,7 +365,7 @@ authenticated
 
 // Handle timeouts
 machine
-  .on('INACTIVE_TIMEOUT', unauthenticated)
+  .on('INACTIVE_TIMEOUT', 'unauthenticated')
   .do((ctx) => {
     ctx.logoutReason = 'inactivity';
   })

@@ -13,20 +13,20 @@ npm install @datnguyen1215/hsmjs
 ### ES6 Modules (ESM)
 
 ```javascript
-import { createMachine, action } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 ```
 
 ### CommonJS
 
 ```javascript
-const { createMachine, action } = require('@datnguyen1215/hsmjs');
+const { createMachine } = require('@datnguyen1215/hsmjs');
 ```
 
 ### TypeScript
 
 ```typescript
-import { createMachine, action } from '@datnguyen1215/hsmjs';
-// Full TypeScript support coming soon
+import { createMachine } from '@datnguyen1215/hsmjs';
+// Full TypeScript support included
 ```
 
 ## Basic Concepts
@@ -50,15 +50,15 @@ import { createMachine } from '@datnguyen1215/hsmjs';
 const machine = createMachine('toggle');
 
 // 2. Define states
-const off = machine.state('off');
-const on = machine.state('on');
+machine.state('off');
+machine.state('on');
 
-// 3. Define transitions
-off.on('TOGGLE', on);
-on.on('TOGGLE', off);
+// 3. Define transitions with string references
+machine.state('off').on('TOGGLE', 'on');
+machine.state('on').on('TOGGLE', 'off');
 
 // 4. Set initial state
-machine.initial(off);
+machine.initial('off');
 
 // 5. Start using it
 const toggle = machine.start();

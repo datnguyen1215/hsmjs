@@ -50,7 +50,7 @@ counting
   .on('RESET', idle)
   .do((ctx) => { ctx.count = 0; });
 
-machine.initial(idle);
+machine.initial('idle');
 
 // React component
 function Counter() {
@@ -60,11 +60,11 @@ function Counter() {
     <div>
       <h2>State: {current}</h2>
       <h3>Count: {context.count}</h3>
-      
+
       {current === 'idle' && (
         <button onClick={() => send('START')}>Start Counting</button>
       )}
-      
+
       {current === 'counting' && (
         <>
           <button onClick={() => send('INCREMENT')}>+</button>

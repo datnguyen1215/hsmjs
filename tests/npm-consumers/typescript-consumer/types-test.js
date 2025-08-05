@@ -5,16 +5,14 @@
  * Tests the dual package 'types' export from package.json
  */
 
-import { createMachine, action } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 // Test 1: Type imports and availability
 
 // Test that functions have correct types (runtime validation)
 const machineFactory = createMachine;
-const actionHelper = action;
 
 console.assert(typeof machineFactory === 'function', 'createMachine should be a function');
-console.assert(typeof actionHelper === 'function', 'action should be a function');
 
 // Test 2: Machine creation with type checking
 // Runtime validation of machine creation
@@ -51,44 +49,16 @@ async function testAsyncTypes() {
 
   await instance.send('COMPLETE');
   console.assert(instance.current === 'completed', 'Should transition to completed');
-  
+
   await instance.send('RESET');
   console.assert(instance.current === 'idle', 'Should reset to idle');
 }
-
-// Test 5: Action helper with type safety
-// Define action context (JavaScript runtime validation)
-const ActionContextSchema = {
-  typescriptTestCompleted: 'boolean',
-  result: 'object'
-};
-
-// Create action with runtime validation
-const typedAction = action('typescript-test-action', (ctx) => {
-  ctx.typescriptTestCompleted = true;
-  ctx.result = {
-    success: true,
-    message: 'TypeScript action executed'
-  };
-  return ctx.result;
-});
-
-// Runtime validation - actionName property exists
-console.assert(typedAction.actionName === 'typescript-test-action', 'Action should have correct name');
 
 // Test 6: Generic type constraints
 // Test that TypeScript enforces proper parameter types
 try {
   // This should work with correct types
   const validMachine = createMachine('valid-name');
-  
-  // Test action execution with context
-  const testContext = {};
-  const actionResult = await typedAction(testContext);
-  
-  console.assert(testContext.typescriptTestCompleted === true, 'Context should be modified');
-  console.assert(actionResult?.success === true, 'Action should return success');
-  
 } catch (error) {
   // Type constraint test failed
 }
@@ -118,7 +88,7 @@ try {
 // Execute async tests and complete
 async function runAllAsyncTests() {
   await testAsyncTypes();
-  
+
   // Test completed successfully
 }
 

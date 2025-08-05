@@ -5,11 +5,10 @@
  * Tests the dual package 'import' export from package.json
  */
 
-import { createMachine, action } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 // Test 1: Verify imports are functions
 console.assert(typeof createMachine === 'function', 'createMachine should be a function');
-console.assert(typeof action === 'function', 'action should be a function');
 
 // Test 2: Basic machine creation and functionality
 const machine = createMachine('esm-test-machine');
@@ -42,15 +41,13 @@ console.assert(instance.current === 'completed', 'Should transition to completed
 await instance.send('RESET');
 console.assert(instance.current === 'idle', 'Should reset to idle');
 
-// Test 4: Action helper functionality
+// Test 4: Action execution (without action helper)
 let actionExecuted = false;
-const testAction = action('esm-test-action', (ctx) => {
+const testAction = (ctx) => {
   actionExecuted = true;
   ctx.esmTestCompleted = true;
   return { success: true };
-});
-
-console.assert(testAction.actionName === 'esm-test-action', 'Action should have correct name');
+};
 
 // Test action execution
 const actionContext = {};

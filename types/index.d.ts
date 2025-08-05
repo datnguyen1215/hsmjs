@@ -98,14 +98,10 @@ export interface History {
   // Query methods
   getByIndex(index: number): HistoryEntry | null;
   getById(id: string): HistoryEntry | null;
-  getRange(start: number, end: number): HistoryEntry[];
-  find(predicate: (entry: HistoryEntry) => boolean): HistoryEntry | null;
-  filter(predicate: (entry: HistoryEntry) => boolean): HistoryEntry[];
 
   // Navigation methods
   canRollback(targetEntry: HistoryEntry): boolean;
   getStepsBack(targetEntry: HistoryEntry): number;
-  getPath(fromEntry: HistoryEntry, toEntry: HistoryEntry): HistoryEntry[];
 }
 
 /**
@@ -150,15 +146,9 @@ export interface RollbackResult {
  */
 export interface Visualizer {
   /**
-   * Preview diagram in browser
+   * Generate Mermaid diagram string
    */
-  preview(): Promise<void>;
-  
-  /**
-   * Save diagram to file
-   * @param filename Optional filename (auto-detects format)
-   */
-  save(filename?: string): Promise<string>;
+  visualize(): string;
 }
 
 /**
@@ -175,12 +165,7 @@ export interface InstanceOptions {
 /**
  * Represents a state transition with guards, actions, and targets
  */
-export declare class Transition<TContext = BaseContext, TEvent = BaseEvent> {
-  constructor(
-    event: string,
-    target: string | State<TContext> | TargetResolver<TContext, TEvent>,
-    source: State<TContext> | null
-  );
+export interface Transition<TContext = BaseContext, TEvent = BaseEvent> {
 
   readonly event: string;
   readonly target: string | State<TContext> | TargetResolver<TContext, TEvent>;
@@ -192,14 +177,10 @@ export declare class Transition<TContext = BaseContext, TEvent = BaseEvent> {
   if(guard: Guard<TContext, TEvent>): this;
 
   /**
-   * Add synchronous action
+   * Add synchronous or asynchronous action
    */
-  do(action: Action<TContext, TEvent>): this;
+  do(action: Action<TContext, TEvent> | AsyncAction<TContext, TEvent>): this;
 
-  /**
-   * Add asynchronous action
-   */
-  doAsync(action: AsyncAction<TContext, TEvent>): this;
 
   /**
    * Add fire-and-forget action
@@ -238,8 +219,7 @@ export declare class Transition<TContext = BaseContext, TEvent = BaseEvent> {
 /**
  * Represents a state in the state machine with hierarchical support
  */
-export declare class State<TContext = BaseContext> {
-  constructor(id: string, parent?: State<TContext> | null);
+export interface State<TContext = BaseContext> {
 
   readonly id: string;
   readonly parent: State<TContext> | null;
@@ -299,85 +279,15 @@ export declare class State<TContext = BaseContext> {
   getAncestors(): State<TContext>[];
 }
 
-// ============================================================================
-// CircularBuffer Class
-// ============================================================================
-
-/**
- * Circular buffer for efficient history management
- */
-export declare class CircularBuffer<T = any> {
-  constructor(maxSize: number);
-
-  /**
-   * Add item to buffer
-   */
-  add(item: T): T | null;
-
-  /**
-   * Get item by index
-   */
-  get(index: number): T | null;
-
-  /**
-   * Get current size
-   */
-  getSize(): number;
-
-  /**
-   * Get maximum size
-   */
-  getMaxSize(): number;
-
-  /**
-   * Check if buffer is full
-   */
-  isFull(): boolean;
-
-  /**
-   * Check if buffer is empty
-   */
-  isEmpty(): boolean;
-
-  /**
-   * Clear all items
-   */
-  clear(): void;
-
-  /**
-   * Convert to array
-   */
-  toArray(): T[];
-
-  /**
-   * Find item by predicate
-   */
-  find(predicate: (item: T) => boolean): T | null;
-
-  /**
-   * Filter items by predicate
-   */
-  filter(predicate: (item: T) => boolean): T[];
-
-  /**
-   * Get buffer statistics
-   */
-  getStats(): {
-    size: number;
-    maxSize: number;
-    utilization: number;
-  };
-}
 
 // ============================================================================
 // HistoryManager Class
 // ============================================================================
 
 /**
- * Manages state machine history with rollback capability
+ * History manager interface - internal implementation detail
  */
-export declare class HistoryManager {
-  constructor(options?: HistoryOptions);
+interface HistoryManager {
 
   /**
    * Record a state transition
@@ -410,20 +320,6 @@ export declare class HistoryManager {
    */
   getById(id: string): HistoryEntry | null;
 
-  /**
-   * Get range of entries
-   */
-  getRange(start: number, end: number): HistoryEntry[];
-
-  /**
-   * Find entry by predicate
-   */
-  find(predicate: (entry: HistoryEntry) => boolean): HistoryEntry | null;
-
-  /**
-   * Filter entries by predicate
-   */
-  filter(predicate: (entry: HistoryEntry) => boolean): HistoryEntry[];
 
   /**
    * Check if rollback to target entry is possible
@@ -463,17 +359,10 @@ export declare class HistoryManager {
 /**
  * Running instance of a state machine
  */
-export declare class Instance<TContext = BaseContext> {
-  constructor(
-    machine: Machine<TContext>,
-    initialContext?: TContext,
-    options?: InstanceOptions
-  );
+export interface Instance<TContext = BaseContext> {
 
-  readonly machine: Machine<TContext>;
   readonly context: TContext;
   readonly currentState: State<TContext> | null;
-  readonly historyManager: HistoryManager;
 
   /**
    * Get current state ID
@@ -523,10 +412,6 @@ export declare class Instance<TContext = BaseContext> {
    */
   visualizer(): Visualizer;
 
-  /**
-   * Generate Mermaid diagram with current state highlighted
-   */
-  visualize(): string;
 }
 
 // ============================================================================
@@ -536,8 +421,7 @@ export declare class Instance<TContext = BaseContext> {
 /**
  * State machine definition with hierarchical state support
  */
-export declare class Machine<TContext = BaseContext> {
-  constructor(name: string);
+export interface Machine<TContext = BaseContext> {
 
   readonly name: string;
   readonly states: Map<string, State<TContext>>;
@@ -582,10 +466,6 @@ export declare class Machine<TContext = BaseContext> {
    */
   visualizer(): Visualizer;
 
-  /**
-   * Generate Mermaid diagram of this state machine
-   */
-  visualize(): string;
 }
 
 // ============================================================================
@@ -599,13 +479,6 @@ export declare function createMachine<TContext = BaseContext>(
   name: string
 ): Machine<TContext>;
 
-/**
- * Create a named action for better debugging
- */
-export declare function action<TContext = BaseContext, TEvent = BaseEvent>(
-  name: string,
-  fn: Action<TContext, TEvent> | AsyncAction<TContext, TEvent>
-): Action<TContext, TEvent> | AsyncAction<TContext, TEvent>;
 
 // ============================================================================
 // Type Utilities
@@ -630,10 +503,10 @@ export type InstanceContext<T> = T extends Instance<infer TContext> ? TContext :
 /**
  * State ID union type helper
  */
-export type StateId<T> = T extends Machine<any> 
-  ? string 
-  : T extends State<any> 
-    ? string 
+export type StateId<T> = T extends Machine<any>
+  ? string
+  : T extends State<any>
+    ? string
     : string;
 
 // ============================================================================
@@ -642,13 +515,6 @@ export type StateId<T> = T extends Machine<any>
 
 declare const _default: {
   createMachine: typeof createMachine;
-  action: typeof action;
-  Machine: typeof Machine;
-  State: typeof State;
-  Instance: typeof Instance;
-  Transition: typeof Transition;
-  HistoryManager: typeof HistoryManager;
-  CircularBuffer: typeof CircularBuffer;
 };
 
 export default _default;

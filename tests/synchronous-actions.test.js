@@ -3,7 +3,7 @@
  * Tests the .do() modifier for synchronous actions
  */
 
-import { createMachine, action } from '../src/index.js'
+import { createMachine } from '../src/index.js'
 
 describe('Synchronous Actions', () => {
   describe('Basic Do Actions', () => {
@@ -39,7 +39,6 @@ describe('Synchronous Actions', () => {
         stateWhenActionRan = instance.current
       })
 
-      instance = machine.start()
       await instance.send('CHECK')
 
       expect(stateWhenActionRan).toBe('idle')
@@ -186,14 +185,14 @@ describe('Synchronous Actions', () => {
       active = machine.state('active')
       actionLog = []
 
-      const logAction = action('log', (ctx, event) => {
+      const logAction = (ctx, event) => {
         actionLog.push({ name: 'log', event: event.type })
-      })
+      }
 
-      const updateAction = action('update', ctx => {
+      const updateAction = ctx => {
         ctx.updated = true
         actionLog.push({ name: 'update' })
-      })
+      }
 
       idle.on('START', active).do(logAction).do(updateAction)
 

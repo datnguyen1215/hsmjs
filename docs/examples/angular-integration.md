@@ -17,7 +17,7 @@ export class StateMachineService implements OnDestroy {
 
   init(machine: any, initialContext = {}) {
     this.instance = machine.start(initialContext);
-    
+
     this.state$.next({
       current: this.instance.current,
       context: this.instance.context
@@ -61,17 +61,17 @@ import { StateMachineService } from './state-machine.service';
   template: `
     <div *ngIf="current$ | async as current">
       <h2>State: {{ current }}</h2>
-      
+
       <div *ngIf="current === 'loggedOut'">
         <input #email type="email" placeholder="Email">
         <input #password type="password" placeholder="Password">
         <button (click)="login(email.value, password.value)">Login</button>
       </div>
-      
+
       <div *ngIf="current === 'authenticating'">
         <p>Logging in...</p>
       </div>
-      
+
       <div *ngIf="current === 'loggedIn'">
         <p>Welcome {{ (context$ | async)?.user?.name }}!</p>
         <button (click)="logout()">Logout</button>
@@ -89,25 +89,25 @@ export class AuthComponent implements OnInit {
   ngOnInit() {
     // Define machine
     const machine = createMachine('auth');
-    
+
     const loggedOut = machine.state('loggedOut');
     const authenticating = machine.state('authenticating');
     const loggedIn = machine.state('loggedIn');
-    
+
     loggedOut.on('LOGIN', authenticating);
-    
+
     authenticating
       .on('SUCCESS', loggedIn)
-      .doAsync(async (ctx, event) => {
+      .do(async (ctx, event) => {
         const user = await this.authService.login(event.email, event.password);
         ctx.user = user;
       })
       .on('ERROR', loggedOut);
-    
+
     loggedIn.on('LOGOUT', loggedOut);
-    
-    machine.initial(loggedOut);
-    
+
+    machine.initial('loggedOut');
+
     // Initialize service
     this.sm.init(machine, { user: null });
   }

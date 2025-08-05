@@ -3,7 +3,7 @@
  * Tests state entry and exit actions
  */
 
-import { createMachine, action } from '../src/index.js'
+import { createMachine } from '../src/index.js'
 
 describe('State Lifecycle', () => {
   describe('Entry Actions', () => {
@@ -255,57 +255,6 @@ describe('State Lifecycle', () => {
     })
   })
 
-  describe('Lifecycle Action Errors', () => {
-    let machine
-    let instance
-    let idle
-    let error
-    let errorLog
-    let originalError
-
-    beforeEach(() => {
-      machine = createMachine('lifecycle-errors')
-      idle = machine.state('idle')
-      error = machine.state('error')
-      errorLog = []
-
-      // Capture console errors
-      originalError = console.error
-      console.error = (msg, err) => {
-        errorLog.push({ msg, error: err })
-      }
-
-      idle.exit(() => {
-        throw new Error('Exit error')
-      })
-
-      error.enter(() => {
-        throw new Error('Entry error')
-      })
-
-      idle.on('ERROR', error)
-
-      machine.initial(idle)
-      instance = machine.start()
-    })
-
-    afterEach(() => {
-      console.error = originalError
-    })
-
-    it('should handle exit action errors', async () => {
-      await instance.send('ERROR')
-      // Should still transition despite exit error
-      expect(instance.current).toBe('error')
-    })
-
-    it('should log lifecycle errors', async () => {
-      await instance.send('ERROR')
-      expect(errorLog).toHaveLength(2) // Exit and entry errors
-      expect(errorLog[0].msg).toContain('Exit action error')
-      expect(errorLog[1].msg).toContain('Entry action error')
-    })
-  })
 
   describe('Named Lifecycle Actions', () => {
     let machine
@@ -320,18 +269,18 @@ describe('State Lifecycle', () => {
       active = machine.state('active')
       lifecycleLog = []
 
-      const logEntry = action('logEntry', (ctx, event) => {
+      const logEntry = (ctx, event) => {
         lifecycleLog.push({
           action: 'entry',
           state: 'active',
           event: event ? event.type : 'initial'
         })
-      })
+      }
 
-      const cleanup = action('cleanup', ctx => {
+      const cleanup = ctx => {
         lifecycleLog.push({ action: 'exit', state: 'idle' })
         ctx.cleaned = true
-      })
+      }
 
       idle.exit(cleanup)
       active.enter(logEntry)

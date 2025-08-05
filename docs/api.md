@@ -6,10 +6,10 @@
 
 ```javascript
 // ES6 Modules
-import { createMachine, action } from '@datnguyen1215/hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
-// CommonJS  
-const { createMachine, action } = require('@datnguyen1215/hsmjs');
+// CommonJS
+const { createMachine } = require('@datnguyen1215/hsmjs');
 ```
 
 ## Table of Contents
@@ -20,7 +20,6 @@ const { createMachine, action } = require('@datnguyen1215/hsmjs');
 - [State Lifecycle](#state-lifecycle)
 - [Transitions](#transitions)
 - [Transition Modifiers](#transition-modifiers)
-- [Actions](#actions)
 - [Machine Instance](#machine-instance)
 - [Global Handlers](#global-handlers)
 - [Context Management](#context-management)
@@ -36,7 +35,7 @@ Creates a new state machine definition.
 **Parameters:**
 - `name` - A descriptive name for the machine (used for debugging)
 
-**Returns:** A `Machine` instance
+**Returns:** A machine object with methods for state definition and configuration
 
 **Example:**
 ```javascript
@@ -126,7 +125,7 @@ Use `^` notation to reference parent states in transitions:
 // Go to parent state
 loginForm.on('CANCEL', '^');
 
-// Go to grandparent state  
+// Go to grandparent state
 deepChild.on('HOME', '^^');
 
 // Go to sibling via parent
@@ -227,6 +226,25 @@ form
   .if((ctx) => ctx.user.isAuthenticated); // Multiple guards (AND)
 ```
 
+### `.after(ms: number, target: State | string): void`
+
+Automatically transitions to another state after a specified time.
+
+**Parameters:**
+- `ms` - Delay in milliseconds
+- `target` - Target state (can be State instance or state ID)
+
+**Example:**
+```javascript
+// Traffic light timing
+red.after(3000, 'green');
+green.after(3000, 'yellow');
+yellow.after(1000, 'red');
+
+// Loading timeout
+loading.after(5000, 'timeout');
+```
+
 ### `.do(action: (ctx, event) => any): Transition`
 
 Adds a synchronous action that blocks the transition until complete. Multiple actions execute in order.
@@ -250,25 +268,20 @@ idle
   });
 ```
 
-### `.doAsync(action: async (ctx, event) => any): Transition`
+### Async Actions with `.do()`
 
-Adds an asynchronous action that blocks the transition until the promise resolves.
-
-**Parameters:**
-- `action` - Async function that receives context and event
-
-**Returns:** Action results are collected and returned from `send()`
+The `.do()` method supports both synchronous and asynchronous actions. When using async functions, the transition waits for the promise to resolve.
 
 **Example:**
 ```javascript
 form
   .on('SUBMIT', 'success')
-  .doAsync(async (ctx, event) => {
+  .do(async (ctx, event) => {
     const response = await api.submit(event.data);
     ctx.submissionId = response.id;
     return { id: response.id, status: response.status };
   })
-  .doAsync(async (ctx) => {
+  .do(async (ctx) => {
     await api.notifyWebhook(ctx.submissionId);
   });
 ```
@@ -298,44 +311,6 @@ purchase
     // Send email (don't block transition)
     await email.sendReceipt(ctx.user.email, ctx.orderId);
   });
-```
-
-## Actions
-
-### `action(name: string, fn: Function): NamedAction`
-
-Creates a named action for better debugging and reusability.
-
-**Parameters:**
-- `name` - Descriptive name for the action
-- `fn` - Action function
-
-**Returns:** A named action function with `actionName` property
-
-**Example:**
-```javascript
-import { action } from '@datnguyen1215/hsmjs';
-
-// Define reusable actions
-const validateForm = action('validateForm', (ctx, event) => {
-  const errors = [];
-  if (!event.email) errors.push('Email required');
-  if (!event.password) errors.push('Password required');
-  ctx.errors = errors;
-  return { valid: errors.length === 0 };
-});
-
-const saveToAPI = action('saveToAPI', async (ctx, event) => {
-  const response = await api.save(event.data);
-  ctx.savedId = response.id;
-  return { id: response.id };
-});
-
-// Use in transitions
-form
-  .on('SUBMIT', 'saving')
-  .do(validateForm)
-  .doAsync(saveToAPI);
 ```
 
 ## Machine Instance
@@ -373,7 +348,7 @@ Sends an event to the machine, potentially triggering a transition.
 
 **Behavior:**
 - Always returns a promise (even for sync-only transitions)
-- Waits for all `.do()` and `.doAsync()` actions
+- Waits for all `.do()` actions (both sync and async)
 - Does not wait for `.fire()` actions
 - Collects and merges return values from actions
 - Throws if any blocking action throws
@@ -384,24 +359,25 @@ Sends an event to the machine, potentially triggering a transition.
 await instance.send('CLICK');
 
 // Event with payload
-await instance.send('LOGIN', { 
+await instance.send('LOGIN', {
   email: 'user@example.com',
-  password: 'secret' 
+  password: 'secret'
 });
 
 // Capture action results
 const results = await instance.send('SAVE');
 console.log(results);
-// { 
-//   validateForm: { valid: true },
-//   saveToAPI: { id: 123, status: 'saved' }
+// {
+//   valid: true,
+//   id: 123,
+//   status: 'saved'
 // }
 
 // Error handling
 try {
   await instance.send('SUBMIT');
 } catch (error) {
-  console.error(`Action '${error.action}' failed:`, error.message);
+  console.error(`Action failed:`, error.message);
 }
 ```
 
@@ -442,7 +418,7 @@ Subscribes to state change notifications.
 ```typescript
 {
   from: string,  // Previous state ID
-  to: string,    // New state ID  
+  to: string,    // New state ID
   event: string  // Event that triggered transition
 }
 ```
@@ -520,10 +496,10 @@ state
   .do((ctx, event) => {
     // Direct mutation
     ctx.user = event.user;
-    
+
     // Adding properties
     ctx.lastUpdate = Date.now();
-    
+
     // Updating nested objects
     ctx.settings.theme = event.theme;
   });
@@ -585,12 +561,12 @@ unsubscribe2();
 
 ### Action Errors
 
-Errors in blocking actions (`.do()`, `.doAsync()`) prevent the transition:
+Errors in blocking actions (`.do()`) prevent the transition:
 
 ```javascript
 state
   .on('SAVE', 'saved')
-  .doAsync(async (ctx) => {
+  .do(async (ctx) => {
     throw new Error('Network error');
   });
 
@@ -650,7 +626,7 @@ await instance.send('GO_TO_STATE'); // Transition succeeds
 
 ### Machine Visualization
 
-#### `machine.visualize(): string`
+#### `machine.visualizer().visualize(): string`
 
 Generates a Mermaid diagram string representing the complete state machine structure.
 
@@ -673,7 +649,8 @@ off.on('TOGGLE', on)
 on.on('TOGGLE', off)
 machine.initial(off)
 
-const diagram = machine.visualize()
+const visualizer = machine.visualizer()
+const diagram = visualizer.visualize()
 console.log(diagram)
 ```
 
@@ -690,29 +667,26 @@ graph TD
 
 #### `machine.visualizer(): VisualizerInterface`
 
-Returns a visualizer object with preview and save capabilities.
+Returns a visualizer object for generating Mermaid diagrams.
 
-**Returns:** Object with methods:
-- `preview(): Promise<void>` - Opens diagram in browser
-- `save(filename: string): Promise<string>` - Saves diagram to file
+**Returns:** Object with method:
+- `visualize(): string` - Generates Mermaid diagram text
 
 **Example:**
 ```javascript
 const viz = machine.visualizer()
 
-// Preview in browser
-await viz.preview()
+// Generate Mermaid diagram text
+const diagram = viz.visualize()
+console.log(diagram)
 
-// Save as HTML file
-await viz.save('my-state-machine.html')
-
-// Save as Mermaid text file  
-await viz.save('my-state-machine.mmd')
+// Use the diagram with external tools or services
+document.getElementById('diagram').textContent = diagram
 ```
 
 ### Instance Visualization
 
-#### `instance.visualize(): string`
+#### `instance.visualizer().visualize(): string`
 
 Generates a Mermaid diagram with current state highlighting for running instances.
 
@@ -728,7 +702,8 @@ Generates a Mermaid diagram with current state highlighting for running instance
 const instance = machine.start()
 await instance.send('TOGGLE')
 
-const diagram = instance.visualize()
+const visualizer = instance.visualizer()
+const diagram = visualizer.visualize()
 // Shows 'on' state with blue highlighting
 ```
 
@@ -742,18 +717,17 @@ classDef current fill:#e1f5fe,stroke:#01579b,stroke-width:3px
 
 Returns a visualizer object for the instance with current state context.
 
-**Returns:** Object with same methods as machine visualizer but includes current state highlighting
+**Returns:** Object with method:
+- `visualize(): string` - Generates Mermaid diagram with current state highlighting
 
 **Example:**
 ```javascript
 const instance = machine.start()
 await instance.send('PLAY')
 
-// Preview shows current state highlighted
-await instance.visualizer().preview()
-
-// Save current state snapshot
-await instance.visualizer().save('current-state.html')
+// Generate diagram with current state highlighted
+const diagram = instance.visualizer().visualize()
+console.log(diagram) // Shows current state with special styling
 ```
 
 ### Hierarchical State Visualization
@@ -778,7 +752,8 @@ playing.on('STOP', stopped)
 
 machine.initial(stopped)
 
-const diagram = machine.visualize()
+const visualizer = machine.visualizer()
+const diagram = visualizer.visualize()
 ```
 
 **Generated Structure:**
@@ -797,62 +772,33 @@ graph TD
   classDef initial fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
 ```
 
-### File Export Formats
+### Using Generated Diagrams
 
-#### HTML Export
+The visualizer generates Mermaid text that can be used with various tools and services:
 
-Files with `.html` extension generate complete HTML pages with embedded Mermaid:
-
+**Integration Examples:**
 ```javascript
-await machine.visualizer().save('state-machine.html')
+const diagram = machine.visualizer().visualize()
+
+// Copy to clipboard for use in documentation
+navigator.clipboard.writeText(diagram)
+
+// Display in web page with Mermaid.js
+document.getElementById('diagram-container').innerHTML = `<div class="mermaid">${diagram}</div>`
+
+// Save to file (if in Node.js environment)
+require('fs').writeFileSync('state-machine.mmd', diagram)
+
+// Use with GitHub/GitLab markdown (supports Mermaid)
+const markdown = `\`\`\`mermaid\n${diagram}\n\`\`\``
 ```
 
-**Generated HTML includes:**
-- Mermaid.js library from CDN
-- Responsive styling
-- Diagram title and metadata
-- Interactive navigation (zoom, pan)
-
-#### Mermaid Text Export
-
-Files with `.mmd`, `.md`, or other extensions save raw Mermaid syntax:
-
-```javascript
-await machine.visualizer().save('state-machine.mmd')
-```
-
-**Use cases:**
-- Include in documentation
-- Import into other Mermaid tools
-- Version control friendly format
-- Custom processing workflows
-
-### Browser Preview
-
-The `preview()` method generates a temporary HTML file and opens it in your default browser:
-
-**Features:**
-- Automatic cleanup of temporary files
-- Cross-platform browser detection
-- Real-time diagram rendering
-- Interactive zoom and pan
-- Mobile-friendly responsive design
-
-**System Requirements:**
-- Node.js environment
-- Default browser configured
-- Internet connection (for Mermaid.js CDN)
-
-**Example:**
-```javascript
-// Preview machine structure
-await machine.visualizer().preview()
-
-// Preview with current state highlighting
-const instance = machine.start()
-await instance.send('ACTIVATE')
-await instance.visualizer().preview()
-```
+**Compatible Tools:**
+- GitHub/GitLab markdown rendering
+- Mermaid Live Editor (mermaid.live)
+- Documentation generators (GitBook, Docusaurus, etc.)
+- Visual Studio Code with Mermaid extensions
+- Static site generators with Mermaid plugins
 
 ### Advanced Visualization Features
 
@@ -862,7 +808,7 @@ Complex state names are automatically sanitized for Mermaid compatibility:
 
 ```javascript
 const state1 = machine.state('state-with-dashes')
-const state2 = machine.state('state.with.dots')  
+const state2 = machine.state('state.with.dots')
 const state3 = machine.state('state with spaces')
 
 // Generated IDs: state_with_dashes, state_with_dots, state_with_spaces

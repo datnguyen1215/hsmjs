@@ -20,15 +20,18 @@ import { createMachine } from '@datnguyen1215/hsmjs'
 
 const machine = createMachine('toggle')
 
-const off = machine.state('off')
-const on = machine.state('on')
+// Define states
+machine.state('off')
+machine.state('on')
 
-off.on('TOGGLE', on)
-on.on('TOGGLE', off)
-machine.initial(off)
+// Define transitions with string references
+machine.state('off').on('TOGGLE', 'on')
+machine.state('on').on('TOGGLE', 'off')
+machine.initial('off')
 
 // Generate Mermaid diagram
-const diagram = machine.visualize()
+const visualizer = machine.visualizer()
+const diagram = visualizer.visualize()
 console.log(diagram)
 ```
 
@@ -56,7 +59,7 @@ await machine.visualizer().preview()
 // Save as HTML file (auto-detected from extension)
 await machine.visualizer().save('my-state-machine.html')
 
-// Save as Mermaid text file  
+// Save as Mermaid text file
 await machine.visualizer().save('my-state-machine.mmd')
 ```
 
@@ -64,7 +67,7 @@ await machine.visualizer().save('my-state-machine.mmd')
 
 ### Machine Methods
 
-#### `machine.visualize()`
+#### `machine.visualizer().visualize()`
 
 Generates a Mermaid diagram string representing the state machine structure.
 
@@ -72,7 +75,8 @@ Generates a Mermaid diagram string representing the state machine structure.
 
 **Example:**
 ```javascript
-const diagram = machine.visualize()
+const visualizer = machine.visualizer()
+const diagram = visualizer.visualize()
 // Returns: "graph TD\n  state1(("state1"))\n..."
 ```
 
@@ -99,7 +103,7 @@ await viz.save('diagram.html')
 
 ### Instance Methods
 
-#### `instance.visualize()`
+#### `instance.visualizer().visualize()`
 
 Generates a Mermaid diagram with current state highlighting for running instances.
 
@@ -110,7 +114,8 @@ Generates a Mermaid diagram with current state highlighting for running instance
 const instance = machine.start()
 await instance.send('TOGGLE')
 
-const diagram = instance.visualize()
+const visualizer = instance.visualizer()
+const diagram = visualizer.visualize()
 // Shows current state with blue highlighting
 ```
 
@@ -135,15 +140,18 @@ const playing = machine.state('playing')
 const normal = playing.state('normal')
 const fastForward = playing.state('fast-forward')
 
+// Set initial states
+playing.initial('normal')
+machine.initial('stopped')
+
 // Transitions
-stopped.on('PLAY', normal)
-normal.on('FF', fastForward)
-fastForward.on('NORMAL', normal)
-playing.on('STOP', stopped)
+stopped.on('PLAY', 'playing.normal')
+normal.on('FF', 'fast-forward')
+fastForward.on('NORMAL', 'normal')
+playing.on('STOP', 'stopped')
 
-machine.initial(stopped)
-
-const diagram = machine.visualize()
+const visualizer = machine.visualizer()
+const diagram = visualizer.visualize()
 ```
 
 **Generated Diagram:**
@@ -180,13 +188,16 @@ const settings = loggedIn.state('settings')
 const account = settings.state('account')
 const privacy = settings.state('privacy')
 
-// Transitions
-loggedOut.on('LOGIN', profile)
-profile.on('SETTINGS', account)
-account.on('PRIVACY', privacy)
-loggedIn.on('LOGOUT', loggedOut)
+// Set initial states
+settings.initial('account')
+loggedIn.initial('profile')
+machine.initial('logged-out')
 
-machine.initial(loggedOut)
+// Transitions
+loggedOut.on('LOGIN', 'logged-in.profile')
+profile.on('SETTINGS', 'settings.account')
+account.on('PRIVACY', 'privacy')
+loggedIn.on('LOGOUT', 'logged-out')
 ```
 
 **Generated Structure:**
@@ -216,7 +227,8 @@ When visualizing running instances, the current state is highlighted with specia
 const instance = machine.start()
 await instance.send('LOGIN')
 
-const diagram = instance.visualize()
+const visualizer = instance.visualizer()
+const diagram = visualizer.visualize()
 // The current state gets blue highlighting:
 // class logged_in_profile current
 // classDef current fill:#e1f5fe,stroke:#01579b,stroke-width:3px
@@ -285,28 +297,29 @@ const preparing = fulfillment.state('preparing')
 const shipped = fulfillment.state('shipped')
 const delivered = fulfillment.state('delivered')
 
-// Transitions
-cart.on('CHECKOUT', shipping)
-shipping.on('NEXT', billing)
-billing.on('NEXT', review)
-review.on('SUBMIT', processing)
-
-processing.on('APPROVE', approved)
-processing.on('DECLINE', declined)
-approved.on('FULFILL', preparing)
-
-preparing.on('SHIP', shipped)
-shipped.on('DELIVER', delivered)
-delivered.on('COMPLETE', completed)
-
 // Set initial states
-machine.initial(cart)
-checkout.initial(shipping)
-payment.initial(processing)
-fulfillment.initial(preparing)
+machine.initial('cart')
+checkout.initial('shipping')
+payment.initial('processing')
+fulfillment.initial('preparing')
+
+// Transitions
+cart.on('CHECKOUT', 'checkout.shipping')
+shipping.on('NEXT', 'billing')
+billing.on('NEXT', 'review')
+review.on('SUBMIT', 'payment.processing')
+
+processing.on('APPROVE', 'approved')
+processing.on('DECLINE', 'declined')
+approved.on('FULFILL', 'fulfillment.preparing')
+
+preparing.on('SHIP', 'shipped')
+shipped.on('DELIVER', 'delivered')
+delivered.on('COMPLETE', 'completed')
 
 // Visualize the complete flow
-const diagram = machine.visualize()
+const visualizer = machine.visualizer()
+const diagram = visualizer.visualize()
 ```
 
 This generates a comprehensive diagram showing the entire e-commerce order processing flow with proper hierarchical organization.
@@ -319,10 +332,11 @@ const instance = machine.start()
 // Subscribe to state changes and update visualization
 instance.subscribe(async ({ to }) => {
   console.log(`State changed to: ${to}`)
-  
+
   // Generate updated visualization with current state
-  const diagram = instance.visualize()
-  
+  const visualizer = instance.visualizer()
+const diagram = visualizer.visualize()
+
   // Save snapshot for debugging
   await instance.visualizer().save(`state-${Date.now()}.html`)
 })
@@ -362,7 +376,8 @@ The browser preview feature requires:
 For debugging visualization issues, inspect the generated Mermaid syntax:
 
 ```javascript
-const diagram = machine.visualize()
+const visualizer = machine.visualizer()
+const diagram = visualizer.visualize()
 console.log('Generated Mermaid:')
 console.log(diagram)
 
@@ -394,12 +409,13 @@ Use visualizations to validate state machine logic:
 ```javascript
 // In your tests
 test('authentication flow structure', () => {
-  const diagram = authMachine.visualize()
-  
+  const visualizer = authMachine.visualizer()
+const diagram = visualizer.visualize()
+
   // Verify key states are present
   expect(diagram).toContain('logged_out')
   expect(diagram).toContain('logged_in')
-  
+
   // Verify critical transitions
   expect(diagram).toContain('logged_out -->|LOGIN|')
   expect(diagram).toContain('logged_in -->|LOGOUT|')

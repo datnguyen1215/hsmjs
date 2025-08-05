@@ -20,15 +20,15 @@ import { createMachine } from '@datnguyen1215/hsmjs';
 const machine = createMachine('toggle');
 
 // Define states
-const off = machine.state('off');
-const on = machine.state('on');
+machine.state('off');
+machine.state('on');
 
-// Define transitions
-off.on('TOGGLE', on);
-on.on('TOGGLE', off);
+// Define transitions with string references
+machine.state('off').on('TOGGLE', 'on');
+machine.state('on').on('TOGGLE', 'off');
 
 // Set initial state
-machine.initial(off);
+machine.initial('off');
 
 // Create instance and use it
 const toggle = machine.start();
@@ -51,22 +51,20 @@ import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('toggle');
 
-const off = machine.state('off');
-const on = machine.state('on');
-
-// Add entry/exit actions
-off
+// Define states with entry/exit actions
+machine.state('off')
   .enter(() => console.log('Switch is OFF'))
   .exit(() => console.log('Leaving OFF state'));
 
-on
+machine.state('on')
   .enter(() => console.log('Switch is ON'))
   .exit(() => console.log('Leaving ON state'));
 
-off.on('TOGGLE', on);
-on.on('TOGGLE', off);
+// Define transitions
+machine.state('off').on('TOGGLE', 'on');
+machine.state('on').on('TOGGLE', 'off');
 
-machine.initial(off);
+machine.initial('off');
 
 const toggle = machine.start();
 // Output: "Switch is OFF"
@@ -85,29 +83,31 @@ import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('toggle');
 
-const off = machine.state('off');
-const on = machine.state('on');
+// Define states
+machine.state('off');
+machine.state('on');
 
-off
-  .on('TOGGLE', on)
+// Define transitions with actions
+machine.state('off')
+  .on('TOGGLE', 'on')
   .do((ctx) => {
     ctx.toggleCount++;
     ctx.lastToggled = Date.now();
   });
 
-on
-  .on('TOGGLE', off)
+machine.state('on')
+  .on('TOGGLE', 'off')
   .do((ctx) => {
     ctx.toggleCount++;
     ctx.lastToggled = Date.now();
   });
 
-machine.initial(off);
+machine.initial('off');
 
 // Start with initial context
-const toggle = machine.start({ 
+const toggle = machine.start({
   toggleCount: 0,
-  lastToggled: null 
+  lastToggled: null
 });
 
 await toggle.send('TOGGLE');
@@ -127,10 +127,10 @@ const toggle = machine.start();
 // Subscribe to changes
 const unsubscribe = toggle.subscribe(({ from, to, event }) => {
   console.log(`${event}: ${from} -> ${to}`);
-  
+
   // Update UI
   document.getElementById('status').textContent = to;
-  document.getElementById('button').textContent = 
+  document.getElementById('button').textContent =
     to === 'on' ? 'Turn Off' : 'Turn On';
 });
 

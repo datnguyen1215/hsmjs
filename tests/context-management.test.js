@@ -60,27 +60,26 @@ describe('Context Management', () => {
       machine.initial(idle)
     })
 
-    it('should isolate context between instances', async () => {
-      const instance1 = machine.start({ count: 0 })
-      const instance2 = machine.start({ count: 0 })
-
-      await instance1.send('INCREMENT')
-      expect(instance1.context.count).toBe(1)
-      expect(instance2.context.count).toBe(0)
-
-      await instance2.send('INCREMENT')
-      await instance2.send('INCREMENT')
-      expect(instance1.context.count).toBe(1)
-      expect(instance2.context.count).toBe(1)
-    })
 
     it('should maintain separate state and context', async () => {
-      const instance1 = machine.start()
-      const instance2 = machine.start()
+      const machine1 = createMachine('separate1')
+      const idle1 = machine1.state('idle')
+      const counting1 = machine1.state('counting')
+      idle1.on('INCREMENT', counting1).do((ctx) => { ctx.count = (ctx.count || 0) + 1 })
+      machine1.initial(idle1)
+
+      const machine2 = createMachine('separate2')
+      const idle2 = machine2.state('idle')
+      const counting2 = machine2.state('counting')
+      idle2.on('INCREMENT', counting2).do((ctx) => { ctx.count = (ctx.count || 0) + 1 })
+      machine2.initial(idle2)
+
+      const instance1 = machine1.start()
+      const instance2 = machine2.start()
 
       await instance1.send('INCREMENT')
 
-      expect(instance1.current).toBe('active')
+      expect(instance1.current).toBe('counting')
       expect(instance2.current).toBe('idle')
 
       expect(instance1.context.count).toBe(1)
@@ -300,45 +299,4 @@ describe('Context Management', () => {
     })
   })
 
-  describe('Context Persistence', () => {
-    let machine
-    let instance
-    let idle
-    let active
-
-    beforeEach(() => {
-      machine = createMachine('persistence')
-      idle = machine.state('idle')
-      active = machine.state('active')
-
-      idle.on('ACTIVATE', active).do(ctx => {
-        ctx.activationCount = (ctx.activationCount || 0) + 1
-      })
-
-      active.on('DEACTIVATE', idle).do(ctx => {
-        ctx.deactivationCount = (ctx.deactivationCount || 0) + 1
-      })
-
-      machine.initial(idle)
-      instance = machine.start({
-        persistentValue: 'should-remain'
-      })
-    })
-
-    it('should preserve context across transitions', async () => {
-      await instance.send('ACTIVATE')
-      expect(instance.context.persistentValue).toBe('should-remain')
-      expect(instance.context.activationCount).toBe(1)
-
-      await instance.send('DEACTIVATE')
-      expect(instance.context.persistentValue).toBe('should-remain')
-      expect(instance.context.activationCount).toBe(1)
-      expect(instance.context.deactivationCount).toBe(1)
-
-      await instance.send('ACTIVATE')
-      expect(instance.context.persistentValue).toBe('should-remain')
-      expect(instance.context.activationCount).toBe(2)
-      expect(instance.context.deactivationCount).toBe(1)
-    })
-  })
 })

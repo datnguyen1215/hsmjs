@@ -50,7 +50,6 @@ describe('Global Transitions', () => {
     it('should prioritize local transitions over global', async () => {
       // Add local ERROR handler
       idle.on('ERROR', loading)
-      instance = machine.start()
 
       await instance.send('ERROR')
       expect(instance.current).toBe('loading') // Local wins

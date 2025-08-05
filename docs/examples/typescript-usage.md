@@ -20,7 +20,7 @@ interface User {
 
 type States = 'idle' | 'loading' | 'active' | 'error';
 
-type Events = 
+type Events =
   | { type: 'START' }
   | { type: 'LOGIN'; email: string; password: string }
   | { type: 'INCREMENT' }
@@ -49,7 +49,7 @@ idle
 
 loading
   .on('LOGIN', active)
-  .doAsync(async (ctx: Context, event: Extract<Events, { type: 'LOGIN' }>) => {
+  .do(async (ctx: Context, event: Extract<Events, { type: 'LOGIN' }>) => {
     const response = await api.login(event.email, event.password);
     ctx.user = response.user;
     return { userId: response.user.id };
@@ -83,12 +83,12 @@ const count: number = instance.context.count;
 
 ```typescript
 // Helper type for extracting event payloads
-type EventPayload<T extends Events, K extends T['type']> = 
+type EventPayload<T extends Events, K extends T['type']> =
   Extract<T, { type: K }>;
 
 // Usage in actions
 const handleLogin = (
-  ctx: Context, 
+  ctx: Context,
   event: EventPayload<Events, 'LOGIN'>
 ) => {
   console.log(event.email); // TypeScript knows this exists
