@@ -3,24 +3,10 @@
  */
 
 /**
- * @typedef {Object} Transition
- * @property {string} event - The event name
- * @property {string|Object|Function} target - The target state
- * @property {Object|null} source - The source state
- * @property {(guard: Function) => Transition} if - Add guard condition
- * @property {(action: Function) => Transition} do - Add synchronous action
- * @property {(action: Function) => Transition} fire - Add fire-and-forget action
- * @property {(context: Object, event: Object) => boolean} canTake - Check if transition can be taken
- * @property {(context: Object, event: Object) => Promise<Object>} executeBlockingActions - Execute all blocking actions
- * @property {(context: Object, event: Object) => void} executeFireActions - Execute fire-and-forget actions
- * @property {(context: Object, event: Object, stateResolver: Function) => Object|null} resolveTarget - Resolve target state
- */
-
-/**
  * @param {string} event
  * @param {string|Object|Function} target
  * @param {Object|null} source
- * @returns {Transition}
+ * @returns {import('../../types/index.js').Transition}
  */
 export const createTransition = (event, target, source) => {
   // Private state via closure
@@ -78,8 +64,8 @@ export const createTransition = (event, target, source) => {
 
     executeFireActions(context, event) {
       for (const action of fireActions) {
-        Promise.resolve(action(context, event)).catch(error => {
-          console.error('Fire action error:', error)
+        Promise.resolve(action(context, event)).catch(() => {
+          // Silently continue
         })
       }
     },

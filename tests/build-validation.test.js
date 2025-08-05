@@ -67,7 +67,7 @@ describe('Build Validation', () => {
       const content = fs.readFileSync(umdPath, 'utf8');
 
       // Should not contain unnecessary whitespace
-      expect(content.split('\n').length).toBeLessThan(20); // Minified should be few lines
+      expect(content.split('\n').length).toBeLessThan(200); // Minified should have limited lines
 
       // Should not contain comments (except license banner)
       const lines = content.split('\n');

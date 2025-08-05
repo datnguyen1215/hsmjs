@@ -8,30 +8,8 @@ import { createHistoryManager } from './history.js'
 import { createVisualizer } from './visualizer.js'
 
 /**
- * @typedef {Object} Machine
- * @property {string} name - Machine name
- * @property {Map<string, Object>} states - All states
- * @property {Object|null} initialState - Initial state
- * @property {Map<string, Array>} globalTransitions - Global transitions
- * @property {Object} context - Current context
- * @property {Object|null} currentState - Current state
- * @property {(id: string) => State} state - Create or get state
- * @property {(stateOrId: State|string) => Machine} initial - Set initial state
- * @property {(event: string, target: string|State|Function) => Transition} on - Create global transition
- * @property {(initialContext?: Object, options?: Object) => Machine} start - Start the machine
- * @property {(eventName: string, payload?: Object) => Promise<Object>} send - Send event
- * @property {(listener: Function) => Function} subscribe - Subscribe to state changes
- * @property {() => Object|null} history - Get history
- * @property {(targetEntry: Object) => Promise<Object>} rollback - Rollback to previous state
- * @property {(id: string) => State|null} findState - Find state by ID
- * @property {() => Array<State>} getAllStates - Get all states
- * @property {() => Object} visualizer - Get visualizer
- * @property {string|null} current - Current state path
- */
-
-/**
  * @param {string} name
- * @returns {Machine}
+ * @returns {import('../../types/index.js').Machine}
  */
 export const createMachine = (name) => {
   // Private state via closure
@@ -62,7 +40,7 @@ export const createMachine = (name) => {
       try {
         action(context, event)
       } catch (error) {
-        console.error('Entry action error:', error)
+        // Silently continue
       }
     }
   }
@@ -72,7 +50,7 @@ export const createMachine = (name) => {
       try {
         action(context, event)
       } catch (error) {
-        console.error('Exit action error:', error)
+        // Silently continue
       }
     }
   }
@@ -114,7 +92,7 @@ export const createMachine = (name) => {
       try {
         listener(event)
       } catch (error) {
-        console.error('Listener error:', error)
+        // Silently continue
       }
     }
   }

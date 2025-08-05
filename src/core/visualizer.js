@@ -4,14 +4,8 @@
  */
 
 /**
- * @typedef {Object} Visualizer
- * @property {() => Object} getInterface - Get visualizer interface with visualize()
- * @property {() => string} visualize - Generate Mermaid diagram
- */
-
-/**
  * @param {Object} machine
- * @returns {Visualizer}
+ * @returns {import('../../types/index.js').Visualizer}
  */
 export const createVisualizer = (machine) => {
   // Private methods via closure

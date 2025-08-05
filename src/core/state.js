@@ -5,30 +5,9 @@
 import { createTransition } from './transition.js'
 
 /**
- * @typedef {Object} State
- * @property {string} id - State identifier
- * @property {State|null} parent - Parent state
- * @property {string} path - Full path from root
- * @property {Map<string, State>} children - Child states
- * @property {Map<string, Array>} transitions - State transitions
- * @property {Array<Function>} entryActions - Entry actions
- * @property {Array<Function>} exitActions - Exit actions
- * @property {string|null} initialChild - Initial child state
- * @property {(id: string) => State} state - Create or get child state
- * @property {(child: State|string) => State} initial - Set initial child state
- * @property {(action: Function) => State} enter - Add entry action
- * @property {(action: Function) => State} exit - Add exit action
- * @property {(event: string, target: string|State|Function) => Transition} on - Create transition
- * @property {(event: string) => Array<Transition>} getTransitions - Get transitions for event
- * @property {(ancestor: State) => boolean} isChildOf - Check if descendant of ancestor
- * @property {(path: string) => State|null} findRelative - Find state by relative path
- * @property {() => Array<State>} getAncestors - Get all ancestor states
- */
-
-/**
  * @param {string} id
- * @param {State|null} [parent=null]
- * @returns {State}
+ * @param {import('../../types/index.js').State|null} [parent=null]
+ * @returns {import('../../types/index.js').State}
  */
 export const createState = (id, parent = null) => {
   if (!id || typeof id !== 'string') {

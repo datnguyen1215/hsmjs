@@ -2,26 +2,11 @@
  * History management for state machines with array storage
  */
 
-
-/**
- * @typedef {Object} HistoryManager
- * @property {(from: string|null, to: string, context: Object, event: string, metadata?: Object) => void} recordTransition - Record a state transition
- * @property {() => Object} getHistory - Get complete history interface
- * @property {() => Object|null} getCurrentEntry - Get current history entry
- * @property {(index: number) => Object|null} getByIndex - Get entry by index
- * @property {(id: string) => Object|null} getById - Get entry by ID
- * @property {(predicate: Function) => Object|null} find - Find entry by predicate
- * @property {(predicate: Function) => Array<Object>} filter - Filter entries by predicate
- * @property {(entry: Object) => boolean} canRollback - Check if rollback is possible
- * @property {(entry: Object) => number} getStepsBack - Get number of steps back
- * @property {() => void} clear - Clear all history
- */
-
 /**
  * @param {Object} [options={}]
  * @param {number} [options.maxSize=30]
  * @param {Array<string>} [options.excludeStates=[]]
- * @returns {HistoryManager}
+ * @returns {Object}
  */
 export const createHistoryManager = (options = {}) => {
   // Private state via closure
