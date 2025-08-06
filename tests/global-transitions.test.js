@@ -70,9 +70,11 @@ describe('Global Transitions', () => {
       emergency = machine.state('emergency')
 
       // Global shutdown with guards
-      machine.on('SHUTDOWN', 'emergency').if(ctx => ctx.emergency === true)
+      const shutdownEmergency = machine.rootState.on('SHUTDOWN', 'emergency')
+      shutdownEmergency.if(ctx => ctx.emergency === true)
 
-      machine.on('SHUTDOWN', 'maintenance').if(ctx => ctx.emergency === false)
+      const shutdownMaintenance = machine.rootState.on('SHUTDOWN', 'maintenance')
+      shutdownMaintenance.if(ctx => ctx.emergency === false)
 
       machine.initial(working)
     })
@@ -215,9 +217,11 @@ describe('Global Transitions', () => {
       stateC = machine.state('stateC')
 
       // Multiple global handlers for same event
-      machine.on('SWITCH', 'stateA').if(ctx => ctx.target === 'A')
+      const switchA = machine.rootState.on('SWITCH', 'stateA')
+      switchA.if(ctx => ctx.target === 'A')
 
-      machine.on('SWITCH', 'stateB').if(ctx => ctx.target === 'B')
+      const switchB = machine.rootState.on('SWITCH', 'stateB')
+      switchB.if(ctx => ctx.target === 'B')
 
       machine.on('SWITCH', 'stateC') // No guard - fallback
 

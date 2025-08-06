@@ -49,13 +49,12 @@ import { createMachine } from '@datnguyen1215/hsmjs';
 // 1. Create a machine
 const machine = createMachine('toggle');
 
-// 2. Define states
-machine.state('off');
-machine.state('on');
+// 2. Define states with transitions
+const off = machine.state('off')
+  .on('TOGGLE', 'on');
 
-// 3. Define transitions with string references
-machine.state('off').on('TOGGLE', 'on');
-machine.state('on').on('TOGGLE', 'off');
+const on = machine.state('on')
+  .on('TOGGLE', 'off');
 
 // 4. Set initial state
 machine.initial('off');

@@ -95,8 +95,11 @@ submitting
     });
 
 // Allow retry from error state
-error.on('RETRY', 'editing');
-success.on('NEW_FORM', 'editing');
+error
+  .on('RETRY', 'editing');
+
+success
+  .on('NEW_FORM', 'editing');
 
 machine.initial('editing');
 
@@ -322,7 +325,7 @@ const updateProgress = (ctx) => {
 personalInfo
   .on('NEXT', 'addressInfo')
     .if((ctx) => ctx.personalData?.firstName && ctx.personalData?.email)
-  .on('SAVE_DRAFT', '^.^.drafts');
+  .on('SAVE_DRAFT', '^^.drafts');
 
 addressInfo
   .on('BACK', 'personalInfo')

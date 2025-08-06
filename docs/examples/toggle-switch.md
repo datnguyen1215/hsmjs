@@ -19,13 +19,12 @@ import { createMachine } from '@datnguyen1215/hsmjs';
 // Create the machine
 const machine = createMachine('toggle');
 
-// Define states
-machine.state('off');
-machine.state('on');
+// Define states with transitions
+const off = machine.state('off')
+  .on('TOGGLE', 'on');
 
-// Define transitions with string references
-machine.state('off').on('TOGGLE', 'on');
-machine.state('on').on('TOGGLE', 'off');
+const on = machine.state('on')
+  .on('TOGGLE', 'off');
 
 // Set initial state
 machine.initial('off');
@@ -51,18 +50,16 @@ import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('toggle');
 
-// Define states with entry/exit actions
-machine.state('off')
+// Define states with entry/exit actions and transitions
+const off = machine.state('off')
   .enter(() => console.log('Switch is OFF'))
-  .exit(() => console.log('Leaving OFF state'));
+  .exit(() => console.log('Leaving OFF state'))
+  .on('TOGGLE', 'on');
 
-machine.state('on')
+const on = machine.state('on')
   .enter(() => console.log('Switch is ON'))
-  .exit(() => console.log('Leaving ON state'));
-
-// Define transitions
-machine.state('off').on('TOGGLE', 'on');
-machine.state('on').on('TOGGLE', 'off');
+  .exit(() => console.log('Leaving ON state'))
+  .on('TOGGLE', 'off');
 
 machine.initial('off');
 
@@ -83,19 +80,15 @@ import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('toggle');
 
-// Define states
-machine.state('off');
-machine.state('on');
-
-// Define transitions with actions
-machine.state('off')
+// Define states with transitions and actions
+const off = machine.state('off')
   .on('TOGGLE', 'on')
   .do((ctx) => {
     ctx.toggleCount++;
     ctx.lastToggled = Date.now();
   });
 
-machine.state('on')
+const on = machine.state('on')
   .on('TOGGLE', 'off')
   .do((ctx) => {
     ctx.toggleCount++;

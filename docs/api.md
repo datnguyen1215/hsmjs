@@ -654,11 +654,12 @@ Generates a Mermaid diagram string representing the complete state machine struc
 const machine = createMachine('toggle')
 
 const off = machine.state('off')
-const on = machine.state('on')
+  .on('TOGGLE', 'on')
 
-off.on('TOGGLE', on)
-on.on('TOGGLE', off)
-machine.initial(off)
+const on = machine.state('on')
+  .on('TOGGLE', 'off')
+
+machine.initial('off')
 
 const visualizer = machine.visualizer()
 const diagram = visualizer.visualize()
@@ -750,18 +751,20 @@ Complex nested states are automatically organized using Mermaid subgraphs:
 const machine = createMachine('media-player')
 
 const stopped = machine.state('stopped')
+  .on('PLAY', 'playing.normal')
+
 const playing = machine.state('playing')
+  .on('STOP', 'stopped')
+  .initial('normal')
 
 // Nested states
 const normal = playing.state('normal')
+  .on('FF', 'fast-forward')
+
 const fastForward = playing.state('fast-forward')
+  .on('NORMAL', 'normal')
 
-stopped.on('PLAY', normal)
-normal.on('FF', fastForward)
-fastForward.on('NORMAL', normal)
-playing.on('STOP', stopped)
-
-machine.initial(stopped)
+machine.initial('stopped')
 
 const visualizer = machine.visualizer()
 const diagram = visualizer.visualize()

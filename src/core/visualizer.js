@@ -52,7 +52,7 @@ export const createVisualizer = (machine) => {
     })
 
     // Add global transitions
-    for (const [event, transitionList] of machine.globalTransitions.entries()) {
+    for (const [event, transitionList] of machine.rootState.transitions.entries()) {
       transitionList.forEach(transition => {
         const target = resolveTransitionTarget(transition)
         if (target) {

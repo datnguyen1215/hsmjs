@@ -13,8 +13,7 @@ import { createVisualizer } from './visualizer.js'
  */
 export const createMachine = (name) => {
   // Private state via closure
-  const states = new Map()
-  const globalTransitions = new Map()
+  const rootState = createState('_root')
   const listeners = []
   let initialState = null
   let context = {}
@@ -147,9 +146,9 @@ export const createMachine = (name) => {
       }
     }
 
-    // Check global transitions
+    // Check global transitions from root state
     if (transitions.length === 0) {
-      transitions = globalTransitions.get(eventName) || []
+      transitions = rootState.getTransitions(eventName)
     }
 
     // Find first transition with passing guards
@@ -209,8 +208,7 @@ export const createMachine = (name) => {
   // Public interface
   const machine = {
     name,
-    states,
-    globalTransitions,
+    rootState,
 
     get initialState() {
       return initialState
@@ -235,13 +233,11 @@ export const createMachine = (name) => {
         throw new Error('State ID is required')
       }
 
-      if (states.has(id)) {
+      if (rootState.children.has(id)) {
         throw new Error(`State '${id}' already exists`)
       }
 
-      const state = createState(id)
-      states.set(id, state)
-      return state
+      return rootState.state(id)
     },
 
     initial(stateOrId) {
@@ -249,19 +245,15 @@ export const createMachine = (name) => {
         throw new Error('Initial state is required')
       }
 
+      rootState.initial(stateOrId)
+
+      // Keep track of the initial state for the machine
       if (typeof stateOrId === 'string') {
-        const state = machine.findState(stateOrId)
-        if (!state) {
-          throw new Error(`State '${stateOrId}' not found`)
-        }
-        initialState = state
+        initialState = machine.findState(stateOrId)
       } else {
-        // Check if the state belongs to this machine
-        if (!states.has(stateOrId.id)) {
-          throw new Error(`State '${stateOrId.id}' not found in machine`)
-        }
         initialState = stateOrId
       }
+
       return machine
     },
 
@@ -269,12 +261,17 @@ export const createMachine = (name) => {
       if (typeof target !== 'string' && typeof target !== 'function') {
         throw new Error(`State transition target must be a string or function, got ${typeof target}`)
       }
-      if (!globalTransitions.has(event)) {
-        globalTransitions.set(event, [])
-      }
-      const transition = createTransition(event, target, null)
-      globalTransitions.get(event).push(transition)
-      return transition
+      return rootState.on(event, target)
+    },
+
+    enter(action) {
+      rootState.enter(action)
+      return machine
+    },
+
+    exit(action) {
+      rootState.exit(action)
+      return machine
     },
 
     // === Instance Methods ===
@@ -284,8 +281,13 @@ export const createMachine = (name) => {
         throw new Error('Machine already started')
       }
 
-      if (!initialState) {
+      if (!rootState.initialChild) {
         throw new Error('No initial state defined')
+      }
+
+      // Get the actual initial state from rootState
+      if (!initialState) {
+        initialState = rootState.children.get(rootState.initialChild)
       }
 
       context = JSON.parse(JSON.stringify(initialContext))
@@ -381,16 +383,137 @@ export const createMachine = (name) => {
       return visualizer.getInterface()
     },
 
+    validate() {
+      const errors = []
+
+      // Check for initial state
+      if (!rootState.initialChild) {
+        errors.push('No initial state defined')
+      }
+
+      // Get all states
+      const allStates = machine.getAllStates()
+      const stateMap = new Map()
+
+      // Build state map for quick lookup
+      for (const state of allStates) {
+        stateMap.set(state.path, state)
+      }
+
+      // Check all transitions for valid targets
+      for (const state of allStates) {
+        for (const transitions of state.transitions.values()) {
+          for (const transition of transitions) {
+            if (typeof transition.target === 'string') {
+              // Try to resolve the target
+              let targetPath = transition.target
+
+              // Handle relative paths
+              if (targetPath.startsWith('^')) {
+                const relativeState = state.findRelative(targetPath)
+                if (!relativeState) {
+                  errors.push(`State '${state.path}' has invalid relative transition target: '${targetPath}'`)
+                }
+              } else {
+                // Try absolute path first
+                if (!stateMap.has(targetPath)) {
+                  // Try relative to parent
+                  if (state.parent) {
+                    const siblingPath = `${state.parent.path}.${targetPath}`
+                    if (!stateMap.has(siblingPath) && !stateMap.has(targetPath)) {
+                      errors.push(`State '${state.path}' has invalid transition target: '${targetPath}'`)
+                    }
+                  } else if (!stateMap.has(targetPath)) {
+                    errors.push(`State '${state.path}' has invalid transition target: '${targetPath}'`)
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Check for unreachable states (excluding root state children as they're reachable)
+      const reachableStates = new Set()
+
+      // Mark initial state and its children as reachable
+      if (rootState.initialChild) {
+        const initial = rootState.children.get(rootState.initialChild)
+        if (initial) {
+          const markReachable = (state) => {
+            reachableStates.add(state.path)
+            for (const child of state.children.values()) {
+              markReachable(child)
+            }
+          }
+          markReachable(initial)
+        }
+      }
+
+      // Mark all states that can be reached via transitions
+      for (const state of allStates) {
+        for (const transitions of state.transitions.values()) {
+          for (const transition of transitions) {
+            if (typeof transition.target === 'string') {
+              let targetPath = transition.target
+
+              // Resolve relative paths
+              if (targetPath.startsWith('^')) {
+                const relativeState = state.findRelative(targetPath)
+                if (relativeState) {
+                  reachableStates.add(relativeState.path)
+                }
+              } else {
+                // Check absolute path
+                if (stateMap.has(targetPath)) {
+                  reachableStates.add(targetPath)
+                } else if (state.parent) {
+                  // Check sibling path
+                  const siblingPath = `${state.parent.path}.${targetPath}`
+                  if (stateMap.has(siblingPath)) {
+                    reachableStates.add(siblingPath)
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Check root state transitions (global transitions)
+      for (const transitions of rootState.transitions.values()) {
+        for (const transition of transitions) {
+          if (typeof transition.target === 'string') {
+            if (stateMap.has(transition.target)) {
+              reachableStates.add(transition.target)
+            }
+          }
+        }
+      }
+
+      // Find unreachable states
+      for (const state of allStates) {
+        if (!reachableStates.has(state.path)) {
+          errors.push(`State '${state.path}' is unreachable`)
+        }
+      }
+
+      return {
+        valid: errors.length === 0,
+        errors
+      }
+    },
+
     // === Utility Methods ===
 
     findState(id) {
-      if (states.has(id)) {
-        return states.get(id)
+      if (rootState.children.has(id)) {
+        return rootState.children.get(id)
       }
 
       // Check nested states
       const parts = id.split('.')
-      let current = states.get(parts[0])
+      let current = rootState.children.get(parts[0])
 
       if (!current) return null
 
@@ -412,7 +535,7 @@ export const createMachine = (name) => {
         }
       }
 
-      for (const state of states.values()) {
+      for (const state of rootState.children.values()) {
         collectStates(state)
       }
 

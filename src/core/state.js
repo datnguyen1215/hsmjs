@@ -25,7 +25,7 @@ export const createState = (id, parent = null) => {
   const state = {
     id,
     parent,
-    path: parent ? `${parent.path}.${id}` : id,
+    path: parent && parent.id !== '_root' ? `${parent.path}.${id}` : id,
     children,
     transitions,
     entryActions,
@@ -116,7 +116,7 @@ export const createState = (id, parent = null) => {
     getAncestors() {
       const ancestors = []
       let current = parent
-      while (current) {
+      while (current && current.id !== '_root') {
         ancestors.push(current)
         current = current.parent
       }

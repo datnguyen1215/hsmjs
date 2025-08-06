@@ -72,10 +72,10 @@ import { createMachine } from '@datnguyen1215/hsmjs'
 const machine = createMachine('toggle')
 
 const off = machine.state('off')
-const on = machine.state('on')
+  .on('TOGGLE', 'on')
 
-off.on('TOGGLE', 'on')
-on.on('TOGGLE', 'off')
+const on = machine.state('on')
+  .on('TOGGLE', 'off')
 
 machine.initial('off')
 
@@ -152,15 +152,16 @@ Complex nested states are automatically organized using Mermaid subgraphs:
 const machine = createMachine('media-player')
 
 const stopped = machine.state('stopped')
+  .on('PLAY', 'playing.normal')
+
 const playing = machine.state('playing')
+  .on('STOP', 'stopped')
 
 // Nested states within 'playing'
 const normal = playing.state('normal')
-const fastForward = playing.state('fast-forward')
+  .on('FF', 'fast-forward')
 
-stopped.on('PLAY', 'normal')
-normal.on('FF', 'fast-forward')
-playing.on('STOP', 'stopped')
+const fastForward = playing.state('fast-forward')
 
 machine.initial('stopped')
 
@@ -193,11 +194,11 @@ await visualizer.preview()
 const machine = createMachine('data-fetcher')
 
 const idle = machine.state('idle')
+  .on('FETCH', 'loading')
+
 const loading = machine.state('loading')
 const success = machine.state('success')
 const error = machine.state('error')
-
-idle.on('FETCH', 'loading')
 
 loading
   .enter(async ctx => {
@@ -212,8 +213,11 @@ loading
   .on('SUCCESS', 'success')
   .on('ERROR', 'error')
 
-error.on('RETRY', 'loading')
-success.on('REFRESH', 'loading')
+error
+  .on('RETRY', 'loading')
+
+success
+  .on('REFRESH', 'loading')
 
 machine.initial('idle')
 
@@ -238,33 +242,29 @@ const machine = createMachine('auth')
 
 // Parent states
 const unauth = machine.state('unauthenticated')
+  .on('LOGIN_SUCCESS', 'authenticated')
+  .initial('login')
+
 const auth = machine.state('authenticated')
+  .on('LOGOUT', 'unauthenticated')
+  .initial('dashboard')
 
 // Child states
 const login = unauth.state('login')
+  .on('REGISTER', 'register')
+  .on('FORGOT_PASSWORD', 'forgotPassword')
+
 const register = unauth.state('register')
+  .on('BACK', 'login')
+
 const forgotPassword = unauth.state('forgotPassword')
+  .on('BACK', 'login')
 
 const dashboard = auth.state('dashboard')
+  .on('VIEW_PROFILE', 'profile')
+
 const profile = auth.state('profile')
-
-// Set initial states
-unauth.initial('login')
-auth.initial('dashboard')
-
-// Transitions between child states
-login.on('REGISTER', 'register').on('FORGOT_PASSWORD', 'forgot-password')
-
-register.on('BACK', 'login')
-forgotPassword.on('BACK', 'login')
-
-// Transitions between parent states
-unauth.on('LOGIN_SUCCESS', 'authenticated')
-auth.on('LOGOUT', 'unauthenticated')
-
-// Navigation within authenticated state
-dashboard.on('VIEW_PROFILE', 'profile')
-profile.on('BACK', 'dashboard')
+  .on('BACK', 'dashboard')
 
 machine.initial('unauthenticated')
 
@@ -376,14 +376,14 @@ Handle events from any state:
 const machine = createMachine('app')
 
 const normal = machine.state('normal')
+
 const emergency = machine.state('emergency')
+  .on('RESOLVE', ctx => ctx.previousState)
 
 // Handle emergency from any state
 machine.on('EMERGENCY', 'emergency').do(ctx => {
   ctx.previousState = ctx.instance.current
 })
-
-emergency.on('RESOLVE', ctx => ctx.previousState)
 ```
 
 ### Dynamic State Transitions
@@ -399,11 +399,11 @@ steps.forEach((step, i) => {
   states[step] = machine.state(step)
 
   if (i > 0) {
-    states[step].on('BACK', states[steps[i - 1]])
+    states[step] = states[step].on('BACK', steps[i - 1])
   }
 
   if (i < steps.length - 1) {
-    states[step].on('NEXT', states[steps[i + 1]])
+    states[step] = states[step].on('NEXT', steps[i + 1])
   }
 })
 
@@ -416,6 +416,11 @@ machine.initial(states.intro)
 const machine = createMachine('editor')
 
 const editing = machine.state('editing')
+  .on('UNDO', ctx => {
+    const prev = ctx.history[ctx.history.length - 2]
+    return prev ? prev.from : null
+  })
+
 const preview = machine.state('preview')
 
 // Track history
@@ -426,12 +431,6 @@ machine.on('*', '*').do((ctx, event) => {
     to: event.to,
     timestamp: Date.now()
   })
-})
-
-// Navigate back
-editing.on('UNDO', ctx => {
-  const prev = ctx.history[ctx.history.length - 2]
-  return prev ? prev.from : null
 })
 ```
 
@@ -520,14 +519,16 @@ export function useStateMachine(machine, initialContext) {
 
 ```javascript
 const machine = createMachine('document-editor')
-const editing = machine.state('editing')
-const preview = machine.state('preview')
-const published = machine.state('published')
 
-editing.on('preview', 'preview')
-preview.on('edit', 'editing')
-preview.on('publish', 'published')
-published.on('edit', 'editing')
+const editing = machine.state('editing')
+  .on('preview', 'preview')
+
+const preview = machine.state('preview')
+  .on('edit', 'editing')
+  .on('publish', 'published')
+
+const published = machine.state('published')
+  .on('edit', 'editing')
 
 machine.initial('editing')
 

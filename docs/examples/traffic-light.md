@@ -20,15 +20,15 @@ import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('traffic-light');
 
-// Define states
-machine.state('red');
-machine.state('yellow');
-machine.state('green');
+// Define states with transitions
+const red = machine.state('red')
+  .on('TIMER', 'green');
 
-// Define transitions
-machine.state('red').on('TIMER', 'green');
-machine.state('green').on('TIMER', 'yellow');
-machine.state('yellow').on('TIMER', 'red');
+const green = machine.state('green')
+  .on('TIMER', 'yellow');
+
+const yellow = machine.state('yellow')
+  .on('TIMER', 'red');
 
 // Set initial state
 machine.initial('red');
@@ -49,15 +49,15 @@ import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine('traffic-light');
 
-// Define states
-machine.state('red');
-machine.state('yellow');
-machine.state('green');
+// Define states with automatic transitions
+const red = machine.state('red')
+  .after(3000, 'green');   // 3 seconds
 
-// Configure automatic transitions with after() method
-machine.state('red').after(3000, 'green');   // 3 seconds
-machine.state('green').after(3000, 'yellow'); // 3 seconds
-machine.state('yellow').after(1000, 'red');   // 1 second
+const green = machine.state('green')
+  .after(3000, 'yellow'); // 3 seconds
+
+const yellow = machine.state('yellow')
+  .after(1000, 'red');   // 1 second
 
 // Set initial state
 machine.initial('red');
@@ -162,12 +162,18 @@ vehicleGreen
   .on('TIMER', 'vehicleYellow')
   .on('PED_REQUEST', 'vehicleYellow'); // Pedestrian can request crossing
 
-vehicleYellow.on('TIMER', 'vehicleRed');
+vehicleYellow
+  .on('TIMER', 'vehicleRed');
 
 // Pedestrian transitions within red light
-pedWait.on('TIMER', 'walk');
-pedWalk.on('TIMER', 'flash');
-pedFlash.on('TIMER', '^.^.vehicleGreen'); // Go back to vehicle green
+pedWait
+  .on('TIMER', 'walk');
+
+pedWalk
+  .on('TIMER', 'flash');
+
+pedFlash
+  .on('TIMER', '^^.vehicleGreen'); // Go back to vehicle green
 
 // Add pedestrian request handling
 vehicleGreen

@@ -52,7 +52,7 @@ export type Guard<TContext = BaseContext, TEvent = BaseEvent> = (
 export type TargetResolver<TContext = BaseContext, TEvent = BaseEvent> = (
   context: TContext,
   event?: TEvent
-) => string | State<TContext>;
+) => string;
 
 /**
  * State change event emitted by instance
@@ -424,14 +424,15 @@ export interface Instance<TContext = BaseContext> {
 export interface Machine<TContext = BaseContext> {
 
   readonly name: string;
-  readonly states: Map<string, State<TContext>>;
-  readonly initialState: State<TContext> | null;
-  readonly globalTransitions: Map<string, Transition<TContext>[]>;
+  readonly rootState: State<TContext>;
+  readonly context: TContext;
+  readonly currentState: State<TContext> | null;
+  readonly current: string | null;
 
   /**
    * Create or retrieve a state
    */
-  state(id: string): State<TContext>;
+  state(id: string): this;
 
   /**
    * Set initial state
@@ -444,12 +445,27 @@ export interface Machine<TContext = BaseContext> {
   on<TEvent = BaseEvent>(
     event: string,
     target: string | TargetResolver<TContext, TEvent>
-  ): Transition<TContext, TEvent>;
+  ): this;
+
+  /**
+   * Add entry action
+   */
+  enter(action: Action<TContext>): this;
+
+  /**
+   * Add exit action
+   */
+  exit(action: Action<TContext>): this;
+
+  /**
+   * Validate machine configuration
+   */
+  validate(): { valid: boolean; errors: string[] };
 
   /**
    * Create a running instance of the machine
    */
-  start(initialContext?: TContext, options?: InstanceOptions): Instance<TContext>;
+  start(initialContext?: TContext, options?: InstanceOptions): this;
 
   /**
    * Find state by ID including nested states
