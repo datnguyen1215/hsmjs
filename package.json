@@ -30,7 +30,7 @@
     "types/"
   ],
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=20.0.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.6",
