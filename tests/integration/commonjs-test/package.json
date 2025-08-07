@@ -1,0 +1,14 @@
+{
+  "name": "hsmjs-commonjs-test",
+  "version": "1.0.0",
+  "description": "CommonJS integration test for HSMJS",
+  "type": "commonjs",
+  "main": "test.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "hsmjs": "file:../../../hsmjs-0.1.0.tgz"
+  },
+  "private": true
+}

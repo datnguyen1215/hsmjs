@@ -1,0 +1,40 @@
+# Source files (use built dist/ instead)
+src/
+
+# Tests and examples
+tests/
+example/
+docs/
+
+# Development files
+rollup.config.js
+jest.config.js
+*.test.js
+
+# Build artifacts and caches
+node_modules/
+coverage/
+.nyc_output/
+
+# Version control
+.git/
+.gitignore
+
+# Development tools
+.vscode/
+.idea/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

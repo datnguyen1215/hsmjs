@@ -1,22 +1,16 @@
 export default {
-  // Test environment
   testEnvironment: 'node',
-  
-  // Test file patterns
-  testMatch: [
-    '**/__tests__/**/*.[jt]s?(x)',
-    '**/?(*.)+(spec|test).[tj]s?(x)'
-  ],
-  
-  // Ignore node_modules
-  transformIgnorePatterns: [
-    'node_modules/'
-  ],
-  
-  // Coverage settings
+  testTimeout: 10000,
+  testMatch: ['**/tests/**/*.test.js'],
   collectCoverageFrom: [
-    'src/**/*.{js,jsx}',
-    '!src/**/*.test.{js,jsx}',
-    '!src/**/__tests__/**'
-  ]
+    'src/**/*.js',
+    '!src/index.js'
+  ],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
+  verbose: true,
+  globals: {
+    jest: true
+  },
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.js']
 };

@@ -1,0 +1,14 @@
+{
+  "name": "hsmjs-esm-test",
+  "version": "1.0.0",
+  "description": "ES6 module integration test for HSMJS",
+  "type": "module",
+  "main": "test.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "hsmjs": "file:../../../hsmjs-0.1.0.tgz"
+  },
+  "private": true
+}
