@@ -17,7 +17,7 @@ Real-world examples and common patterns for HSMJS state machines.
 ### Traffic Light System
 
 ```javascript
-import { createMachine, assign } from 'hsmjs';
+import { createMachine, assign } from '@datnguyen1215/hsmjs';
 
 const trafficLightMachine = createMachine({
   id: 'trafficLight',
@@ -1055,7 +1055,7 @@ const fileUploadMachine = createMachine({
 
 ```javascript
 // test/machine.test.js
-import { createMachine, assign } from 'hsmjs';
+import { createMachine, assign } from '@datnguyen1215/hsmjs';
 
 describe('User Authentication Machine', () => {
   let authMachine;

@@ -9,7 +9,7 @@ Hierarchical states allow you to organize complex logic into manageable nested s
 ### Basic Nesting
 
 ```javascript
-import { createMachine, assign } from 'hsmjs';
+import { createMachine, assign } from '@datnguyen1215/hsmjs';
 
 const authMachine = createMachine({
   id: 'auth',
@@ -691,7 +691,7 @@ const searchMachine = createMachine({
 
 ```javascript
 // test/guards.test.js
-import { createMachine } from 'hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 test('guards prevent invalid transitions', async () => {
   const machine = createMachine({

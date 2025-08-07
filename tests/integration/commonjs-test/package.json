@@ -1,5 +1,5 @@
 {
-  "name": "hsmjs-commonjs-test",
+  "name": "@datnguyen1215/hsmjs-commonjs-test",
   "version": "1.0.0",
   "description": "CommonJS integration test for HSMJS",
   "type": "commonjs",
@@ -8,7 +8,7 @@
     "test": "node test.js"
   },
   "dependencies": {
-    "hsmjs": "file:../../../hsmjs-0.1.0.tgz"
+    "@datnguyen1215/hsmjs": "file:../../../datnguyen1215-hsmjs-1.3.0.tgz"
   },
   "private": true
 }
