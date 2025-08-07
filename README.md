@@ -6,314 +6,182 @@ A lightweight hierarchical state machine library for JavaScript with XState-like
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/your-username/hsmjs/workflows/Tests/badge.svg)](https://github.com/your-username/hsmjs/actions)
 
-## Installation
+## Quick Start (30 seconds)
 
-### NPM
 ```bash
 npm install hsmjs
 ```
 
-### Yarn
-```bash
-yarn add hsmjs
-```
-
-### CDN (Browser)
-```html
-<script src="https://unpkg.com/hsmjs@latest/dist/index.umd.min.js"></script>
-```
-
-## Usage Examples
-
-### ES6 Modules (Recommended)
 ```javascript
 import { createMachine, assign } from 'hsmjs';
 
 const toggleMachine = createMachine({
   id: 'toggle',
   initial: 'inactive',
-  context: {
-    count: 0
-  },
+  context: { count: 0 },
   states: {
     inactive: {
-      on: {
-        TOGGLE: {
-          target: 'active',
-          actions: [
-            assign({ count: (context) => context.count + 1 })
-          ]
-        }
-      }
+      on: { TOGGLE: { target: 'active', actions: [assign({ count: ctx => ctx.count + 1 })] } }
     },
     active: {
       entry: [() => console.log('Activated!')],
-      exit: [() => console.log('Deactivated!')],
-      on: {
-        TOGGLE: 'inactive'
-      }
+      on: { TOGGLE: 'inactive' }
     }
   }
 });
 
-const service = toggleMachine.start();
-const result = service.send('TOGGLE');
-console.log('Current state:', result.state.value); // 'active'
-console.log('Count:', result.state.context.count); // 1
-```
-
-### CommonJS
-```javascript
-const { createMachine, assign } = require('hsmjs');
-
-const machine = createMachine({
-  id: 'counter',
-  initial: 'idle',
-  context: { value: 0 },
-  states: {
-    idle: {
-      on: {
-        INCREMENT: {
-          actions: [assign({ value: (ctx) => ctx.value + 1 })]
-        }
-      }
-    }
-  }
-});
-
-const service = machine.start();
-service.send('INCREMENT');
-```
-
-### Browser (UMD)
-```html
-<script src="https://unpkg.com/hsmjs@latest/dist/index.umd.min.js"></script>
-<script>
-  const { createMachine, assign } = HSMJS;
-
-  const machine = createMachine({
-    id: 'browser-machine',
-    initial: 'loading',
-    states: {
-      loading: {
-        on: { LOADED: 'ready' }
-      },
-      ready: {
-        on: { RESET: 'loading' }
-      }
-    }
-  });
-
-  const service = machine.start();
-  service.send('LOADED');
-</script>
+// Use it - no .start() needed!
+const result = await toggleMachine.send('TOGGLE');
+console.log(result.state); // 'active'
+console.log(result.context.count); // 1
 ```
 
 ## Features
 
-- ✅ **Hierarchical State Machines** - Nested states for complex logic
+- ✅ **No .start() needed** - Use machine directly
+- ✅ **Hierarchical States** - Nested states for complex logic
 - ✅ **XState-like Syntax** - Familiar configuration format
-- ✅ **Guards & Conditional Transitions** - Smart state transitions
+- ✅ **Guards & Conditions** - Smart state transitions
 - ✅ **Context Management** - Built-in state with `assign()`
 - ✅ **Entry/Exit Actions** - Lifecycle hooks for states
-- ✅ **Action References** - String-based action mapping
 - ✅ **Async Action Support** - Promise-based actions
 - ✅ **TypeScript Support** - Full type definitions included
-- ✅ **Multiple Module Formats** - ESM, CommonJS, and UMD builds
-- ✅ **Lightweight** - Small bundle size, zero dependencies
+- ✅ **Zero Dependencies** - Lightweight bundle
 - ✅ **Event Queuing** - Handles rapid event sequences
-- ✅ **Results API** - Capture action return values
 
-## Advanced Examples
+## Installation Options
 
-### Hierarchical States
-```javascript
-import { createMachine } from 'hsmjs';
-
-const authMachine = createMachine({
-  id: 'auth',
-  initial: 'loggedOut',
-  states: {
-    loggedOut: {
-      on: { LOGIN: 'authenticating' }
-    },
-    authenticating: {
-      on: {
-        SUCCESS: 'loggedIn',
-        FAILURE: 'loggedOut'
-      }
-    },
-    loggedIn: {
-      initial: 'dashboard',
-      states: {
-        dashboard: {
-          on: { GO_TO_PROFILE: 'profile' }
-        },
-        profile: {
-          on: { GO_TO_DASHBOARD: 'dashboard' }
-        }
-      },
-      on: { LOGOUT: 'loggedOut' }
-    }
-  }
-});
+### NPM/Yarn
+```bash
+npm install hsmjs
+# or
+yarn add hsmjs
 ```
 
-### Guards and Conditional Logic
-```javascript
-import { createMachine, assign } from 'hsmjs';
+### CDN (Browser)
+```html
+<script src="https://unpkg.com/hsmjs@latest/dist/index.umd.min.js"></script>
+<script>
+  const { createMachine, assign } = HSMJS;
+  // Your code here
+</script>
+```
 
+## Basic Usage Patterns
+
+### Fire and Forget
+```javascript
+// Send events without waiting
+machine.send('START');
+machine.send('NEXT');
+```
+
+### Get Results
+```javascript
+// Wait for completion and get state + context
+const result = await machine.send('FETCH', { url: '/api/data' });
+console.log(result.state);    // New state
+console.log(result.context);  // Updated context
+console.log(result.results);  // Action return values
+```
+
+### Context Updates
+```javascript
 const counterMachine = createMachine({
   id: 'counter',
-  initial: 'active',
+  initial: 'idle',
   context: { count: 0 },
   states: {
-    active: {
+    idle: {
       on: {
         INCREMENT: {
-          target: 'active',
-          actions: [assign({ count: (ctx) => ctx.count + 1 })],
-          cond: (context) => context.count < 10
-        },
-        INCREMENT: {
-          target: 'maxed',
-          cond: (context) => context.count >= 10
-        }
-      }
-    },
-    maxed: {
-      on: {
-        RESET: {
-          target: 'active',
-          actions: [assign({ count: 0 })]
+          actions: [assign({ count: ctx => ctx.count + 1 })]
         }
       }
     }
   }
 });
+
+await counterMachine.send('INCREMENT');
+console.log(counterMachine.context.count); // 1
 ```
 
-### Async Actions
+### Conditional Transitions (Guards)
 ```javascript
+const machine = createMachine({
+  id: 'validation',
+  initial: 'input',
+  context: { value: '', attempts: 0 },
+  states: {
+    input: {
+      on: {
+        SUBMIT: [
+          { target: 'success', cond: ctx => ctx.value.length > 0 },
+          { target: 'error', actions: [assign({ attempts: ctx => ctx.attempts + 1 })] }
+        ]
+      }
+    },
+    success: {},
+    error: { on: { TRY_AGAIN: 'input' } }
+  }
+});
+```
+
+## Framework Integration
+
+### React Hook Example
+```javascript
+import { useReducer, useEffect } from 'react';
 import { createMachine, assign } from 'hsmjs';
 
-const fetchMachine = createMachine({
-  id: 'fetch',
-  initial: 'idle',
-  context: { data: null, error: null },
-  states: {
-    idle: {
-      on: { FETCH: 'loading' }
-    },
-    loading: {
-      entry: [
-        async (context, event) => {
-          const response = await fetch(event.url);
-          const data = await response.json();
-          return { data };
-        }
-      ],
-      on: {
-        SUCCESS: {
-          target: 'success',
-          actions: [assign({ data: (ctx, event) => event.data })]
-        },
-        ERROR: {
-          target: 'error',
-          actions: [assign({ error: (ctx, event) => event.error })]
-        }
-      }
-    },
-    success: {
-      on: { FETCH: 'loading' }
-    },
-    error: {
-      on: { RETRY: 'loading' }
-    }
-  }
-});
+const useMachine = (machine) => {
+  const [, forceUpdate] = useReducer(x => x + 1, 0);
+
+  useEffect(() => {
+    const unsubscribe = machine.subscribe(() => forceUpdate());
+    return unsubscribe;
+  }, [machine]);
+
+  return [machine.state, machine.context, machine.send.bind(machine)];
+};
+
+// In component
+const [state, context, send] = useMachine(toggleMachine);
 ```
 
-## API Reference
+### Svelte Store Example
+```javascript
+import { writable } from 'svelte/store';
+import { createMachine } from 'hsmjs';
 
-### `createMachine(config)`
-Creates a new state machine from the configuration object.
+const createMachineStore = (machine) => {
+  const { subscribe, set } = writable({ state: machine.state, context: machine.context });
 
-### `machine.start()`
-Starts the machine and returns a service that can receive events.
+  machine.subscribe(() => {
+    set({ state: machine.state, context: machine.context });
+  });
 
-### `service.send(event, payload?)`
-Sends an event to the machine. Returns the new state.
-
-### `assign(updater)`
-Creates an action that updates the machine's context.
-
-## TypeScript Support
-
-HSMJS includes full TypeScript definitions:
-
-```typescript
-import { createMachine, assign, MachineConfig } from 'hsmjs';
-
-interface Context {
-  count: number;
-  user?: string;
-}
-
-type Events =
-  | { type: 'INCREMENT' }
-  | { type: 'SET_USER'; user: string };
-
-const config: MachineConfig<Context, Events> = {
-  id: 'typed-machine',
-  initial: 'idle',
-  context: { count: 0 },
-  states: {
-    idle: {
-      on: {
-        INCREMENT: {
-          actions: [assign({ count: (ctx) => ctx.count + 1 })]
-        }
-      }
-    }
-  }
+  return {
+    subscribe,
+    send: machine.send.bind(machine)
+  };
 };
 ```
 
-## Module Formats
+## Documentation
 
-HSMJS is distributed in multiple formats:
-
-- **ES Modules**: `dist/index.mjs` (recommended)
-- **CommonJS**: `dist/index.cjs`
-- **UMD**: `dist/index.umd.js` (browser)
-- **UMD Minified**: `dist/index.umd.min.js` (production)
+| Topic | Description |
+|-------|-------------|
+| [Getting Started](docs/getting-started.md) | Installation, basic concepts, first machine |
+| [API Reference](docs/api-reference.md) | Complete API documentation |
+| [Advanced Features](docs/advanced-features.md) | Guards, nested states, async actions |
+| [Framework Integration](docs/framework-integration.md) | React, Svelte, Vue examples |
+| [Examples & Patterns](docs/examples.md) | Real-world use cases |
 
 ## Browser Support
 
-- Chrome 63+
-- Firefox 67+
-- Safari 13+
-- Edge 79+
-- Node.js 14+
-
-## Documentation
-
-For complete API documentation, see [docs/api.md](docs/api.md).
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Run tests (`npm test`)
-4. Commit your changes (`git commit -m 'Add amazing feature'`)
-5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
+- Chrome 63+ | Firefox 67+ | Safari 13+ | Edge 79+ | Node.js 14+
 
 ## License
 
 MIT © Dat Nguyen
-
----
-
-Made with ❤️ for the JavaScript community

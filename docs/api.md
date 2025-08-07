@@ -29,9 +29,11 @@ const machine = createMachine({
   }
 });
 
-machine.send('START');  // Fire and forget
-// Or
-await machine.send('START');  // Wait for completion
+// Fire and forget
+machine.send('START');
+
+// Or wait for completion
+await machine.send('START');
 ```
 
 ## Configuration Structure
