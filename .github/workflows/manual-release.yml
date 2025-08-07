@@ -1,4 +1,5 @@
 name: Manual Release
+# Workflow for manual releases with dry-run capability
 
 on:
   workflow_dispatch:
