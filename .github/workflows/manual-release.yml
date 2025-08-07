@@ -35,14 +35,12 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag_name: ${{ steps.version.outputs.tag_name }}
-      release_created: ${{ steps.release.outputs.release_created }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -91,15 +89,8 @@ jobs:
           echo "tag_name=$tag_name" >> $GITHUB_OUTPUT
 
       - name: Dry run summary
-        if: github.event.inputs.dry_run == 'true'
+        if: github.event.inputs.dry_run
         run: |
           echo "🧪 DRY RUN COMPLETED SUCCESSFULLY"
-          echo ""
-          echo "📊 Summary:"
-          echo "  • Current version: ${{ steps.version.outputs.current_version }}"
-          echo "  • New version: ${{ steps.version.outputs.version }}"
-          echo "  • Tag name: ${{ steps.version.outputs.tag_name }}"
-          echo "  • Version type: ${{ github.event.inputs.version_type }}"
-          echo ""
-          echo "✅ Ready for actual release!"
-          echo "Run this workflow again with 'Dry run' unchecked to publish."
+          echo "📊 ${{ steps.version.outputs.current_version }} → ${{ steps.version.outputs.version }} (${{ github.event.inputs.version_type }})"
+          echo "🚀 Ready for release! Run again with 'Dry run' unchecked to publish."
