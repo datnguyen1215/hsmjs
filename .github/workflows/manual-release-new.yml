@@ -1,0 +1,105 @@
+name: Manual Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        type: choice
+        description: 'Type of version increment'
+        required: true
+        default: 'patch'
+        options:
+          - patch
+          - minor
+          - major
+      release_notes:
+        type: string
+        description: 'Optional custom release notes (will be added to auto-generated changelog)'
+        required: false
+      dry_run:
+        type: boolean
+        description: 'Dry run - validate workflow without publishing'
+        required: false
+        default: false
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: read
+
+jobs:
+  release:
+    name: Manual Release Process
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag_name: ${{ steps.version.outputs.tag_name }}
+      release_created: ${{ steps.release.outputs.release_created }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Calculate new version
+        id: version
+        run: |
+          current_version=$(node -p "require('./package.json').version")
+          echo "Current version: $current_version"
+
+          IFS='.' read -ra VERSION_PARTS <<< "$current_version"
+          major=${VERSION_PARTS[0]}
+          minor=${VERSION_PARTS[1]}
+          patch=${VERSION_PARTS[2]}
+
+          case "${{ github.event.inputs.version_type }}" in
+            "major")
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            "minor")
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            "patch")
+              patch=$((patch + 1))
+              ;;
+          esac
+
+          new_version="$major.$minor.$patch"
+          tag_name="v$new_version"
+
+          echo "New version: $new_version"
+          echo "Tag name: $tag_name"
+
+          echo "current_version=$current_version" >> $GITHUB_OUTPUT
+          echo "version=$new_version" >> $GITHUB_OUTPUT
+          echo "tag_name=$tag_name" >> $GITHUB_OUTPUT
+
+      - name: Dry run summary
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "🧪 DRY RUN COMPLETED SUCCESSFULLY"
+          echo ""
+          echo "📊 Summary:"
+          echo "  • Current version: ${{ steps.version.outputs.current_version }}"
+          echo "  • New version: ${{ steps.version.outputs.version }}"
+          echo "  • Tag name: ${{ steps.version.outputs.tag_name }}"
+          echo "  • Version type: ${{ github.event.inputs.version_type }}"
+          echo ""
+          echo "✅ Ready for actual release!"
+          echo "Run this workflow again with 'Dry run' unchecked to publish."
