@@ -1,6 +1,6 @@
 {
-  "name": "hsmjs",
-  "version": "0.1.0",
+  "name": "@datnguyen1215/hsmjs",
+  "version": "1.3.0",
   "description": "A lightweight hierarchical state machine library",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",

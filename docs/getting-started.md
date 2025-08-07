@@ -8,18 +8,18 @@ Choose your preferred method:
 
 ```bash
 # NPM
-npm install hsmjs
+npm install @datnguyen1215/hsmjs
 
 # Yarn
-yarn add hsmjs
+yarn add @datnguyen1215/hsmjs
 
 # PNPM
-pnpm add hsmjs
+pnpm add @datnguyen1215/hsmjs
 ```
 
 ### CDN (Browser)
 ```html
-<script src="https://unpkg.com/hsmjs@latest/dist/index.umd.min.js"></script>
+<script src="https://unpkg.com/@datnguyen1215/hsmjs@latest/dist/index.umd.min.js"></script>
 <script>
   const { createMachine, assign } = HSMJS;
   // Ready to use!
@@ -44,7 +44,7 @@ A state machine has:
 Let's build a simple toggle switch:
 
 ```javascript
-import { createMachine, assign } from 'hsmjs';
+import { createMachine, assign } from '@datnguyen1215/hsmjs';
 
 const toggleMachine = createMachine({
   id: 'toggle',           // Unique identifier

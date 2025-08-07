@@ -3,7 +3,7 @@
  * Tests that the CommonJS build can be imported and used correctly
  */
 
-const { createMachine, assign } = require('hsmjs');
+const { createMachine, assign } = require('@datnguyen1215/hsmjs');
 
 console.log('Starting CommonJS integration test...');
 
@@ -117,7 +117,7 @@ try {
 // Test 4: Module exports check
 console.log('Test 4: Module exports check');
 try {
-  const hsmjs = require('hsmjs');
+  const hsmjs = require('@datnguyen1215/hsmjs');
 
   if (typeof hsmjs.createMachine !== 'function') {
     throw new Error('createMachine export missing or invalid');

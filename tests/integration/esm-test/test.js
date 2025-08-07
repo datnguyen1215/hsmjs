@@ -3,7 +3,7 @@
  * Tests that the ES6 module build can be imported and used correctly
  */
 
-import { createMachine, assign } from 'hsmjs';
+import { createMachine, assign } from '@datnguyen1215/hsmjs';
 
 console.log('Starting ES6 module integration test...');
 
@@ -134,7 +134,7 @@ try {
 // Test 5: Dynamic import test
 console.log('Test 5: Dynamic import test');
 try {
-  const hsmjs = await import('hsmjs');
+  const hsmjs = await import('@datnguyen1215/hsmjs');
 
   if (typeof hsmjs.createMachine !== 'function') {
     throw new Error('createMachine export missing or invalid in dynamic import');

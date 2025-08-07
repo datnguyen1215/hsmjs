@@ -5,7 +5,7 @@ A lightweight hierarchical state machine library with XState-like syntax.
 ## Basic Usage
 
 ```javascript
-import { createMachine, assign } from 'hsmjs';
+import { createMachine, assign } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine({
   id: 'myMachine',
@@ -78,7 +78,7 @@ await machine.send('START');
 Actions can update context using `assign()` or perform side effects:
 
 ```javascript
-import { assign } from 'hsmjs';
+import { assign } from '@datnguyen1215/hsmjs';
 
 // Context updates with assign()
 actions: [

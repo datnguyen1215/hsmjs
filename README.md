@@ -2,18 +2,18 @@
 
 A lightweight hierarchical state machine library for JavaScript with XState-like syntax. Perfect for managing complex application state, UI flows, and business logic.
 
-[![NPM Version](https://img.shields.io/npm/v/hsmjs.svg)](https://www.npmjs.com/package/hsmjs)
+[![NPM Version](https://img.shields.io/npm/v/@datnguyen1215/hsmjs.svg)](https://www.npmjs.com/package/@datnguyen1215/hsmjs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/your-username/hsmjs/workflows/Tests/badge.svg)](https://github.com/your-username/hsmjs/actions)
 
 ## Quick Start (30 seconds)
 
 ```bash
-npm install hsmjs
+npm install @datnguyen1215/hsmjs
 ```
 
 ```javascript
-import { createMachine, assign } from 'hsmjs';
+import { createMachine, assign } from '@datnguyen1215/hsmjs';
 
 const toggleMachine = createMachine({
   id: 'toggle',
@@ -53,14 +53,14 @@ console.log(result.context.count); // 1
 
 ### NPM/Yarn
 ```bash
-npm install hsmjs
+npm install @datnguyen1215/hsmjs
 # or
-yarn add hsmjs
+yarn add @datnguyen1215/hsmjs
 ```
 
 ### CDN (Browser)
 ```html
-<script src="https://unpkg.com/hsmjs@latest/dist/index.umd.min.js"></script>
+<script src="https://unpkg.com/@datnguyen1215/hsmjs@latest/dist/index.umd.min.js"></script>
 <script>
   const { createMachine, assign } = HSMJS;
   // Your code here
@@ -132,7 +132,7 @@ const machine = createMachine({
 ### React Hook Example
 ```javascript
 import { useReducer, useEffect } from 'react';
-import { createMachine, assign } from 'hsmjs';
+import { createMachine, assign } from '@datnguyen1215/hsmjs';
 
 const useMachine = (machine) => {
   const [, forceUpdate] = useReducer(x => x + 1, 0);
@@ -152,7 +152,7 @@ const [state, context, send] = useMachine(toggleMachine);
 ### Svelte Store Example
 ```javascript
 import { writable } from 'svelte/store';
-import { createMachine } from 'hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 const createMachineStore = (machine) => {
   const { subscribe, set } = writable({ state: machine.state, context: machine.context });

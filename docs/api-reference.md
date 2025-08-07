@@ -15,7 +15,7 @@ Creates a new state machine instance.
 **Returns:** Machine instance
 
 ```javascript
-import { createMachine } from 'hsmjs';
+import { createMachine } from '@datnguyen1215/hsmjs';
 
 const machine = createMachine({
   id: 'myMachine',
@@ -53,7 +53,7 @@ Creates an action that updates the machine's context.
 **Returns:** Action function
 
 ```javascript
-import { assign } from 'hsmjs';
+import { assign } from '@datnguyen1215/hsmjs';
 
 // Object form - static values
 assign({ loading: true, error: null })
@@ -406,7 +406,7 @@ machine.send('SET_USER', { name: 'John', id: 123 });
 Thrown when events are cleared from the queue:
 
 ```javascript
-import { QueueClearedError } from 'hsmjs';
+import { QueueClearedError } from '@datnguyen1215/hsmjs';
 
 try {
   await machine.send('SOME_EVENT');
@@ -422,7 +422,7 @@ try {
 HSMJS includes full TypeScript definitions:
 
 ```typescript
-import { createMachine, assign, MachineConfig } from 'hsmjs';
+import { createMachine, assign, MachineConfig } from '@datnguyen1215/hsmjs';
 
 interface Context {
   count: number;

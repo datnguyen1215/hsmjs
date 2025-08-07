@@ -27,7 +27,7 @@ export const useMachine = (machine) => {
 ```javascript
 // components/Counter.jsx
 import React from 'react';
-import { createMachine, assign } from 'hsmjs';
+import { createMachine, assign } from '@datnguyen1215/hsmjs';
 import { useMachine } from '../hooks/useMachine';
 
 const counterMachine = createMachine({
@@ -71,7 +71,7 @@ export const Counter = () => {
 ```javascript
 // components/ContactForm.jsx
 import React from 'react';
-import { createMachine, assign } from 'hsmjs';
+import { createMachine, assign } from '@datnguyen1215/hsmjs';
 import { useMachine } from '../hooks/useMachine';
 
 const formMachine = createMachine({
@@ -248,7 +248,7 @@ export const ContactForm = () => {
 ```javascript
 // contexts/MachineContext.jsx
 import React, { createContext, useContext } from 'react';
-import { createMachine, assign } from 'hsmjs';
+import { createMachine, assign } from '@datnguyen1215/hsmjs';
 import { useMachine } from '../hooks/useMachine';
 
 const appMachine = createMachine({
@@ -348,7 +348,7 @@ export const createMachineStore = (machine) => {
 ```svelte
 <!-- components/Counter.svelte -->
 <script>
-  import { createMachine, assign } from 'hsmjs';
+  import { createMachine, assign } from '@datnguyen1215/hsmjs';
   import { createMachineStore } from '../stores/machine.js';
 
   const counterMachine = createMachine({
@@ -391,7 +391,7 @@ export const createMachineStore = (machine) => {
 ```svelte
 <!-- components/TodoList.svelte -->
 <script>
-  import { createMachine, assign } from 'hsmjs';
+  import { createMachine, assign } from '@datnguyen1215/hsmjs';
   import { createMachineStore } from '../stores/machine.js';
 
   const todoMachine = createMachine({
@@ -567,7 +567,7 @@ export const createMachineStore = (machine) => {
 
 ```javascript
 // stores/appStore.js
-import { createMachine, assign } from 'hsmjs';
+import { createMachine, assign } from '@datnguyen1215/hsmjs';
 import { createMachineStore } from './machine.js';
 
 const appMachine = createMachine({
@@ -767,7 +767,7 @@ export function useMachine(machine) {
 </template>
 
 <script setup>
-import { createMachine, assign } from 'hsmjs';
+import { createMachine, assign } from '@datnguyen1215/hsmjs';
 import { useMachine } from '../composables/useMachine.js';
 
 const timerMachine = createMachine({
