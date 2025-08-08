@@ -16,11 +16,6 @@ on:
         type: string
         description: 'Optional custom release notes (will be added to auto-generated changelog)'
         required: false
-      dry_run:
-        type: boolean
-        description: 'Dry run - validate workflow without publishing'
-        required: false
-        default: false
 
 permissions:
   contents: write
@@ -51,6 +46,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build package
+        run: npm run build
 
       - name: Calculate new version
         id: version
@@ -88,9 +89,37 @@ jobs:
           echo "version=$new_version" >> $GITHUB_OUTPUT
           echo "tag_name=$tag_name" >> $GITHUB_OUTPUT
 
-      - name: Dry run summary
-        if: github.event.inputs.dry_run
+      - name: Update package.json version
         run: |
-          echo "🧪 DRY RUN COMPLETED SUCCESSFULLY"
-          echo "📊 ${{ steps.version.outputs.current_version }} → ${{ steps.version.outputs.version }} (${{ github.event.inputs.version_type }})"
-          echo "🚀 Ready for release! Run again with 'Dry run' unchecked to publish."
+          npm version ${{ steps.version.outputs.version }} --no-git-tag-version
+          echo "Updated package.json to version ${{ steps.version.outputs.version }}"
+
+      - name: Publish to NPM
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
+
+      - name: Create and push git tag
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to ${{ steps.version.outputs.version }}"
+          git tag ${{ steps.version.outputs.tag_name }}
+          git push origin main
+          git push origin ${{ steps.version.outputs.tag_name }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag_name }}
+          name: Release v${{ steps.version.outputs.version }}
+          body: |
+            ${{ github.event.inputs.release_notes && github.event.inputs.release_notes || 'Automated release' }}
+
+            **Version Information:**
+            - Version bump: ${{ steps.version.outputs.current_version }} → ${{ steps.version.outputs.version }}
+            - NPM Package: [@datnguyen1215/hsmjs@${{ steps.version.outputs.version }}](https://www.npmjs.com/package/@datnguyen1215/hsmjs/v/${{ steps.version.outputs.version }})
+          draft: false
+          prerelease: false
+          generate_release_notes: true
