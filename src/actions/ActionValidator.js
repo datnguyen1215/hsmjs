@@ -1,23 +1,5 @@
 import { isAssignAction } from './assign.js';
-
-/**
- * @param {Function} func
- * @returns {boolean}
- */
-const isAsyncFunction = (func) => {
-  return func.constructor.name === 'AsyncFunction';
-};
-
-/**
- * @param {Function} func
- * @returns {boolean}
- */
-const detectsPromiseInFunction = (func) => {
-  const funcStr = func.toString();
-  return funcStr.includes('Promise.reject') ||
-         funcStr.includes('Promise.resolve') ||
-         funcStr.includes('new Promise');
-};
+import { isAsyncFunction, detectPromiseInFunction } from '../utils/AsyncDetector.js';
 
 /**
  * @param {Function|string|Object} action
@@ -45,58 +27,4 @@ export const validateActions = (actions, actionRegistry = {}) => {
   return actions.every(action => isValidAction(action, actionRegistry));
 };
 
-/**
- * @param {Function|string|Object} action
- * @param {Object} actionRegistry
- * @returns {boolean}
- */
-export const validateAction = (action, actionRegistry = {}) => {
-  return isValidAction(action, actionRegistry);
-};
 
-/**
- * @param {Function|string|Object} action
- * @param {Object} actionRegistry
- * @returns {boolean}
- */
-export const detectsAsync = (action, actionRegistry = {}) => {
-  if (typeof action === 'function') {
-    return isAsyncFunction(action) || detectsPromiseInFunction(action);
-  }
-
-  if (isAssignAction(action)) {
-    if (typeof action.assigner === 'function') {
-      return isAsyncFunction(action.assigner);
-    }
-    return false;
-  }
-
-  if (typeof action === 'string' && actionRegistry[action]) {
-    const resolved = actionRegistry[action];
-
-    if (typeof resolved === 'function') {
-      return isAsyncFunction(resolved) || detectsPromiseInFunction(resolved);
-    }
-
-    if (isAssignAction(resolved)) {
-      if (typeof resolved.assigner === 'function') {
-        return isAsyncFunction(resolved.assigner);
-      }
-    }
-  }
-
-  return false;
-};
-
-/**
- * @param {Array} actions
- * @param {Object} actionRegistry
- * @returns {boolean}
- */
-export const hasAsyncAction = (actions, actionRegistry = {}) => {
-  if (!Array.isArray(actions)) {
-    return detectsAsync(actions, actionRegistry);
-  }
-
-  return actions.some(action => detectsAsync(action, actionRegistry));
-};

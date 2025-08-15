@@ -218,17 +218,6 @@ export const Machine = (config, options = {}) => {
      */
     subscribe(callback) {
       return eventEmitter.subscribe(callback);
-    },
-
-    // Expose for compatibility
-    getStateNode: getStateNodeForPath,
-    processEventSync: processEvent,
-    processEventAsync: processEventAsyncHandler,
-    executeActionsSync: (actionsList, context, event) => executeActionsSync(actionsList, context, event, actions),
-    processNextQueuedEventSync,
-    processNextQueuedEvent,
-    initializeState: (parentNode, initialKey) => initializeState(parentNode, initialKey),
-    getStatePath,
-    notifySubscribers
+    }
   };
 };

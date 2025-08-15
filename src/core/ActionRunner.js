@@ -1,6 +1,6 @@
 import { isAssignAction } from '../actions/assign.js';
 import { updateContext } from './ContextUpdater.js';
-import { hasAsyncAction } from '../actions/ActionValidator.js';
+import { hasAsyncActions } from '../utils/AsyncDetector.js';
 
 /**
  * @param {Function|string|Object} action
@@ -109,7 +109,7 @@ export const executeActions = async (actions, context, event, actionRegistry = {
   const actionArray = Array.isArray(actions) ? actions : [actions];
 
   // Check if all actions are synchronous
-  const isAsync = hasAsyncAction(actionArray, actionRegistry);
+  const isAsync = hasAsyncActions(actionArray, actionRegistry);
 
   if (!isAsync) {
     // Execute all actions synchronously
