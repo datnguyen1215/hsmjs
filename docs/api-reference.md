@@ -43,6 +43,16 @@ const machine = createMachine({
 }
 ```
 
+**Options Structure:**
+
+```javascript
+{
+  actions: {},               // Optional: Named action implementations
+  guards: {},                // Optional: Named guard implementations
+  historySize: 50            // Optional: Maximum history size (default: 50)
+}
+```
+
 ### `assign(updater)`
 
 Creates an action that updates the machine's context.
@@ -194,6 +204,43 @@ console.log(machine.state); // 'idle'
 ```javascript
 console.log(machine.context); // { count: 5, user: null }
 ```
+
+### `machine.historySize`
+
+**Type:** Number
+**Description:** Number of states stored in history
+
+```javascript
+console.log(machine.historySize); // 3
+```
+
+## History and Rollback Methods
+
+### `machine.rollback()`
+
+**Description:** Rollback to the previous state in history. Does not execute entry/exit actions.
+
+**Returns:** Promise<{ state: string, context: Object }>
+
+```javascript
+// Move through states
+await machine.send('START');
+await machine.send('NEXT');
+
+// Rollback to previous state
+const result = await machine.rollback();
+console.log(result.state); // Previous state
+console.log(result.context); // Previous context
+
+// Returns current state if no history available
+const sameResult = await machine.rollback();
+```
+
+**Important Notes:**
+- Does NOT execute entry/exit actions when rolling back
+- Clears the event queue
+- Preserves context exactly as it was
+- Returns current state if no previous history exists
 
 ## State Configuration
 
