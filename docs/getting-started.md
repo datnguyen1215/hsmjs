@@ -38,6 +38,7 @@ A state machine has:
 - **Transitions**: How events move you from one state to another
 - **Context**: Data that persists across states
 - **Actions**: Side effects that happen during transitions
+- **History**: Automatic state tracking for undo/rollback functionality
 
 ## Your First Machine
 
