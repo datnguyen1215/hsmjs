@@ -28,11 +28,21 @@ export const findTransition = (event, currentState, rootNode, guards) => {
     return null;
   }
 
-  const isInternalTransition = !transition.target;
+  let isInternalTransition = !transition.target;
   const targetNode = isInternalTransition ? null : resolveTargetNode(rootNode, currentStateNode, transition.target);
 
   if (!isInternalTransition && !targetNode) {
     return null;
+  }
+
+  // Check if this is a self-transition (target is the same as current state)
+  if (!isInternalTransition && targetNode) {
+    const currentPath = getStatePath(currentStateNode);
+    const targetPath = getStatePath(targetNode);
+    if (currentPath === targetPath) {
+      // Treat self-transitions as internal transitions by default
+      isInternalTransition = true;
+    }
   }
 
   return {

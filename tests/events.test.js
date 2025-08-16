@@ -165,7 +165,7 @@ describe('Events', () => {
   });
 
   describe('Self-transitions', () => {
-    test('should handle self-transitions', () => {
+    test('should handle self-transitions as internal transitions', () => {
       const entryAction = jest.fn();
       const exitAction = jest.fn();
       const transitionAction = jest.fn();
@@ -194,9 +194,10 @@ describe('Events', () => {
 
       machine.send('REFRESH');
 
-      expect(exitAction).toHaveBeenCalledTimes(1);
+      // Self-transitions should not trigger exit/entry actions
+      expect(exitAction).not.toHaveBeenCalled();
       expect(transitionAction).toHaveBeenCalledTimes(1);
-      expect(entryAction).toHaveBeenCalledTimes(1);
+      expect(entryAction).not.toHaveBeenCalled();
       expect(machine.state).toBe('active');
     });
 
@@ -233,6 +234,50 @@ describe('Events', () => {
       expect(entryAction).not.toHaveBeenCalled();
       expect(internalAction).toHaveBeenCalledTimes(1);
       expect(machine.state).toBe('active');
+    });
+
+    test('should handle real transitions between different states', () => {
+      const exitIdle = jest.fn();
+      const entryActive = jest.fn();
+      const exitActive = jest.fn();
+      const entryIdle = jest.fn();
+
+      const machine = createMachine({
+        id: 'test',
+        initial: 'idle',
+        states: {
+          idle: {
+            entry: [entryIdle],
+            exit: [exitIdle],
+            on: {
+              START: 'active'
+            }
+          },
+          active: {
+            entry: [entryActive],
+            exit: [exitActive],
+            on: {
+              STOP: 'idle'
+            }
+          }
+        }
+      });
+
+      expect(entryIdle).toHaveBeenCalledTimes(1);
+
+      entryIdle.mockClear();
+
+      // Transition from idle to active
+      machine.send('START');
+      expect(exitIdle).toHaveBeenCalledTimes(1);
+      expect(entryActive).toHaveBeenCalledTimes(1);
+      expect(machine.state).toBe('active');
+
+      // Transition from active back to idle
+      machine.send('STOP');
+      expect(exitActive).toHaveBeenCalledTimes(1);
+      expect(entryIdle).toHaveBeenCalledTimes(1);
+      expect(machine.state).toBe('idle');
     });
   });
 
