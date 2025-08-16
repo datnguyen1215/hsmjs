@@ -411,8 +411,8 @@ describe('Actions', () => {
       expect(sideEffect).toHaveBeenCalledTimes(1); // Initial entry
 
       machine.send('EVENT');
-      // Self-transition executes: transition action (1 call) + re-entry (1 call)
-      expect(sideEffect).toHaveBeenCalledTimes(3);
+      // Self-transition now behaves as internal transition: only transition action (1 call)
+      expect(sideEffect).toHaveBeenCalledTimes(2);
     });
 
     test('should pass context and event to action functions', () => {
