@@ -57,29 +57,46 @@ const runExample = async () => {
                 console.log('Breadcrumbs:', debugMachine.context.breadcrumbs);
                 console.log('Error count:', debugMachine.context.errorCount);
 
-                // Show previous states
-                const states = [];
+                // Save current snapshot to restore later
+                const currentSnapshot = debugMachine.snapshot;
 
-                // Save current state to restore later
-                const currentState = debugMachine.state;
-                const currentContext = { ...debugMachine.context };
+                console.log('\n=== History Navigation ===');
+                console.log('Complete history overview:');
+                debugMachine.history.forEach((snapshot, index) => {
+                  const isCurrents = index === debugMachine.history.length - 1;
+                  console.log(`  ${index}: ${snapshot.state} - breadcrumbs: [${snapshot.context.breadcrumbs.join(', ')}]${isCurrents ? ' (current)' : ''}`);
+                });
 
-                console.log('\n=== Previous States ===');
-                for (let i = 0; i < Math.min(5, debugMachine.historySize - 1); i++) {
-                  await debugMachine.rollback();
-                  states.push({
-                    state: debugMachine.state,
-                    breadcrumbs: [...debugMachine.context.breadcrumbs]
-                  });
-                  console.log(`State ${i + 1} back:`, debugMachine.state, 'Breadcrumbs:', debugMachine.context.breadcrumbs);
+                console.log('\n=== Analyzing Previous States ===');
+                // Show last few states for analysis
+                const recentStates = debugMachine.history.slice(-5);
+                recentStates.forEach((snapshot, index) => {
+                  const globalIndex = debugMachine.history.length - recentStates.length + index;
+                  console.log(`State ${globalIndex}: ${snapshot.state}`);
+                  console.log(`  Breadcrumbs: [${snapshot.context.breadcrumbs.join(', ')}]`);
+                  console.log(`  Error count: ${snapshot.context.errorCount}`);
+                });
+
+                console.log('\n=== State Restoration Demo ===');
+                // Navigate to a previous state for inspection
+                if (debugMachine.history.length >= 2) {
+                  const prevSnapshot = debugMachine.history[debugMachine.history.length - 2];
+                  console.log(`Temporarily restoring to previous state: ${prevSnapshot.state}`);
+                  await debugMachine.restore(prevSnapshot);
+                  console.log('Restored state:', debugMachine.state);
+                  console.log('Restored breadcrumbs:', debugMachine.context.breadcrumbs);
                 }
 
                 console.log('\n=== Restoring to Failed State ===');
-                // Restore to failed state by replaying the scenario
-                await debugMachine.send('START');
-                await debugMachine.send('SUCCESS');
-                await debugMachine.send('BREAK');
-                console.log('Restored to:', debugMachine.state);
+                // Restore back to the failed state for continued debugging
+                await debugMachine.restore(currentSnapshot);
+                console.log('Restored to original failed state:', debugMachine.state);
+
+                // Demonstrate state persistence for debugging
+                console.log('\n=== Debug State Persistence ===');
+                const serializedDebugState = JSON.stringify(currentSnapshot);
+                console.log('Serialized state for bug report:');
+                console.log(serializedDebugState);
               }
             ]
           },

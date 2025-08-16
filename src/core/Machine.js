@@ -31,7 +31,7 @@ export const Machine = (config, options = {}) => {
   const eventEmitter = createEventEmitter();
   const queueManager = createQueueManager();
   const _stateHistory = [];
-  
+
   // Tracking variables for transitions
   let _lastEvent = null;
   let _previousState = null;
@@ -64,7 +64,7 @@ export const Machine = (config, options = {}) => {
     _previousState = state;
     _previousContext = cloneContext(_context);
     _lastEvent = event;
-    
+
     const result = processEventSync(event, state, _context, rootNode, guards, actions, executeActionsSync);
     if (!result.wasAsync) {
       // Update local state from result
@@ -83,7 +83,7 @@ export const Machine = (config, options = {}) => {
     _previousState = state;
     _previousContext = cloneContext(_context);
     _lastEvent = event;
-    
+
     const result = await processEventAsync(event, state, _context, rootNode, guards, actions);
     // Update local state from result
     state = result.state;
@@ -125,7 +125,7 @@ export const Machine = (config, options = {}) => {
 
   // Store initial state in history
   pushToHistory();
-  
+
   // Initialize tracking variables with initial state
   _previousState = state;
   _previousContext = cloneContext(_context);
@@ -144,6 +144,8 @@ export const Machine = (config, options = {}) => {
     get isTransitioning() { return queueManager.getIsTransitioning(); },
     get eventQueue() { return queueManager.eventQueue; },
     get historySize() { return _stateHistory.length; },
+    get history() { return [..._stateHistory]; },
+    get snapshot() { return { state, context: cloneContext(_context) }; },
 
     /**
      * @param {string} eventType
@@ -268,31 +270,44 @@ export const Machine = (config, options = {}) => {
     },
 
     /**
-     * Rollback to the previous state in history.
+     * Restore machine to a specific snapshot state.
      * Note: This does NOT execute entry/exit actions.
+     * @param {Object} snapshot - Object with state and context properties
      * @returns {Promise<{state: string, context: Object}>}
      */
-    rollback() {
-      if (_stateHistory.length > 1) {
-        // Capture current state as previous before rollback
-        _previousState = state;
-        _previousContext = cloneContext(_context);
-        _lastEvent = { type: 'ROLLBACK' };
-        
-        // Remove current state
-        _stateHistory.pop();
-        // Get previous state
-        const previousSnapshot = _stateHistory[_stateHistory.length - 1];
-        // Restore state and context
-        state = previousSnapshot.state;
-        _context = cloneContext(previousSnapshot.context);
-        // Clear any queued events
-        queueManager.clearQueue();
-        // Notify subscribers
-        notifySubscribers();
-        return Promise.resolve({ state, context: cloneContext(_context) });
+    restore(snapshot) {
+      // Validate snapshot parameter
+      if (!snapshot || typeof snapshot !== 'object') {
+        return Promise.reject(new Error('Snapshot must be an object'));
       }
-      // If no history to rollback to, return current state
+      if (!snapshot.hasOwnProperty('state') || !snapshot.hasOwnProperty('context')) {
+        return Promise.reject(new Error('Snapshot must have state and context properties'));
+      }
+
+      // Validate that the state exists in the machine definition
+      const stateNode = getStateNodeForPath(snapshot.state);
+      if (!stateNode) {
+        return Promise.reject(new Error(`Invalid state in snapshot: ${snapshot.state}`));
+      }
+
+      // Capture current state as previous before restore
+      _previousState = state;
+      _previousContext = cloneContext(_context);
+      _lastEvent = { type: 'RESTORE' };
+
+      // Restore state and context from snapshot
+      state = snapshot.state;
+      _context = cloneContext(snapshot.context);
+
+      // Clear any queued events
+      queueManager.clearQueue();
+
+      // Push to history
+      pushToHistory();
+
+      // Notify subscribers
+      notifySubscribers();
+
       return Promise.resolve({ state, context: cloneContext(_context) });
     }
   };

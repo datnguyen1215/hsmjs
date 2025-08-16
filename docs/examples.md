@@ -92,7 +92,7 @@ File upload system with progress tracking, cancellation support, and error handl
 
 ### Basic Undo Button
 
-Simple undo functionality for user actions using HSMJS built-in history features. Shows how to implement rollback operations.
+Simple undo functionality for user actions using HSMJS built-in history features. Shows how to implement restore operations with state snapshots.
 
 - **File**: [example/undo-button.js](../example/undo-button.js)
 - **Run**: `node example/undo-button.js`
@@ -113,7 +113,7 @@ Debugging tool that uses state history to analyze application flow and troublesh
 
 ### History-Based Testing
 
-Testing approach that uses rollback functionality to isolate test scenarios and ensure clean state between tests.
+Testing approach that uses restore functionality to isolate test scenarios and ensure clean state between tests.
 
 - **File**: [example/history-testing.js](../example/history-testing.js)
 - **Run**: `node example/history-testing.js`

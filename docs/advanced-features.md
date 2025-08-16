@@ -760,9 +760,9 @@ test('async actions handle errors', async () => {
 });
 ```
 
-## State History and Rollback
+## State History and Persistence
 
-HSMJS automatically tracks state history, allowing you to rollback to previous states. This is useful for implementing undo functionality, debugging, and error recovery.
+HSMJS automatically tracks state history and provides powerful state management capabilities for implementing undo functionality, debugging, error recovery, and full state persistence.
 
 ### Basic Usage
 
@@ -799,11 +799,18 @@ await machine.send('TYPE', { text: 'Hello' });
 await machine.send('TYPE', { text: 'Hello World' });
 await machine.send('SAVE');
 
-// Check history size
+// Check history
 console.log(machine.historySize); // 4 (initial + 3 transitions)
+console.log(machine.history); // Array of all snapshots
 
-// Rollback to previous state
-const result = await machine.rollback();
+// Get current snapshot
+const currentSnapshot = machine.snapshot;
+console.log(currentSnapshot.state); // 'idle'
+console.log(currentSnapshot.context); // { text: 'Hello World', saved: true }
+
+// Restore to previous state
+const previousSnapshot = machine.history[machine.history.length - 2];
+const result = await machine.restore(previousSnapshot);
 console.log(result.state); // 'editing'
 console.log(result.context); // { text: 'Hello World', saved: false }
 ```
@@ -827,17 +834,18 @@ const machine = createMachine({
 }, { historySize: 10 }); // Keep only last 10 states
 ```
 
-### Important Rollback Behavior
+### State Restoration Behavior
 
-When rolling back:
+When restoring state:
 - **No entry/exit actions are executed** - The state is restored directly
 - **Context is preserved exactly** - All context values are restored
 - **Event queue is cleared** - Pending events are discarded
+- **History is updated** - The restored state is added to history
 - **Subscribers are notified** - State change notifications are sent
 
 ```javascript
 const machine = createMachine({
-  id: 'rollback-demo',
+  id: 'restore-demo',
   initial: 'idle',
   states: {
     idle: {
@@ -855,14 +863,61 @@ const machine = createMachine({
 await machine.send('START');
 // Logs: "Exiting idle", "Entering active"
 
-await machine.rollback();
+const idleSnapshot = machine.history[0]; // Initial idle state
+await machine.restore(idleSnapshot);
 // No logs - entry/exit actions are not executed
 console.log(machine.state); // 'idle'
 ```
 
+### State Persistence
+
+One of the key features is full state persistence for power outage recovery:
+
+```javascript
+const appMachine = createMachine({
+  id: 'app',
+  initial: 'loading',
+  context: { user: null, data: [], preferences: {} },
+  states: {
+    loading: {
+      on: { LOADED: 'authenticated' }
+    },
+    authenticated: {
+      on: {
+        UPDATE_PREFS: {
+          actions: [assign({ preferences: (ctx, event) => event.prefs })]
+        },
+        LOAD_DATA: {
+          actions: [assign({ data: (ctx, event) => event.data })]
+        }
+      }
+    }
+  }
+});
+
+// Normal operation
+await appMachine.send('LOADED');
+await appMachine.send('UPDATE_PREFS', { prefs: { theme: 'dark' } });
+await appMachine.send('LOAD_DATA', { data: [1, 2, 3] });
+
+// Save state before potential power loss
+const snapshot = appMachine.snapshot;
+localStorage.setItem('appState', JSON.stringify(snapshot));
+
+// After restart/power loss, restore state
+const savedState = localStorage.getItem('appState');
+if (savedState) {
+  const snapshot = JSON.parse(savedState);
+  await appMachine.restore(snapshot);
+  console.log('Application state restored successfully');
+  console.log('User preferences:', appMachine.context.preferences);
+  console.log('Loaded data:', appMachine.context.data);
+}
+```
+
 ### Use Cases
 
-#### Undo Functionality
+#### Undo Functionality with History
 
 ```javascript
 const textEditor = createMachine({
@@ -886,7 +941,11 @@ const textEditor = createMachine({
         },
         UNDO: {
           actions: [async () => {
-            await textEditor.rollback();
+            // Restore to previous state in history
+            if (textEditor.history.length > 1) {
+              const previousSnapshot = textEditor.history[textEditor.history.length - 2];
+              await textEditor.restore(previousSnapshot);
+            }
           }]
         }
       }
@@ -903,21 +962,21 @@ await textEditor.send('UNDO');
 console.log(textEditor.context.content); // 'H'
 ```
 
-#### Error Recovery
+#### Error Recovery with Checkpoints
 
 ```javascript
 const apiMachine = createMachine({
   id: 'api',
   initial: 'idle',
-  context: { data: null, error: null, lastGoodState: null },
+  context: { data: null, error: null, checkpoint: null },
   states: {
     idle: {
       on: { FETCH: 'loading' }
     },
     loading: {
       entry: [
-        // Save current state before risky operation
-        assign({ lastGoodState: ctx => ({ ...ctx }) }),
+        // Save checkpoint before risky operation
+        assign({ checkpoint: (ctx) => apiMachine.snapshot }),
         async (ctx, event) => {
           try {
             const data = await fetch(event.url);
@@ -930,7 +989,7 @@ const apiMachine = createMachine({
       on: {
         SUCCESS: {
           target: 'success',
-          actions: [assign({ data: (ctx, event) => event.data })]
+          actions: [assign({ data: (ctx, event) => event.data, checkpoint: null })]
         },
         ERROR: {
           target: 'error',
@@ -942,10 +1001,11 @@ const apiMachine = createMachine({
     error: {
       on: {
         RECOVER: {
-          actions: [async () => {
-            // Rollback to state before the failed operation
-            await apiMachine.rollback();
-            await apiMachine.rollback(); // Go back to idle
+          actions: [async (ctx) => {
+            // Restore to checkpoint before the failed operation
+            if (ctx.checkpoint) {
+              await apiMachine.restore(ctx.checkpoint);
+            }
           }]
         }
       }
@@ -954,7 +1014,7 @@ const apiMachine = createMachine({
 });
 ```
 
-#### Debugging State Transitions
+#### Debugging with History Navigation
 
 ```javascript
 const debugMachine = createMachine({
@@ -986,18 +1046,22 @@ const debugMachine = createMachine({
 await debugMachine.send('STEP1');
 await debugMachine.send('STEP2');
 
-// Debug: Check history
+// Debug: Inspect history
 console.log('History size:', debugMachine.historySize); // 3
+console.log('All states:', debugMachine.history.map(s => s.state)); // ['start', 'middle', 'end']
 
-// Rollback to see previous states
-await debugMachine.rollback();
-console.log('Previous state:', debugMachine.state); // 'middle'
-console.log('Previous context:', debugMachine.context); // { steps: ['step1'] }
+// Navigate to any previous state
+const middleState = debugMachine.history[1];
+await debugMachine.restore(middleState);
+console.log('Restored to:', debugMachine.state); // 'middle'
+console.log('Context:', debugMachine.context); // { steps: ['step1'] }
 ```
 
-### Limitations
+### Limitations and Considerations
 
 - History only stores state and context, not the full machine configuration
-- Rollback doesn't replay events - it directly restores the previous state
-- History is stored in memory and is lost when the machine instance is destroyed
+- Restore doesn't replay events - it directly restores the snapshot state
+- History is stored in memory and is lost when the machine instance is destroyed (unless persisted)
 - Large history sizes can impact memory usage for machines with large contexts
+- Snapshots are JSON-serializable, so context must contain serializable data for persistence
+- State validation ensures only valid states can be restored

@@ -92,11 +92,68 @@ describe('History and Rollback', () => {
     });
   });
 
-  describe('Rollback functionality', () => {
-    test('should rollback to previous state', async () => {
+  describe('History Access and State Restoration', () => {
+    test('machine.history returns array of snapshots', async () => {
       const machine = createMachine({
         id: 'test',
         initial: 'idle',
+        context: { count: 0 },
+        states: {
+          idle: {
+            on: {
+              START: {
+                target: 'active',
+                actions: [assign({ count: 1 })]
+              }
+            }
+          },
+          active: {
+            on: { FINISH: 'done' }
+          },
+          done: {}
+        }
+      });
+
+      // Initial state should be in history
+      expect(machine.history).toHaveLength(1);
+      expect(machine.history[0]).toEqual({ state: 'idle', context: { count: 0 } });
+
+      await machine.send('START');
+      expect(machine.history).toHaveLength(2);
+      expect(machine.history[1]).toEqual({ state: 'active', context: { count: 1 } });
+
+      await machine.send('FINISH');
+      expect(machine.history).toHaveLength(3);
+      expect(machine.history[2]).toEqual({ state: 'done', context: { count: 1 } });
+    });
+
+    test('machine.snapshot returns current state/context', async () => {
+      const machine = createMachine({
+        id: 'test',
+        initial: 'idle',
+        context: { value: 'test' },
+        states: {
+          idle: {
+            on: {
+              UPDATE: {
+                actions: [assign({ value: 'updated' })]
+              }
+            }
+          }
+        }
+      });
+
+      expect(machine.snapshot).toEqual({ state: 'idle', context: { value: 'test' } });
+
+      await machine.send('UPDATE');
+      expect(machine.snapshot).toEqual({ state: 'idle', context: { value: 'updated' } });
+    });
+
+    test('restore() with valid snapshot works', async () => {
+      const machine = createMachine({
+        id: 'test',
+        initial: 'idle',
+        context: { count: 0 },
         states: {
           idle: {
             on: { START: 'active' }
@@ -108,83 +165,79 @@ describe('History and Rollback', () => {
         }
       });
 
-      expect(machine.state).toBe('idle');
-
       await machine.send('START');
-      expect(machine.state).toBe('active');
-
       await machine.send('FINISH');
       expect(machine.state).toBe('done');
 
-      // Rollback to active
-      const result1 = await machine.rollback();
-      expect(machine.state).toBe('active');
-      expect(result1.state).toBe('active');
+      // Restore to idle state
+      const snapshot = { state: 'idle', context: { count: 5 } };
+      const result = await machine.restore(snapshot);
 
-      // Rollback to idle
-      const result2 = await machine.rollback();
       expect(machine.state).toBe('idle');
-      expect(result2.state).toBe('idle');
+      expect(machine.context).toEqual({ count: 5 });
+      expect(result).toEqual({ state: 'idle', context: { count: 5 } });
     });
 
-    test('should rollback context along with state', async () => {
+    test('restore() with invalid snapshot rejects', async () => {
       const machine = createMachine({
         id: 'test',
         initial: 'idle',
-        context: { count: 0, name: 'test' },
-        states: {
-          idle: {
-            on: {
-              UPDATE: {
-                target: 'active',
-                actions: [assign({ count: 10, name: 'updated' })]
-              }
-            }
-          },
-          active: {
-            on: {
-              INCREMENT: {
-                actions: [assign((ctx) => ({ count: ctx.count + 1 }))]
-              }
-            }
-          }
-        }
-      });
-
-      expect(machine.context).toEqual({ count: 0, name: 'test' });
-
-      await machine.send('UPDATE');
-      expect(machine.context).toEqual({ count: 10, name: 'updated' });
-
-      await machine.send('INCREMENT');
-      expect(machine.context).toEqual({ count: 11, name: 'updated' });
-
-      // Rollback
-      await machine.rollback();
-      expect(machine.context).toEqual({ count: 10, name: 'updated' });
-
-      await machine.rollback();
-      expect(machine.context).toEqual({ count: 0, name: 'test' });
-    });
-
-    test('should handle rollback with no history', async () => {
-      const machine = createMachine({
-        id: 'test',
-        initial: 'idle',
-        context: { value: 'initial' },
         states: {
           idle: {}
         }
       });
 
-      // Rollback when only initial state exists
-      const result = await machine.rollback();
-      expect(machine.state).toBe('idle');
-      expect(result.state).toBe('idle');
-      expect(result.context.value).toBe('initial');
+      // Test null snapshot
+      await expect(machine.restore(null)).rejects.toThrow('Snapshot must be an object');
+
+      // Test snapshot without state property
+      await expect(machine.restore({ context: {} })).rejects.toThrow('Snapshot must have state and context properties');
+
+      // Test snapshot without context property
+      await expect(machine.restore({ state: 'idle' })).rejects.toThrow('Snapshot must have state and context properties');
+
+      // Test invalid state
+      await expect(machine.restore({ state: 'invalid', context: {} })).rejects.toThrow('Invalid state in snapshot: invalid');
     });
 
-    test('should clear event queue on rollback', async () => {
+    test('restore() from history entry works', async () => {
+      const machine = createMachine({
+        id: 'test',
+        initial: 'idle',
+        context: { count: 0 },
+        states: {
+          idle: {
+            on: {
+              START: {
+                target: 'active',
+                actions: [assign({ count: 1 })]
+              }
+            }
+          },
+          active: {
+            on: {
+              FINISH: {
+                target: 'done',
+                actions: [assign({ count: 2 })]
+              }
+            }
+          },
+          done: {}
+        }
+      });
+
+      await machine.send('START');
+      await machine.send('FINISH');
+
+      // Get history entry and restore from it
+      const previousSnapshot = machine.history[1]; // active state
+      await machine.restore(previousSnapshot);
+
+      expect(machine.state).toBe('active');
+      expect(machine.context.count).toBe(1);
+    });
+
+    test('restore() clears event queue', async () => {
       const machine = createMachine({
         id: 'test',
         initial: 'idle',
@@ -207,8 +260,9 @@ describe('History and Rollback', () => {
       // Queue another event while transitioning
       machine.send('STOP');
 
-      // Rollback should clear the queue
-      await machine.rollback();
+      // Restore should clear the queue
+      const snapshot = { state: 'idle', context: {} };
+      await machine.restore(snapshot);
 
       // Wait a bit to ensure no queued events execute
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -217,7 +271,7 @@ describe('History and Rollback', () => {
       expect(machine.state).toBe('idle');
     });
 
-    test('should not execute entry/exit actions on rollback', async () => {
+    test('restore() does not execute entry/exit actions', async () => {
       const entryFn = jest.fn();
       const exitFn = jest.fn();
 
@@ -226,12 +280,12 @@ describe('History and Rollback', () => {
         initial: 'idle',
         states: {
           idle: {
-            exit: [exitFn],
-            on: { START: 'active' }
+            entry: [entryFn],
+            exit: [exitFn]
           },
           active: {
             entry: [entryFn],
-            on: { STOP: 'idle' }
+            exit: [exitFn]
           }
         }
       });
@@ -240,22 +294,49 @@ describe('History and Rollback', () => {
       entryFn.mockClear();
       exitFn.mockClear();
 
-      // Transition to active
-      await machine.send('START');
-      expect(entryFn).toHaveBeenCalledTimes(1);
-      expect(exitFn).toHaveBeenCalledTimes(1);
+      // Restore to active state
+      const snapshot = { state: 'active', context: {} };
+      await machine.restore(snapshot);
 
-      // Clear counts
-      entryFn.mockClear();
-      exitFn.mockClear();
-
-      // Rollback
-      await machine.rollback();
-      expect(machine.state).toBe('idle');
+      expect(machine.state).toBe('active');
 
       // No entry/exit actions should have been called
       expect(entryFn).not.toHaveBeenCalled();
       expect(exitFn).not.toHaveBeenCalled();
+    });
+
+    test('Full persistence flow (stringify/parse/restore)', async () => {
+      const machine = createMachine({
+        id: 'test',
+        initial: 'idle',
+        context: { count: 0, name: 'test' },
+        states: {
+          idle: {
+            on: {
+              START: {
+                target: 'active',
+                actions: [assign({ count: 5, name: 'active' })]
+              }
+            }
+          },
+          active: {}
+        }
+      });
+
+      await machine.send('START');
+      expect(machine.state).toBe('active');
+      expect(machine.context).toEqual({ count: 5, name: 'active' });
+
+      // Simulate persistence: serialize snapshot
+      const snapshot = machine.snapshot;
+      const serialized = JSON.stringify(snapshot);
+
+      // Simulate power loss and restoration: parse and restore
+      const restored = JSON.parse(serialized);
+      await machine.restore(restored);
+
+      expect(machine.state).toBe('active');
+      expect(machine.context).toEqual({ count: 5, name: 'active' });
     });
   });
 
@@ -293,102 +374,4 @@ describe('History and Rollback', () => {
     });
   });
 
-  describe('Complex rollback scenarios', () => {
-    test('should handle multiple rollbacks in sequence', async () => {
-      const machine = createMachine({
-        id: 'test',
-        initial: 'a',
-        context: { path: ['a'] },
-        states: {
-          a: {
-            on: {
-              NEXT: {
-                target: 'b',
-                actions: [assign((ctx) => ({ path: [...ctx.path, 'b'] }))]
-              }
-            }
-          },
-          b: {
-            on: {
-              NEXT: {
-                target: 'c',
-                actions: [assign((ctx) => ({ path: [...ctx.path, 'c'] }))]
-              }
-            }
-          },
-          c: {
-            on: {
-              NEXT: {
-                target: 'd',
-                actions: [assign((ctx) => ({ path: [...ctx.path, 'd'] }))]
-              }
-            }
-          },
-          d: {}
-        }
-      });
-
-      // Navigate through states
-      await machine.send('NEXT'); // a -> b
-      await machine.send('NEXT'); // b -> c
-      await machine.send('NEXT'); // c -> d
-
-      expect(machine.state).toBe('d');
-      expect(machine.context.path).toEqual(['a', 'b', 'c', 'd']);
-
-      // Rollback multiple times
-      await machine.rollback(); // d -> c
-      expect(machine.state).toBe('c');
-      expect(machine.context.path).toEqual(['a', 'b', 'c']);
-
-      await machine.rollback(); // c -> b
-      expect(machine.state).toBe('b');
-      expect(machine.context.path).toEqual(['a', 'b']);
-
-      await machine.rollback(); // b -> a
-      expect(machine.state).toBe('a');
-      expect(machine.context.path).toEqual(['a']);
-
-      // No more history to rollback
-      await machine.rollback();
-      expect(machine.state).toBe('a');
-      expect(machine.context.path).toEqual(['a']);
-    });
-
-    test('should handle nested state rollback', async () => {
-      const machine = createMachine({
-        id: 'test',
-        initial: 'parent',
-        states: {
-          parent: {
-            initial: 'child1',
-            states: {
-              child1: {
-                on: { NEXT: 'child2' }
-              },
-              child2: {
-                on: { EXIT: '#test.outside' }
-              }
-            }
-          },
-          outside: {}
-        }
-      });
-
-      expect(machine.state).toBe('parent.child1');
-
-      await machine.send('NEXT');
-      expect(machine.state).toBe('parent.child2');
-
-      await machine.send('EXIT');
-      expect(machine.state).toBe('outside');
-
-      // Rollback to nested state
-      await machine.rollback();
-      expect(machine.state).toBe('parent.child2');
-
-      await machine.rollback();
-      expect(machine.state).toBe('parent.child1');
-    });
-  });
 });
