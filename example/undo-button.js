@@ -17,11 +17,14 @@ const runExample = async () => {
             ]
           },
           UNDO: {
-            cond: ctx => ctx.canUndo,
+            cond: ctx => ctx.canUndo && undoableMachine.history.length > 1,
             actions: [
               async () => {
-                const result = await undoableMachine.rollback();
-                console.log('Rolled back to previous state');
+                // Restore to previous state in history
+                const previousSnapshot = undoableMachine.history[undoableMachine.history.length - 2];
+                const result = await undoableMachine.restore(previousSnapshot);
+                console.log('Restored to previous state:', result.state);
+                console.log('Previous value:', result.context.value);
                 // UI will update automatically via subscription
               }
             ]

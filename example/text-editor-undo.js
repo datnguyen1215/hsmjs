@@ -40,10 +40,15 @@ const runExample = async () => {
             ]
           },
           UNDO: {
-            cond: () => textEditorMachine.historySize > 1,
+            cond: () => textEditorMachine.history.length > 1,
             actions: [
               async () => {
-                await textEditorMachine.rollback();
+                // Find the previous state in history (skip current state)
+                const currentIndex = textEditorMachine.history.length - 1;
+                if (currentIndex > 0) {
+                  const previousSnapshot = textEditorMachine.history[currentIndex - 1];
+                  await textEditorMachine.restore(previousSnapshot);
+                }
               },
               assign({ undoStack: ctx => ctx.undoStack + 1 })
             ]

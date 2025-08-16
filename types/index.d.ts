@@ -70,13 +70,20 @@ export interface MachineOptions<TContext = Context, TEvent = Event> {
   historySize?: number;
 }
 
+export interface Snapshot<TContext = Context> {
+  state: string;
+  context: TContext;
+}
+
 export interface MachineService<TContext = Context, TEvent = Event> {
   state: string;
   context: TContext;
   historySize: number;
+  readonly history: Array<Snapshot<TContext>>;
+  readonly snapshot: Snapshot<TContext>;
   send(event: string | TEvent, payload?: any): Promise<SendResult>;
   subscribe(callback: (snapshot: { state: string; context: TContext }) => void): () => void;
-  rollback(): Promise<{ state: string; context: TContext }>;
+  restore(snapshot: Snapshot<TContext>): Promise<Snapshot<TContext>>;
 }
 
 export function createMachine<TContext = Context, TEvent = Event>(

@@ -1,9 +1,10 @@
 import { createMachine, assign } from '../src/index.js';
 
-// Test helper function
+// Test helper function using state snapshots
 const testScenario = async (machine, scenario) => {
-  // Save initial state
-  const initialHistory = machine.historySize;
+  // Save initial state snapshot
+  const initialSnapshot = machine.snapshot;
+  const initialHistoryLength = machine.history.length;
 
   try {
     // Run scenario
@@ -13,18 +14,18 @@ const testScenario = async (machine, scenario) => {
     return {
       success: true,
       finalState: machine.state,
-      context: machine.context
+      context: machine.context,
+      stateChanges: machine.history.length - initialHistoryLength
     };
   } catch (error) {
-    // On failure, rollback to initial state
-    while (machine.historySize > initialHistory) {
-      await machine.rollback();
-    }
+    // On failure, restore to initial state
+    await machine.restore(initialSnapshot);
 
     return {
       success: false,
       error: error.message,
-      rolledBack: true
+      restored: true,
+      restoredTo: machine.state
     };
   }
 };
@@ -111,7 +112,7 @@ const runExample = async () => {
   });
 
   console.log('Scenario 2 result:', result2);
-  console.log('Machine state after test 2 (should be rolled back):', testMachine.state);
+  console.log('Machine state after test 2 (should be restored):', testMachine.state);
   console.log('Machine context after test 2:', testMachine.context);
 
   // Test scenario 3: Different path
@@ -132,7 +133,7 @@ const runExample = async () => {
 
   console.log('\n--- Summary ---');
   console.log('Test 1 (complete flow):', result1.success ? 'PASSED' : 'FAILED');
-  console.log('Test 2 (error handling):', result2.success ? 'FAILED' : 'PASSED (correctly rolled back)');
+  console.log('Test 2 (error handling):', result2.success ? 'FAILED' : 'PASSED (correctly restored)');
   console.log('Test 3 (different path):', result3.success ? 'PASSED' : 'FAILED');
 };
 

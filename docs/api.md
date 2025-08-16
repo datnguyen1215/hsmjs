@@ -294,7 +294,9 @@ console.log(machine.state); // Final state after all events
 - `machine.state` - Get current state
 - `machine.context` - Get current context
 - `machine.historySize` - Get number of states in history
-- `machine.rollback()` - Rollback to previous state (returns Promise)
+- `machine.history` - Array of all state snapshots
+- `machine.snapshot` - Current state and context snapshot
+- `machine.restore(snapshot)` - Restore to specific snapshot (returns Promise)
 - `machine.subscribe(callback)` - Subscribe to state changes
 
 ### Queue Management
@@ -325,22 +327,65 @@ await machine.sendPriority('EMERGENCY_STOP');
 - Then sends the priority event
 - Useful for critical state changes that must happen immediately
 
-### History Management
+### History and State Management
 
-#### rollback()
+#### history property
 
-Rollback to the previous state in history without executing entry/exit actions.
+Array of all state snapshots in chronological order.
 
 ```javascript
-const result = await machine.rollback();
-console.log(result.state);    // Previous state
-console.log(result.context);  // Previous context
+console.log(machine.history.length); // Number of states in history
+console.log(machine.history); // [{ state: 'idle', context: {...} }, ...]
+
+// Access specific history entries
+const firstState = machine.history[0];
+const previousSnapshot = machine.history[machine.history.length - 2];
+```
+
+#### snapshot property
+
+Current state and context as a serializable snapshot.
+
+```javascript
+const snapshot = machine.snapshot;
+console.log(snapshot.state);   // Current state
+console.log(snapshot.context); // Current context
+
+// JSON-serializable for persistence
+const serialized = JSON.stringify(snapshot);
+localStorage.setItem('machineState', serialized);
+```
+
+#### restore(snapshot)
+
+Restore machine to a specific snapshot state without executing entry/exit actions.
+
+```javascript
+// Save current state
+const checkpoint = machine.snapshot;
+
+// Make changes
+await machine.send('START');
+
+// Restore to checkpoint
+const result = await machine.restore(checkpoint);
+console.log(result.state);    // Restored state
+console.log(result.context);  // Restored context
+
+// Restore from history
+const previousSnapshot = machine.history[machine.history.length - 2];
+await machine.restore(previousSnapshot);
+
+// Restore from persisted state
+const saved = JSON.parse(localStorage.getItem('machineState'));
+await machine.restore(saved);
 ```
 
 - Returns Promise that resolves to `{ state, context }`
 - Does NOT execute entry/exit actions
 - Clears the event queue
-- Returns current state if no history available
+- Validates snapshot and state existence
+- Supports full state persistence through JSON serialization
 
 #### historySize property
 

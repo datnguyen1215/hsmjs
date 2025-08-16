@@ -14,10 +14,6 @@ import { executeActionsSync } from './ActionRunner.js';
  */
 export const Machine = (config, options = {}) => {
   // Private state
-  const machineConfig = config;
-  const machineOptions = options;
-  const id = config.id;
-  const initial = config.initial;
   const rootNode = createStateNode(config.id, {
     initial: config.initial,
     states: config.states
@@ -31,14 +27,9 @@ export const Machine = (config, options = {}) => {
   const eventEmitter = createEventEmitter();
   const queueManager = createQueueManager();
   const _stateHistory = [];
-  
-  // Tracking variables for transitions
-  let _lastEvent = null;
-  let _previousState = null;
-  let _previousContext = null;
 
-  // Helper functions use the imported modules
-  const getStateNodeForPath = (statePath) => getStateNode(rootNode, statePath);
+  // Only track last event for notifications
+  let _lastEvent = null;
 
   const pushToHistory = () => {
     _stateHistory.push({
@@ -51,47 +42,33 @@ export const Machine = (config, options = {}) => {
     }
   };
 
+  const applyStateUpdate = (newState, newContext) => {
+    state = newState;
+    _context = newContext;
+    pushToHistory();
+    notifySubscribers();
+  };
 
-
-
-
-
-
+  const scheduleNextEvent = (isAsync) => {
+    setTimeout(() => isAsync ? processNextQueuedEvent() : processNextQueuedEventSync(), 0);
+  };
 
   // Create event processing functions that update our local state
   const processEvent = (event) => {
-    // Capture previous state before processing
-    _previousState = state;
-    _previousContext = cloneContext(_context);
     _lastEvent = event;
-    
+
     const result = processEventSync(event, state, _context, rootNode, guards, actions, executeActionsSync);
     if (!result.wasAsync) {
-      // Update local state from result
-      state = result.value.state;
-      _context = result.value.context;
-      // Store state in history after successful transition
-      pushToHistory();
-      // Notify subscribers after state update
-      notifySubscribers();
+      applyStateUpdate(result.value.state, result.value.context);
     }
     return result;
   };
 
   const processEventAsyncHandler = async (event) => {
-    // Capture previous state before processing
-    _previousState = state;
-    _previousContext = cloneContext(_context);
     _lastEvent = event;
-    
+
     const result = await processEventAsync(event, state, _context, rootNode, guards, actions);
-    // Update local state from result
-    state = result.state;
-    _context = result.context;
-    // Store state in history after successful transition
-    pushToHistory();
-    // Notify subscribers after state update
-    notifySubscribers();
+    applyStateUpdate(result.state, result.context);
     return result;
   };
 
@@ -99,25 +76,25 @@ export const Machine = (config, options = {}) => {
   const { processNextQueuedEventSync, processNextQueuedEvent } = queueManager.createEventProcessor(processEvent, processEventAsyncHandler);
 
   const notifySubscribers = () => {
+    // Get previous state from history
+    const previousSnapshot = _stateHistory.length > 1
+      ? _stateHistory[_stateHistory.length - 2]
+      : { state: config.initial, context: cloneContext(config.context || {}) };
+    const currentSnapshot = _stateHistory[_stateHistory.length - 1];
+
     const transition = {
-      previousState: {
-        state: _previousState,
-        context: _previousContext ? cloneContext(_previousContext) : null
-      },
-      nextState: {
-        state,
-        context: cloneContext(_context)
-      },
+      previousState: previousSnapshot,
+      nextState: currentSnapshot,
       event: _lastEvent
     };
     eventEmitter.notify(transition);
   };
 
   // Initialize with initial state, handling nested initial states
-  let state = initializeState(rootNode, initial);
+  let state = initializeState(rootNode, config.initial);
 
   // Execute initial entry actions
-  const initialNode = getStateNodeForPath(state);
+  const initialNode = getStateNode(rootNode, state);
   if (initialNode && initialNode.entry.length > 0) {
     const result = executeActionsSync(initialNode.entry, _context, {}, actions);
     _context = result.context;
@@ -125,17 +102,13 @@ export const Machine = (config, options = {}) => {
 
   // Store initial state in history
   pushToHistory();
-  
-  // Initialize tracking variables with initial state
-  _previousState = state;
-  _previousContext = cloneContext(_context);
 
   // Public API
   return {
-    get config() { return machineConfig; },
-    get options() { return machineOptions; },
-    get id() { return id; },
-    get initial() { return initial; },
+    get config() { return config; },
+    get options() { return options; },
+    get id() { return config.id; },
+    get initial() { return config.initial; },
     get rootNode() { return rootNode; },
     get actions() { return actions; },
     get guards() { return guards; },
@@ -144,6 +117,11 @@ export const Machine = (config, options = {}) => {
     get isTransitioning() { return queueManager.getIsTransitioning(); },
     get eventQueue() { return queueManager.eventQueue; },
     get historySize() { return _stateHistory.length; },
+    get history() { return [..._stateHistory]; },
+    get snapshot() {
+      // Return the last history entry as the current snapshot
+      return _stateHistory[_stateHistory.length - 1] || { state, context: cloneContext(_context) };
+    },
 
     /**
      * @param {string} eventType
@@ -168,21 +146,14 @@ export const Machine = (config, options = {}) => {
 
         if (result.wasAsync) {
           // Switch to async processing
-          return processEventAsyncHandler(event).then(asyncResult => {
+          return processEventAsyncHandler(event).finally(() => {
             queueManager.setIsTransitioning(false);
-            // Process next queued event asynchronously
-            setTimeout(() => processNextQueuedEvent(), 0);
-            return asyncResult;
-          }).catch(error => {
-            queueManager.setIsTransitioning(false);
-            // Process next queued event asynchronously
-            setTimeout(() => processNextQueuedEvent(), 0);
-            throw error;
+            scheduleNextEvent(true);
           });
         } else {
           queueManager.setIsTransitioning(false);
           // Process next queued event synchronously
-          setTimeout(() => processNextQueuedEventSync(), 0);
+          scheduleNextEvent(false);
           return Promise.resolve(result.value);
         }
       } catch (error) {
@@ -268,31 +239,41 @@ export const Machine = (config, options = {}) => {
     },
 
     /**
-     * Rollback to the previous state in history.
+     * Restore machine to a specific snapshot state.
      * Note: This does NOT execute entry/exit actions.
+     * @param {Object} snapshot - Object with state and context properties
      * @returns {Promise<{state: string, context: Object}>}
      */
-    rollback() {
-      if (_stateHistory.length > 1) {
-        // Capture current state as previous before rollback
-        _previousState = state;
-        _previousContext = cloneContext(_context);
-        _lastEvent = { type: 'ROLLBACK' };
-        
-        // Remove current state
-        _stateHistory.pop();
-        // Get previous state
-        const previousSnapshot = _stateHistory[_stateHistory.length - 1];
-        // Restore state and context
-        state = previousSnapshot.state;
-        _context = cloneContext(previousSnapshot.context);
-        // Clear any queued events
-        queueManager.clearQueue();
-        // Notify subscribers
-        notifySubscribers();
-        return Promise.resolve({ state, context: cloneContext(_context) });
+    restore(snapshot) {
+      // Validate snapshot parameter
+      if (!snapshot || typeof snapshot !== 'object') {
+        return Promise.reject(new Error('Snapshot must be an object'));
       }
-      // If no history to rollback to, return current state
+      if (!snapshot.hasOwnProperty('state') || !snapshot.hasOwnProperty('context')) {
+        return Promise.reject(new Error('Snapshot must have state and context properties'));
+      }
+
+      // Validate that the state exists in the machine definition
+      const stateNode = getStateNode(rootNode, snapshot.state);
+      if (!stateNode) {
+        return Promise.reject(new Error(`Invalid state in snapshot: ${snapshot.state}`));
+      }
+
+      _lastEvent = { type: 'RESTORE' };
+
+      // Restore state and context from snapshot
+      state = snapshot.state;
+      _context = cloneContext(snapshot.context);
+
+      // Clear any queued events
+      queueManager.clearQueue();
+
+      // Push to history
+      pushToHistory();
+
+      // Notify subscribers
+      notifySubscribers();
+
       return Promise.resolve({ state, context: cloneContext(_context) });
     }
   };

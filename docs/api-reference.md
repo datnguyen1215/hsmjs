@@ -214,33 +214,96 @@ console.log(machine.context); // { count: 5, user: null }
 console.log(machine.historySize); // 3
 ```
 
-## History and Rollback Methods
+## History and State Management
 
-### `machine.rollback()`
+### `machine.history`
 
-**Description:** Rollback to the previous state in history. Does not execute entry/exit actions.
+**Type:** Array<{state: string, context: Object}>
+**Description:** Array of all state snapshots in chronological order
+
+```javascript
+// Check history
+console.log(machine.history.length); // Number of states in history
+console.log(machine.history); // [{ state: 'idle', context: {...} }, ...]
+
+// Access specific history entries
+const firstState = machine.history[0];
+const currentSnapshot = machine.history[machine.history.length - 1];
+```
+
+### `machine.snapshot`
+
+**Type:** {state: string, context: Object}
+**Description:** Current state and context as a serializable snapshot
+
+```javascript
+// Get current snapshot
+const snapshot = machine.snapshot;
+console.log(snapshot.state); // Current state
+console.log(snapshot.context); // Current context
+
+// Snapshot is JSON-serializable for persistence
+const serialized = JSON.stringify(snapshot);
+localStorage.setItem('machineState', serialized);
+```
+
+### `machine.restore(snapshot)`
+
+**Description:** Restore machine to a specific snapshot state. Does not execute entry/exit actions.
+
+**Parameters:**
+- `snapshot` (Object): Snapshot with state and context properties
 
 **Returns:** Promise<{ state: string, context: Object }>
 
 ```javascript
-// Move through states
+// Save current state
+const checkpoint = machine.snapshot;
+
+// Make some changes
 await machine.send('START');
 await machine.send('NEXT');
 
-// Rollback to previous state
-const result = await machine.rollback();
-console.log(result.state); // Previous state
-console.log(result.context); // Previous context
+// Restore to checkpoint
+const result = await machine.restore(checkpoint);
+console.log(result.state); // Restored state
+console.log(result.context); // Restored context
 
-// Returns current state if no history available
-const sameResult = await machine.rollback();
+// Restore from history
+const previousSnapshot = machine.history[machine.history.length - 2];
+await machine.restore(previousSnapshot);
+
+// Restore from persisted state
+const saved = JSON.parse(localStorage.getItem('machineState'));
+await machine.restore(saved);
 ```
 
 **Important Notes:**
-- Does NOT execute entry/exit actions when rolling back
+- Does NOT execute entry/exit actions when restoring
 - Clears the event queue
-- Preserves context exactly as it was
-- Returns current state if no previous history exists
+- Validates that the snapshot state exists in machine definition
+- Adds restored state to history
+- Supports full state persistence through JSON serialization
+
+**Error Cases:**
+- Throws if snapshot is not an object
+- Throws if snapshot lacks state or context properties
+- Throws if snapshot.state is not a valid state in the machine
+
+**State Persistence Example:**
+```javascript
+// Save state before power loss
+const snapshot = machine.snapshot;
+localStorage.setItem('appState', JSON.stringify(snapshot));
+
+// After restart, restore state
+const savedState = localStorage.getItem('appState');
+if (savedState) {
+  const snapshot = JSON.parse(savedState);
+  await machine.restore(snapshot);
+  console.log('State restored successfully');
+}
+```
 
 ## State Configuration
 
