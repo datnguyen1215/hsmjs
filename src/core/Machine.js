@@ -31,6 +31,11 @@ export const Machine = (config, options = {}) => {
   const eventEmitter = createEventEmitter();
   const queueManager = createQueueManager();
   const _stateHistory = [];
+  
+  // Tracking variables for transitions
+  let _lastEvent = null;
+  let _previousState = null;
+  let _previousContext = null;
 
   // Helper functions use the imported modules
   const getStateNodeForPath = (statePath) => getStateNode(rootNode, statePath);
@@ -55,6 +60,11 @@ export const Machine = (config, options = {}) => {
 
   // Create event processing functions that update our local state
   const processEvent = (event) => {
+    // Capture previous state before processing
+    _previousState = state;
+    _previousContext = cloneContext(_context);
+    _lastEvent = event;
+    
     const result = processEventSync(event, state, _context, rootNode, guards, actions, executeActionsSync);
     if (!result.wasAsync) {
       // Update local state from result
@@ -69,6 +79,11 @@ export const Machine = (config, options = {}) => {
   };
 
   const processEventAsyncHandler = async (event) => {
+    // Capture previous state before processing
+    _previousState = state;
+    _previousContext = cloneContext(_context);
+    _lastEvent = event;
+    
     const result = await processEventAsync(event, state, _context, rootNode, guards, actions);
     // Update local state from result
     state = result.state;
@@ -84,11 +99,18 @@ export const Machine = (config, options = {}) => {
   const { processNextQueuedEventSync, processNextQueuedEvent } = queueManager.createEventProcessor(processEvent, processEventAsyncHandler);
 
   const notifySubscribers = () => {
-    const snapshot = {
-      state,
-      context: cloneContext(_context)
+    const transition = {
+      previousState: {
+        state: _previousState,
+        context: _previousContext ? cloneContext(_previousContext) : null
+      },
+      nextState: {
+        state,
+        context: cloneContext(_context)
+      },
+      event: _lastEvent
     };
-    eventEmitter.notify(snapshot);
+    eventEmitter.notify(transition);
   };
 
   // Initialize with initial state, handling nested initial states
@@ -103,6 +125,10 @@ export const Machine = (config, options = {}) => {
 
   // Store initial state in history
   pushToHistory();
+  
+  // Initialize tracking variables with initial state
+  _previousState = state;
+  _previousContext = cloneContext(_context);
 
   // Public API
   return {
@@ -248,6 +274,11 @@ export const Machine = (config, options = {}) => {
      */
     rollback() {
       if (_stateHistory.length > 1) {
+        // Capture current state as previous before rollback
+        _previousState = state;
+        _previousContext = cloneContext(_context);
+        _lastEvent = { type: 'ROLLBACK' };
+        
         // Remove current state
         _stateHistory.pop();
         // Get previous state
