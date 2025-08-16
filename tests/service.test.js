@@ -73,8 +73,15 @@ describe('Machine', () => {
       machine.send('START');
 
       expect(subscriber).toHaveBeenCalledWith({
-        state: 'active',
-        context: {}
+        previousState: {
+          state: 'idle',
+          context: {}
+        },
+        nextState: {
+          state: 'active',
+          context: {}
+        },
+        event: { type: 'START' }
       });
     });
 
@@ -103,13 +110,20 @@ describe('Machine', () => {
 
       machine.send('INCREMENT');
 
-      const expectedSnapshot = {
-        state: 'idle',
-        context: { count: 1 }
+      const expectedTransition = {
+        previousState: {
+          state: 'idle',
+          context: { count: 0 }
+        },
+        nextState: {
+          state: 'idle',
+          context: { count: 1 }
+        },
+        event: { type: 'INCREMENT' }
       };
 
-      expect(subscriber1).toHaveBeenCalledWith(expectedSnapshot);
-      expect(subscriber2).toHaveBeenCalledWith(expectedSnapshot);
+      expect(subscriber1).toHaveBeenCalledWith(expectedTransition);
+      expect(subscriber2).toHaveBeenCalledWith(expectedTransition);
     });
 
     test('should return unsubscribe function', () => {
@@ -176,6 +190,67 @@ describe('Machine', () => {
 
       expect(() => machine.send('EVENT')).not.toThrow();
       expect(normalSubscriber).toHaveBeenCalled();
+    });
+
+    test('should provide complete transition details', () => {
+      const subscriber = jest.fn();
+      const machine = createMachine({
+        id: 'test',
+        initial: 'idle',
+        context: { value: 'initial' },
+        states: {
+          idle: {
+            on: {
+              UPDATE: {
+                target: 'active',
+                actions: [assign((ctx, event) => ({ value: event.newValue }))]
+              }
+            }
+          },
+          active: {
+            on: {
+              RESET: {
+                target: 'idle',
+                actions: [assign({ value: 'reset' })]
+              }
+            }
+          }
+        }
+      });
+
+      machine.subscribe(subscriber);
+      
+      // First transition
+      machine.send('UPDATE', { newValue: 'updated' });
+      
+      expect(subscriber).toHaveBeenCalledWith({
+        previousState: {
+          state: 'idle',
+          context: { value: 'initial' }
+        },
+        nextState: {
+          state: 'active',
+          context: { value: 'updated' }
+        },
+        event: { type: 'UPDATE', newValue: 'updated' }
+      });
+      
+      subscriber.mockClear();
+      
+      // Second transition
+      machine.send('RESET');
+      
+      expect(subscriber).toHaveBeenCalledWith({
+        previousState: {
+          state: 'active',
+          context: { value: 'updated' }
+        },
+        nextState: {
+          state: 'idle',
+          context: { value: 'reset' }
+        },
+        event: { type: 'RESET' }
+      });
     });
   });
 
