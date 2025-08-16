@@ -103,7 +103,24 @@ export const Machine = (config, options = {}) => {
   // Store initial state in history
   pushToHistory();
 
+  // Helper functions for validation
+  const normalizeTransitions = (transition) => {
+    return Array.isArray(transition) ? transition : [transition];
+  };
+
+  const forEachChildState = (node, statePath, callback) => {
+    if (node.states) {
+      for (const [childKey, childNode] of Object.entries(node.states)) {
+        const childPath = statePath ? `${statePath}.${childKey}` : childKey;
+        callback(childNode, childPath);
+      }
+    }
+  };
+
   // Validation helper functions
+  /**
+   * @returns {{errors: Array, warnings: Array}}
+   */
   const validateStateTransitions = () => {
     const errors = [];
     const warnings = [];
@@ -112,7 +129,7 @@ export const Machine = (config, options = {}) => {
       // Check all transitions for this state
       if (node.on) {
         for (const [event, transition] of Object.entries(node.on)) {
-          const transitions = Array.isArray(transition) ? transition : [transition];
+          const transitions = normalizeTransitions(transition);
 
           for (const trans of transitions) {
             const normalizedTrans = typeof trans === 'string'
@@ -152,25 +169,23 @@ export const Machine = (config, options = {}) => {
       }
 
       // Recursively check child states
-      if (node.states) {
-        for (const [childKey, childNode] of Object.entries(node.states)) {
-          const childPath = statePath ? `${statePath}.${childKey}` : childKey;
-          checkTransitions(childNode, childPath);
-        }
-      }
+      forEachChildState(node, statePath, checkTransitions);
     };
 
     checkTransitions(rootNode, '');
     return { errors, warnings };
   };
 
+  /**
+   * @returns {Array}
+   */
   const validateGuardReferences = () => {
     const errors = [];
 
     const checkGuards = (node, statePath) => {
       if (node.on) {
         for (const [event, transition] of Object.entries(node.on)) {
-          const transitions = Array.isArray(transition) ? transition : [transition];
+          const transitions = normalizeTransitions(transition);
 
           for (const trans of transitions) {
             if (trans && typeof trans === 'object' && trans.cond) {
@@ -194,18 +209,16 @@ export const Machine = (config, options = {}) => {
       }
 
       // Recursively check child states
-      if (node.states) {
-        for (const [childKey, childNode] of Object.entries(node.states)) {
-          const childPath = statePath ? `${statePath}.${childKey}` : childKey;
-          checkGuards(childNode, childPath);
-        }
-      }
+      forEachChildState(node, statePath, checkGuards);
     };
 
     checkGuards(rootNode, '');
     return errors;
   };
 
+  /**
+   * @returns {Array}
+   */
   const validateActionReferences = () => {
     const errors = [];
 
@@ -235,7 +248,7 @@ export const Machine = (config, options = {}) => {
       // Check transition actions
       if (node.on) {
         for (const [event, transition] of Object.entries(node.on)) {
-          const transitions = Array.isArray(transition) ? transition : [transition];
+          const transitions = normalizeTransitions(transition);
 
           for (const trans of transitions) {
             if (trans && typeof trans === 'object' && trans.actions) {
@@ -256,18 +269,16 @@ export const Machine = (config, options = {}) => {
       }
 
       // Recursively check child states
-      if (node.states) {
-        for (const [childKey, childNode] of Object.entries(node.states)) {
-          const childPath = statePath ? `${statePath}.${childKey}` : childKey;
-          checkActions(childNode, childPath);
-        }
-      }
+      forEachChildState(node, statePath, checkActions);
     };
 
     checkActions(rootNode, '');
     return errors;
   };
 
+  /**
+   * @returns {Array}
+   */
   const validateNestedStates = () => {
     const errors = [];
 
@@ -284,18 +295,16 @@ export const Machine = (config, options = {}) => {
       }
 
       // Recursively check child states
-      if (node.states) {
-        for (const [childKey, childNode] of Object.entries(node.states)) {
-          const childPath = statePath ? `${statePath}.${childKey}` : childKey;
-          checkNestedInitial(childNode, childPath);
-        }
-      }
+      forEachChildState(node, statePath, checkNestedInitial);
     };
 
     checkNestedInitial(rootNode, '');
     return errors;
   };
 
+  /**
+   * @returns {Array}
+   */
   const validateStateReachability = () => {
     const warnings = [];
     const reachableStates = new Set();
@@ -319,7 +328,7 @@ export const Machine = (config, options = {}) => {
     const findTransitionTargets = (node) => {
       if (node.on) {
         for (const transition of Object.values(node.on)) {
-          const transitions = Array.isArray(transition) ? transition : [transition];
+          const transitions = normalizeTransitions(transition);
           for (const trans of transitions) {
             const target = typeof trans === 'string' ? trans : trans?.target;
             if (target) {
@@ -354,12 +363,7 @@ export const Machine = (config, options = {}) => {
         });
       }
 
-      if (node.states) {
-        for (const [childKey, childNode] of Object.entries(node.states)) {
-          const childPath = statePath ? `${statePath}.${childKey}` : childKey;
-          checkUnreachable(childNode, childPath);
-        }
-      }
+      forEachChildState(node, statePath, checkUnreachable);
     };
 
     checkUnreachable(rootNode, '');
@@ -377,12 +381,7 @@ export const Machine = (config, options = {}) => {
         });
       }
 
-      if (node.states) {
-        for (const [childKey, childNode] of Object.entries(node.states)) {
-          const childPath = statePath ? `${statePath}.${childKey}` : childKey;
-          checkEmpty(childNode, childPath);
-        }
-      }
+      forEachChildState(node, statePath, checkEmpty);
     };
 
     checkEmpty(rootNode, '');
