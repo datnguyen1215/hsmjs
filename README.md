@@ -48,6 +48,7 @@ console.log(result.context.count); // 1
 - ✅ **TypeScript Support** - Full type definitions included
 - ✅ **Zero Dependencies** - Lightweight bundle
 - ✅ **Event Queuing** - Handles rapid event sequences
+- ✅ **History & Rollback** - Undo state changes with built-in history tracking
 
 ## Installation Options
 

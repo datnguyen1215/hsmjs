@@ -67,23 +67,22 @@ export interface MachineOptions<TContext = Context, TEvent = Event> {
   guards?: {
     [key: string]: (context: TContext, event: TEvent) => boolean;
   };
+  historySize?: number;
 }
 
 export interface MachineService<TContext = Context, TEvent = Event> {
   state: string;
   context: TContext;
+  historySize: number;
   send(event: string | TEvent, payload?: any): Promise<SendResult>;
   subscribe(callback: (snapshot: { state: string; context: TContext }) => void): () => void;
-}
-
-export interface Machine<TContext = Context, TEvent = Event> {
-  start(): MachineService<TContext, TEvent>;
+  rollback(): Promise<{ state: string; context: TContext }>;
 }
 
 export function createMachine<TContext = Context, TEvent = Event>(
   config: MachineConfig<TContext, TEvent>,
   options?: MachineOptions<TContext, TEvent>
-): Machine<TContext, TEvent>;
+): MachineService<TContext, TEvent>;
 
 export function assign<TContext = Context, TEvent = Event>(
   assigner: ((context: TContext, event: TEvent) => Partial<TContext>) | Partial<TContext>

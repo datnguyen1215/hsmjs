@@ -759,3 +759,245 @@ test('async actions handle errors', async () => {
   expect(machine.state).toBe('loading'); // Still in loading state
 });
 ```
+
+## State History and Rollback
+
+HSMJS automatically tracks state history, allowing you to rollback to previous states. This is useful for implementing undo functionality, debugging, and error recovery.
+
+### Basic Usage
+
+```javascript
+const machine = createMachine({
+  id: 'editor',
+  initial: 'idle',
+  context: { text: '', saved: false },
+  states: {
+    idle: {
+      on: {
+        TYPE: {
+          target: 'editing',
+          actions: [assign({ text: (ctx, event) => event.text, saved: false })]
+        }
+      }
+    },
+    editing: {
+      on: {
+        SAVE: {
+          target: 'idle',
+          actions: [assign({ saved: true })]
+        },
+        TYPE: {
+          actions: [assign({ text: (ctx, event) => event.text })]
+        }
+      }
+    }
+  }
+});
+
+// Make some changes
+await machine.send('TYPE', { text: 'Hello' });
+await machine.send('TYPE', { text: 'Hello World' });
+await machine.send('SAVE');
+
+// Check history size
+console.log(machine.historySize); // 4 (initial + 3 transitions)
+
+// Rollback to previous state
+const result = await machine.rollback();
+console.log(result.state); // 'editing'
+console.log(result.context); // { text: 'Hello World', saved: false }
+```
+
+### Configuring History Size
+
+By default, HSMJS keeps the last 50 states in history. You can configure this:
+
+```javascript
+const machine = createMachine({
+  id: 'limited',
+  initial: 'idle',
+  states: {
+    idle: {
+      on: { TOGGLE: 'active' }
+    },
+    active: {
+      on: { TOGGLE: 'idle' }
+    }
+  }
+}, { historySize: 10 }); // Keep only last 10 states
+```
+
+### Important Rollback Behavior
+
+When rolling back:
+- **No entry/exit actions are executed** - The state is restored directly
+- **Context is preserved exactly** - All context values are restored
+- **Event queue is cleared** - Pending events are discarded
+- **Subscribers are notified** - State change notifications are sent
+
+```javascript
+const machine = createMachine({
+  id: 'rollback-demo',
+  initial: 'idle',
+  states: {
+    idle: {
+      entry: [() => console.log('Entering idle')],
+      exit: [() => console.log('Exiting idle')],
+      on: { START: 'active' }
+    },
+    active: {
+      entry: [() => console.log('Entering active')],
+      exit: [() => console.log('Exiting active')]
+    }
+  }
+});
+
+await machine.send('START');
+// Logs: "Exiting idle", "Entering active"
+
+await machine.rollback();
+// No logs - entry/exit actions are not executed
+console.log(machine.state); // 'idle'
+```
+
+### Use Cases
+
+#### Undo Functionality
+
+```javascript
+const textEditor = createMachine({
+  id: 'textEditor',
+  initial: 'editing',
+  context: { content: '', cursor: 0 },
+  states: {
+    editing: {
+      on: {
+        TYPE: {
+          actions: [assign({
+            content: (ctx, event) => ctx.content + event.char,
+            cursor: ctx => ctx.cursor + 1
+          })]
+        },
+        DELETE: {
+          actions: [assign({
+            content: ctx => ctx.content.slice(0, -1),
+            cursor: ctx => Math.max(0, ctx.cursor - 1)
+          })]
+        },
+        UNDO: {
+          actions: [async () => {
+            await textEditor.rollback();
+          }]
+        }
+      }
+    }
+  }
+});
+
+// Type some text
+await textEditor.send('TYPE', { char: 'H' });
+await textEditor.send('TYPE', { char: 'i' });
+
+// Undo last action
+await textEditor.send('UNDO');
+console.log(textEditor.context.content); // 'H'
+```
+
+#### Error Recovery
+
+```javascript
+const apiMachine = createMachine({
+  id: 'api',
+  initial: 'idle',
+  context: { data: null, error: null, lastGoodState: null },
+  states: {
+    idle: {
+      on: { FETCH: 'loading' }
+    },
+    loading: {
+      entry: [
+        // Save current state before risky operation
+        assign({ lastGoodState: ctx => ({ ...ctx }) }),
+        async (ctx, event) => {
+          try {
+            const data = await fetch(event.url);
+            apiMachine.send('SUCCESS', { data });
+          } catch (error) {
+            apiMachine.send('ERROR', { error });
+          }
+        }
+      ],
+      on: {
+        SUCCESS: {
+          target: 'success',
+          actions: [assign({ data: (ctx, event) => event.data })]
+        },
+        ERROR: {
+          target: 'error',
+          actions: [assign({ error: (ctx, event) => event.error })]
+        }
+      }
+    },
+    success: {},
+    error: {
+      on: {
+        RECOVER: {
+          actions: [async () => {
+            // Rollback to state before the failed operation
+            await apiMachine.rollback();
+            await apiMachine.rollback(); // Go back to idle
+          }]
+        }
+      }
+    }
+  }
+});
+```
+
+#### Debugging State Transitions
+
+```javascript
+const debugMachine = createMachine({
+  id: 'debug',
+  initial: 'start',
+  context: { steps: [] },
+  states: {
+    start: {
+      on: {
+        STEP1: {
+          target: 'middle',
+          actions: [assign({ steps: ctx => [...ctx.steps, 'step1'] })]
+        }
+      }
+    },
+    middle: {
+      on: {
+        STEP2: {
+          target: 'end',
+          actions: [assign({ steps: ctx => [...ctx.steps, 'step2'] })]
+        }
+      }
+    },
+    end: {}
+  }
+});
+
+// Step through states
+await debugMachine.send('STEP1');
+await debugMachine.send('STEP2');
+
+// Debug: Check history
+console.log('History size:', debugMachine.historySize); // 3
+
+// Rollback to see previous states
+await debugMachine.rollback();
+console.log('Previous state:', debugMachine.state); // 'middle'
+console.log('Previous context:', debugMachine.context); // { steps: ['step1'] }
+```
+
+### Limitations
+
+- History only stores state and context, not the full machine configuration
+- Rollback doesn't replay events - it directly restores the previous state
+- History is stored in memory and is lost when the machine instance is destroyed
+- Large history sizes can impact memory usage for machines with large contexts

@@ -293,6 +293,8 @@ console.log(machine.state); // Final state after all events
 - `machine.matches(stateValue)` - Check if current state matches given state
 - `machine.state` - Get current state
 - `machine.context` - Get current context
+- `machine.historySize` - Get number of states in history
+- `machine.rollback()` - Rollback to previous state (returns Promise)
 - `machine.subscribe(callback)` - Subscribe to state changes
 
 ### Queue Management
@@ -322,6 +324,43 @@ await machine.sendPriority('EMERGENCY_STOP');
 - Clears all queued events first
 - Then sends the priority event
 - Useful for critical state changes that must happen immediately
+
+### History Management
+
+#### rollback()
+
+Rollback to the previous state in history without executing entry/exit actions.
+
+```javascript
+const result = await machine.rollback();
+console.log(result.state);    // Previous state
+console.log(result.context);  // Previous context
+```
+
+- Returns Promise that resolves to `{ state, context }`
+- Does NOT execute entry/exit actions
+- Clears the event queue
+- Returns current state if no history available
+
+#### historySize property
+
+Get the number of states currently stored in history.
+
+```javascript
+console.log(machine.historySize); // e.g., 5
+```
+
+#### Configuring History Size
+
+Set maximum history size when creating the machine:
+
+```javascript
+const machine = createMachine({
+  // ... machine config
+}, {
+  historySize: 20  // Keep last 20 states (default: 50)
+});
+```
 
 ### Error Types
 

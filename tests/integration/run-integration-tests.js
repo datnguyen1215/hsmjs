@@ -42,9 +42,9 @@ const runCommand = async (command, cwd = projectRoot) => {
 /**
  * Install HSMJS package in test directory
  */
-const installPackage = async (testDir, packagePath) => {
+const installPackage = async (testDir) => {
   console.log(`Installing package in ${testDir}...`);
-  const result = await runCommand(`npm install ${packagePath}`, testDir);
+  const result = await runCommand(`npm install`, testDir);
   return result.success;
 };
 
@@ -75,28 +75,10 @@ const runIntegrationTests = async () => {
     }
     console.log('✅ Package built successfully');
 
-    // Step 2: Create npm package
-    console.log('📦 Creating npm package...');
-    const packResult = await runCommand('npm pack');
-    if (!packResult.success) {
-      throw new Error('npm pack failed');
-    }
-    console.log('✅ Package created successfully');
-
-    // Find the created .tgz file
-    const files = await fs.readdir(projectRoot);
-    const tgzFile = files.find(file => file.endsWith('.tgz'));
-    if (!tgzFile) {
-      throw new Error('Could not find created .tgz file');
-    }
-
-    const packagePath = path.resolve(projectRoot, tgzFile);
-    console.log(`📦 Package created: ${tgzFile}`);
-
-    // Step 3: Test CommonJS integration
+    // Step 2: Test CommonJS integration
     console.log('\n🧪 Testing CommonJS integration...');
     const commonjsTestDir = path.resolve(__dirname, 'commonjs-test');
-    const commonjsSuccess = await installPackage(commonjsTestDir, packagePath);
+    const commonjsSuccess = await installPackage(commonjsTestDir);
     if (!commonjsSuccess) {
       throw new Error('Failed to install package in CommonJS test directory');
     }
@@ -106,10 +88,10 @@ const runIntegrationTests = async () => {
       throw new Error('CommonJS integration test failed');
     }
 
-    // Step 4: Test ES6 module integration
+    // Step 3: Test ES6 module integration
     console.log('\n🧪 Testing ES6 module integration...');
     const esmTestDir = path.resolve(__dirname, 'esm-test');
-    const esmSuccess = await installPackage(esmTestDir, packagePath);
+    const esmSuccess = await installPackage(esmTestDir);
     if (!esmSuccess) {
       throw new Error('Failed to install package in ES6 test directory');
     }
@@ -119,15 +101,8 @@ const runIntegrationTests = async () => {
       throw new Error('ES6 module integration test failed');
     }
 
-    // Step 5: Cleanup
+    // Step 4: Cleanup
     console.log('\n🧹 Cleaning up...');
-    try {
-      await fs.unlink(packagePath);
-      console.log('✅ Cleaned up package file');
-    } catch (error) {
-      console.warn('Warning: Could not clean up package file:', error.message);
-    }
-
     // Clean up node_modules in test directories
     try {
       await fs.rm(path.join(commonjsTestDir, 'node_modules'), { recursive: true, force: true });

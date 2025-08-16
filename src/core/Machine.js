@@ -24,14 +24,27 @@ export const Machine = (config, options = {}) => {
   });
   const actions = options.actions || {};
   const guards = options.guards || {};
+  const historySize = options.historySize || 50;
 
   // Runtime state (previously in MachineService)
   let _context = cloneContext(config.context || {});
   const eventEmitter = createEventEmitter();
   const queueManager = createQueueManager();
+  const _stateHistory = [];
 
   // Helper functions use the imported modules
   const getStateNodeForPath = (statePath) => getStateNode(rootNode, statePath);
+
+  const pushToHistory = () => {
+    _stateHistory.push({
+      state,
+      context: cloneContext(_context)
+    });
+    // Keep only the last historySize entries
+    if (_stateHistory.length > historySize) {
+      _stateHistory.splice(0, _stateHistory.length - historySize);
+    }
+  };
 
 
 
@@ -47,6 +60,8 @@ export const Machine = (config, options = {}) => {
       // Update local state from result
       state = result.value.state;
       _context = result.value.context;
+      // Store state in history after successful transition
+      pushToHistory();
       // Notify subscribers after state update
       notifySubscribers();
     }
@@ -58,6 +73,8 @@ export const Machine = (config, options = {}) => {
     // Update local state from result
     state = result.state;
     _context = result.context;
+    // Store state in history after successful transition
+    pushToHistory();
     // Notify subscribers after state update
     notifySubscribers();
     return result;
@@ -84,6 +101,9 @@ export const Machine = (config, options = {}) => {
     _context = result.context;
   }
 
+  // Store initial state in history
+  pushToHistory();
+
   // Public API
   return {
     get config() { return machineConfig; },
@@ -97,6 +117,7 @@ export const Machine = (config, options = {}) => {
     get context() { return cloneContext(_context); },
     get isTransitioning() { return queueManager.getIsTransitioning(); },
     get eventQueue() { return queueManager.eventQueue; },
+    get historySize() { return _stateHistory.length; },
 
     /**
      * @param {string} eventType
@@ -220,15 +241,28 @@ export const Machine = (config, options = {}) => {
       return eventEmitter.subscribe(callback);
     },
 
-    // Expose for compatibility
-    getStateNode: getStateNodeForPath,
-    processEventSync: processEvent,
-    processEventAsync: processEventAsyncHandler,
-    executeActionsSync: (actionsList, context, event) => executeActionsSync(actionsList, context, event, actions),
-    processNextQueuedEventSync,
-    processNextQueuedEvent,
-    initializeState: (parentNode, initialKey) => initializeState(parentNode, initialKey),
-    getStatePath,
-    notifySubscribers
+    /**
+     * Rollback to the previous state in history.
+     * Note: This does NOT execute entry/exit actions.
+     * @returns {Promise<{state: string, context: Object}>}
+     */
+    rollback() {
+      if (_stateHistory.length > 1) {
+        // Remove current state
+        _stateHistory.pop();
+        // Get previous state
+        const previousSnapshot = _stateHistory[_stateHistory.length - 1];
+        // Restore state and context
+        state = previousSnapshot.state;
+        _context = cloneContext(previousSnapshot.context);
+        // Clear any queued events
+        queueManager.clearQueue();
+        // Notify subscribers
+        notifySubscribers();
+        return Promise.resolve({ state, context: cloneContext(_context) });
+      }
+      // If no history to rollback to, return current state
+      return Promise.resolve({ state, context: cloneContext(_context) });
+    }
   };
 };

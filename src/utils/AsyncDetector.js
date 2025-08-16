@@ -84,13 +84,4 @@ export const isActionAsync = (action, actionRegistry = {}) => {
   return false;
 };
 
-/**
- * @param {Array} actionsList
- * @param {Object} actionRegistry
- * @returns {boolean}
- */
-export const someActionAsync = (actionsList, actionRegistry = {}) => {
-  return actionsList.some(action => isActionAsync(action, actionRegistry));
-};
-
 export { isAsyncFunction, detectPromiseInFunction };
