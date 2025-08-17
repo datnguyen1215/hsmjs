@@ -8,7 +8,7 @@ A lightweight hierarchical state machine library for JavaScript with XState-like
 
 ## Features
 
-- ✅ **No .start() needed** - Use machine directly
+- ✅ **CommonJs & ESM Support** - Use in Node.js or browser environments
 - ✅ **Hierarchical States** - Nested states for complex logic
 - ✅ **XState-like Syntax** - Familiar configuration format
 - ✅ **Guards & Conditions** - Smart state transitions
