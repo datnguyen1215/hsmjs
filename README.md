@@ -6,39 +6,9 @@ A lightweight hierarchical state machine library for JavaScript with XState-like
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/your-username/hsmjs/workflows/Tests/badge.svg)](https://github.com/your-username/hsmjs/actions)
 
-## Quick Start (30 seconds)
-
-```bash
-npm install @datnguyen1215/hsmjs
-```
-
-```javascript
-import { createMachine, assign } from '@datnguyen1215/hsmjs';
-
-const toggleMachine = createMachine({
-  id: 'toggle',
-  initial: 'inactive',
-  context: { count: 0 },
-  states: {
-    inactive: {
-      on: { TOGGLE: { target: 'active', actions: [assign({ count: ctx => ctx.count + 1 })] } }
-    },
-    active: {
-      entry: [() => console.log('Activated!')],
-      on: { TOGGLE: 'inactive' }
-    }
-  }
-});
-
-// Use it - no .start() needed!
-const result = await toggleMachine.send('TOGGLE');
-console.log(result.state); // 'active'
-console.log(result.context.count); // 1
-```
-
 ## Features
 
-- ✅ **No .start() needed** - Use machine directly
+- ✅ **CommonJs & ESM Support** - Use in Node.js or browser environments
 - ✅ **Hierarchical States** - Nested states for complex logic
 - ✅ **XState-like Syntax** - Familiar configuration format
 - ✅ **Guards & Conditions** - Smart state transitions
@@ -56,148 +26,252 @@ console.log(result.context.count); // 1
 ## Installation Options
 
 ### NPM/Yarn
+
 ```bash
 npm install @datnguyen1215/hsmjs
 # or
 yarn add @datnguyen1215/hsmjs
 ```
 
-### CDN (Browser)
-```html
-<script src="https://unpkg.com/@datnguyen1215/hsmjs@latest/dist/index.umd.min.js"></script>
-<script>
-  const { createMachine, assign } = HSMJS;
-  // Your code here
-</script>
-```
+## Example
 
-## Basic Usage Patterns
-
-### Fire and Forget
 ```javascript
-// Send events without waiting
-machine.send('START');
-machine.send('NEXT');
-```
+import { createMachine, assign } from '@datnguyen1215/hsmjs'
 
-### Get Results
-```javascript
-// Wait for completion and get state + context
-const result = await machine.send('FETCH', { url: '/api/data' });
-console.log(result.state);    // New state
-console.log(result.context);  // Updated context
-console.log(result.results);  // Action return values
-```
-
-### Context Updates
-```javascript
-const counterMachine = createMachine({
-  id: 'counter',
-  initial: 'idle',
-  context: { count: 0 },
+// Authentication machine with nested states, guards, and context management
+const authMachine = createMachine({
+  id: 'auth',
+  initial: 'unauthenticated',
+  context: {
+    user: null,
+    loginAttempts: 0,
+    maxAttempts: 3
+  },
   states: {
-    idle: {
+    unauthenticated: {
       on: {
-        INCREMENT: {
-          actions: [assign({ count: ctx => ctx.count + 1 })]
+        LOGIN: [
+          {
+            target: 'authenticated',
+            cond: (ctx, event) =>
+              event.username === 'admin' && event.password === 'pass',
+            actions: [
+              assign({
+                user: (ctx, event) => ({ username: event.username }),
+                loginAttempts: 0
+              })
+            ]
+          },
+          {
+            target: 'locked',
+            cond: ctx => ctx.loginAttempts >= ctx.maxAttempts - 1,
+            actions: [assign({ loginAttempts: ctx => ctx.loginAttempts + 1 })]
+          },
+          {
+            actions: [
+              assign({ loginAttempts: ctx => ctx.loginAttempts + 1 }),
+              () => console.log('Invalid credentials')
+            ]
+          }
+        ],
+        FORGOT_PASSWORD: 'passwordReset'
+      }
+    },
+    authenticated: {
+      initial: 'idle', // Nested states start here
+      states: {
+        idle: {
+          entry: [() => console.log('Welcome! You are in the idle state.')],
+          on: {
+            VIEW_PROFILE: 'profile',
+            VIEW_SETTINGS: 'settings'
+          }
+        },
+        profile: {
+          entry: [() => console.log('Viewing profile...')],
+          on: {
+            BACK: 'idle',
+            EDIT: 'editingProfile'
+          }
+        },
+        editingProfile: {
+          on: {
+            SAVE: {
+              target: 'profile',
+              actions: [
+                assign((ctx, event) => ({
+                  user: { ...ctx.user, ...event.data }
+                }))
+              ]
+            },
+            CANCEL: 'profile'
+          }
+        },
+        settings: {
+          entry: [() => console.log('Viewing settings...')],
+          on: { BACK: 'idle' }
+        }
+      },
+      on: {
+        LOGOUT: {
+          target: 'unauthenticated',
+          actions: [assign({ user: null })]
+        }
+      }
+    },
+    passwordReset: {
+      on: {
+        SEND_RESET_EMAIL: {
+          target: 'unauthenticated',
+          actions: [() => console.log('Password reset email sent')]
+        },
+        CANCEL: 'unauthenticated'
+      }
+    },
+    locked: {
+      entry: [
+        () => console.log('Account locked due to too many failed attempts')
+      ],
+      on: {
+        UNLOCK: {
+          target: 'unauthenticated',
+          cond: (ctx, event) => event.adminCode === 'UNLOCK123',
+          actions: [assign({ loginAttempts: 0 })]
         }
       }
     }
   }
-});
+})
 
-await counterMachine.send('INCREMENT');
-console.log(counterMachine.context.count); // 1
+// Validate the machine configuration
+const validation = authMachine.validate()
+console.log(validation)
+// { valid: true, errors: [], warnings: [] }
+
+// Generate and display state diagram
+const diagram = authMachine.visualize({ direction: 'TB' })
+console.log(diagram)
 ```
 
-### State Visualization
+### Generated Mermaid Diagram
 
-```javascript
-// Generate Mermaid diagram
-const diagram = machine.visualize();
-console.log(diagram);
-// Outputs: stateDiagram-v2 ...
-
-// With options
-const diagram = machine.visualize({
-  direction: 'LR',  // Left to right layout
-  showGuards: true  // Show guard conditions
-});
+```mermaid
+stateDiagram-v2
+    direction TB
+    [*] --> unauthenticated
+    unauthenticated --> authenticated : LOGIN
+    unauthenticated --> locked : LOGIN
+    unauthenticated --> passwordReset : FORGOT_PASSWORD
+    state authenticated {
+        [*] --> idle
+        idle --> profile : VIEW_PROFILE
+        idle --> settings : VIEW_SETTINGS
+        profile --> idle : BACK
+        profile --> editingProfile : EDIT
+        editingProfile --> profile : SAVE
+        editingProfile --> profile : CANCEL
+        settings --> idle : BACK
+    }
+    authenticated --> unauthenticated : LOGOUT
+    passwordReset --> unauthenticated : SEND_RESET_EMAIL
+    passwordReset --> unauthenticated : CANCEL
+    locked --> unauthenticated : UNLOCK
 ```
 
-Render diagrams at [Mermaid Live](https://mermaid.live) or in any Markdown file.
+### Usage Examples
 
-### Conditional Transitions (Guards)
 ```javascript
-const machine = createMachine({
-  id: 'validation',
-  initial: 'input',
-  context: { value: '', attempts: 0 },
-  states: {
-    input: {
-      on: {
-        SUBMIT: [
-          { target: 'success', cond: ctx => ctx.value.length > 0 },
-          { target: 'error', actions: [assign({ attempts: ctx => ctx.attempts + 1 })] }
-        ]
-      }
-    },
-    success: {},
-    error: { on: { TRY_AGAIN: 'input' } }
-  }
-});
+// Initial state
+console.log(authMachine.state) // 'unauthenticated'
+console.log(authMachine.context) // { user: null, loginAttempts: 0, maxAttempts: 3 }
+
+// Failed login attempt
+await authMachine.send('LOGIN', { username: 'user', password: 'wrong' })
+// State: 'unauthenticated', loginAttempts: 1
+
+// Too many failed attempts (after 3 tries)
+// State transitions: unauthenticated -> locked
+
+// Successful login
+await authMachine.send('LOGIN', { username: 'admin', password: 'pass' })
+// State transitions: unauthenticated -> authenticated.idle
+// Context: { user: { username: 'admin' }, loginAttempts: 0, maxAttempts: 3 }
+
+// Navigate within authenticated state
+await authMachine.send('VIEW_PROFILE')
+// State transitions: authenticated.idle -> authenticated.profile
+
+await authMachine.send('EDIT')
+// State transitions: authenticated.profile -> authenticated.editingProfile
+
+await authMachine.send('SAVE', { data: { email: 'admin@example.com' } })
+// State transitions: authenticated.editingProfile -> authenticated.profile
+// Context: user updated with email
+
+await authMachine.send('BACK')
+// State transitions: authenticated.profile -> authenticated.idle
+
+// Logout
+await authMachine.send('LOGOUT')
+// State transitions: authenticated.idle -> unauthenticated
+// Context: { user: null, loginAttempts: 0, maxAttempts: 3 }
 ```
 
 ## Framework Integration
 
 ### React Hook Example
-```javascript
-import { useReducer, useEffect } from 'react';
-import { createMachine, assign } from '@datnguyen1215/hsmjs';
 
-const useMachine = (machine) => {
-  const [, forceUpdate] = useReducer(x => x + 1, 0);
+```javascript
+import { useReducer, useEffect } from 'react'
+import { createMachine, assign } from '@datnguyen1215/hsmjs'
+
+const useMachine = machine => {
+  const [, forceUpdate] = useReducer(x => x + 1, 0)
 
   useEffect(() => {
-    const unsubscribe = machine.subscribe(() => forceUpdate());
-    return unsubscribe;
-  }, [machine]);
+    const unsubscribe = machine.subscribe(() => forceUpdate())
+    return unsubscribe
+  }, [machine])
 
-  return [machine.state, machine.context, machine.send.bind(machine)];
-};
+  return [machine.state, machine.context, machine.send.bind(machine)]
+}
 
 // In component
-const [state, context, send] = useMachine(toggleMachine);
+const [state, context, send] = useMachine(toggleMachine)
 ```
 
 ### Svelte Store Example
-```javascript
-import { writable } from 'svelte/store';
-import { createMachine } from '@datnguyen1215/hsmjs';
 
-const createMachineStore = (machine) => {
-  const { subscribe, set } = writable({ state: machine.state, context: machine.context });
+```javascript
+import { writable } from 'svelte/store'
+import { createMachine } from '@datnguyen1215/hsmjs'
+
+const createMachineStore = machine => {
+  const { subscribe, set } = writable({
+    state: machine.state,
+    context: machine.context
+  })
 
   machine.subscribe(() => {
-    set({ state: machine.state, context: machine.context });
-  });
+    set({ state: machine.state, context: machine.context })
+  })
 
   return {
     subscribe,
     send: machine.send.bind(machine)
-  };
-};
+  }
+}
 ```
 
 ## Documentation
 
-| Topic | Description |
-|-------|-------------|
-| [Getting Started](docs/getting-started.md) | Installation, basic concepts, first machine |
-| [API Reference](docs/api-reference.md) | Complete API documentation |
-| [Advanced Features](docs/advanced-features.md) | Guards, nested states, async actions |
-| [Framework Integration](docs/framework-integration.md) | React, Svelte, Vue examples |
-| [Examples & Patterns](docs/examples.md) | Real-world use cases |
+| Topic                                                  | Description                                 |
+| ------------------------------------------------------ | ------------------------------------------- |
+| [Getting Started](docs/getting-started.md)             | Installation, basic concepts, first machine |
+| [API Reference](docs/api-reference.md)                 | Complete API documentation                  |
+| [Advanced Features](docs/advanced-features.md)         | Guards, nested states, async actions        |
+| [Framework Integration](docs/framework-integration.md) | React, Svelte, Vue examples                 |
+| [Examples & Patterns](docs/examples.md)                | Real-world use cases                        |
 
 ## Browser Support
 
@@ -206,3 +280,4 @@ const createMachineStore = (machine) => {
 ## License
 
 MIT © Dat Nguyen
+
