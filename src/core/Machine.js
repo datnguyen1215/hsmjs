@@ -208,6 +208,31 @@ export const Machine = (config, options = {}) => {
         }
       }
 
+      // Check wildcard event handlers
+      if (node.on && node.on['*']) {
+        const wildcardTransition = node.on['*'];
+        const transitions = normalizeTransitions(wildcardTransition);
+
+        for (const trans of transitions) {
+          if (trans && typeof trans === 'object' && trans.cond) {
+            const guard = trans.cond;
+
+            // Check string guard references
+            if (typeof guard === 'string') {
+              const guardName = guard.startsWith('!') ? guard.slice(1) : guard;
+              if (!guards[guardName]) {
+                errors.push({
+                  type: 'MISSING_GUARD',
+                  guard: guardName,
+                  state: statePath,
+                  event: '*'
+                });
+              }
+            }
+          }
+        }
+      }
+
       // Recursively check child states
       forEachChildState(node, statePath, checkGuards);
     };
@@ -262,6 +287,28 @@ export const Machine = (config, options = {}) => {
                     event: event
                   });
                 }
+              }
+            }
+          }
+        }
+      }
+
+      // Check wildcard event handlers
+      if (node.on && node.on['*']) {
+        const wildcardTransition = node.on['*'];
+        const transitions = normalizeTransitions(wildcardTransition);
+
+        for (const trans of transitions) {
+          if (trans && typeof trans === 'object' && trans.actions) {
+            const transActions = Array.isArray(trans.actions) ? trans.actions : [trans.actions];
+            for (const action of transActions) {
+              if (typeof action === 'string' && !actions[action]) {
+                errors.push({
+                  type: 'MISSING_ACTION',
+                  action: action,
+                  state: statePath,
+                  event: '*'
+                });
               }
             }
           }
