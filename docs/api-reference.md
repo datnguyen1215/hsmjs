@@ -349,6 +349,39 @@ if (result.warnings.length > 0) {
 }
 ```
 
+### `machine.visualize(options?)`
+
+Generates a Mermaid state diagram representation of the machine.
+
+**Parameters:**
+- `options` (Object, optional):
+  - `type` (String): Diagram type, currently only 'mermaid' supported (default: 'mermaid')
+  - `direction` (String): Diagram direction - 'TB', 'LR', 'BT', 'RL' (default: 'TB')
+  - `showGuards` (Boolean): Include guard conditions in labels (default: false)
+
+**Returns:** String containing Mermaid diagram syntax
+
+**Example:**
+```javascript
+// Basic usage
+const diagram = machine.visualize();
+// Render at https://mermaid.live or in Markdown
+
+// Horizontal layout
+const horizontalDiagram = machine.visualize({ direction: 'LR' });
+
+// Show guard conditions
+const detailedDiagram = machine.visualize({
+  showGuards: true
+});
+```
+
+**Notes:**
+- Wildcard events (*) are excluded from visualization for clarity
+- Nested states are properly formatted with indentation
+- ID references are cleaned (e.g., #machine.state becomes state)
+- Compatible with all Mermaid rendering tools
+
 ## State Configuration
 
 ### Basic State

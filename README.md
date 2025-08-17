@@ -51,6 +51,7 @@ console.log(result.context.count); // 1
 - ✅ **Wildcard Events** - Handle any unmatched event with `*`
 - ✅ **Configuration Validation** - Built-in machine.validate() method
 - ✅ **History & Rollback** - Undo state changes with built-in history tracking
+- ✅ **State Visualization** - Generate Mermaid diagrams with machine.visualize()
 
 ## Installation Options
 
@@ -108,6 +109,23 @@ const counterMachine = createMachine({
 await counterMachine.send('INCREMENT');
 console.log(counterMachine.context.count); // 1
 ```
+
+### State Visualization
+
+```javascript
+// Generate Mermaid diagram
+const diagram = machine.visualize();
+console.log(diagram);
+// Outputs: stateDiagram-v2 ...
+
+// With options
+const diagram = machine.visualize({
+  direction: 'LR',  // Left to right layout
+  showGuards: true  // Show guard conditions
+});
+```
+
+Render diagrams at [Mermaid Live](https://mermaid.live) or in any Markdown file.
 
 ### Conditional Transitions (Guards)
 ```javascript

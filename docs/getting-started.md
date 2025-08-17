@@ -39,6 +39,7 @@ A state machine has:
 - **Context**: Data that persists across states
 - **Actions**: Side effects that happen during transitions
 - **History**: Automatic state tracking and persistence for undo/restore functionality
+- **Visualization**: Generate diagrams to understand your state machine
 
 ## Your First Machine
 
@@ -80,6 +81,22 @@ console.log(toggleMachine.context);         // { clickCount: 1 }
 await toggleMachine.send('TOGGLE');         // on → off
 console.log(toggleMachine.context);         // { clickCount: 1 }
 ```
+
+## Visualizing Your Machine
+
+HSMJS can generate Mermaid diagrams to help you understand and document your state machines:
+
+```javascript
+const diagram = toggleMachine.visualize();
+console.log(diagram);
+// Copy output to any Mermaid-compatible tool
+```
+
+You can render the output at:
+- [Mermaid Live Editor](https://mermaid.live) - Interactive online editor
+- GitHub/GitLab Markdown files - Automatic rendering in READMEs
+- VS Code with Mermaid extensions - Preview in your editor
+- Any documentation tool supporting Mermaid syntax
 
 ## Key Differences from XState
 

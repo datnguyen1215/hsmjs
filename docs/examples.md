@@ -12,6 +12,7 @@ Real-world examples and common patterns for HSMJS state machines.
 - [Background Processes](#background-processes)
 - [State History & Undo](#state-history--undo)
 - [Testing Patterns](#testing-patterns)
+- [Visualization](#visualization)
 
 ## Basic Examples
 
@@ -133,6 +134,116 @@ Mock state machine implementation for fast unit testing and component testing. S
 
 - **File**: [example/mock-testing.js](../example/mock-testing.js)
 - **Run**: `node example/mock-testing.js`
+
+## Visualization
+
+### Generating State Diagrams
+
+Visualize any state machine as a Mermaid diagram for documentation or debugging:
+
+```javascript
+import { createMachine } from '@datnguyen1215/hsmjs';
+
+const orderMachine = createMachine({
+  id: 'order',
+  initial: 'pending',
+  states: {
+    pending: {
+      on: {
+        PAY: 'processing',
+        CANCEL: 'cancelled'
+      }
+    },
+    processing: {
+      on: {
+        SUCCESS: 'completed',
+        FAILURE: 'failed'
+      }
+    },
+    completed: {},
+    failed: {
+      on: { RETRY: 'processing' }
+    },
+    cancelled: {}
+  }
+});
+
+// Generate diagram
+const diagram = orderMachine.visualize({ direction: 'LR' });
+console.log(diagram);
+/* Output:
+stateDiagram-v2
+    direction LR
+    [*] --> pending
+    pending --> processing : PAY
+    pending --> cancelled : CANCEL
+    processing --> completed : SUCCESS
+    processing --> failed : FAILURE
+    failed --> processing : RETRY
+*/
+```
+
+### Visualization Options
+
+Control how your state diagrams are generated:
+
+- **Direction**: Control diagram flow
+  - `'TB'` - Top to Bottom (default)
+  - `'LR'` - Left to Right
+  - `'BT'` - Bottom to Top
+  - `'RL'` - Right to Left
+
+- **Show Guards**: Display guard conditions in transition labels
+  - `showGuards: true` - Shows [guardName] in labels
+  - `showGuards: false` - Simple event names only (default)
+
+### Advanced Example with Nested States
+
+```javascript
+const authMachine = createMachine({
+  id: 'auth',
+  initial: 'unauthenticated',
+  states: {
+    unauthenticated: {
+      on: {
+        LOGIN: [
+          { target: 'authenticated', cond: 'hasValidCredentials' },
+          { target: 'unauthenticated' }
+        ]
+      }
+    },
+    authenticated: {
+      initial: 'idle',
+      states: {
+        idle: {
+          on: { VIEW_PROFILE: 'profile' }
+        },
+        profile: {
+          on: { BACK: 'idle' }
+        }
+      },
+      on: { LOGOUT: 'unauthenticated' }
+    }
+  }
+});
+
+// Visualize with guards shown
+const diagram = authMachine.visualize({ showGuards: true });
+```
+
+### Rendering Your Diagrams
+
+1. **Mermaid Live Editor**: Copy and paste for instant preview
+2. **Markdown Files**: Embed directly in README.md
+3. **Documentation Sites**: Most modern doc tools support Mermaid
+4. **Development**: VS Code extensions for live preview
+
+### Tips
+
+- Use `direction: 'LR'` for wide state machines
+- Enable `showGuards: true` when debugging conditional transitions
+- Wildcard events (*) are automatically excluded for cleaner diagrams
+- Nested states maintain proper hierarchy in the output
 
 ---
 
