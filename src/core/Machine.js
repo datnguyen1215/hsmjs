@@ -1,4 +1,4 @@
-import { createStateNode } from './State.js';
+import { createStateNode, findStateNode } from './State.js';
 import { cloneContext } from './ContextCloner.js';
 import { getStateNode, initializeState, getStatePath } from './StateNavigator.js';
 import { createEventEmitter } from '../utils/EventEmitter.js';
@@ -102,6 +102,339 @@ export const Machine = (config, options = {}) => {
 
   // Store initial state in history
   pushToHistory();
+
+  // Helper functions for validation
+  const normalizeTransitions = (transition) => {
+    return Array.isArray(transition) ? transition : [transition];
+  };
+
+  const forEachChildState = (node, statePath, callback) => {
+    if (node.states) {
+      for (const [childKey, childNode] of Object.entries(node.states)) {
+        const childPath = statePath ? `${statePath}.${childKey}` : childKey;
+        callback(childNode, childPath);
+      }
+    }
+  };
+
+  // Validation helper functions
+  /**
+   * @returns {{errors: Array, warnings: Array}}
+   */
+  const validateStateTransitions = () => {
+    const errors = [];
+    const warnings = [];
+
+    const checkTransitions = (node, statePath) => {
+      // Check all transitions for this state
+      if (node.on) {
+        for (const [event, transition] of Object.entries(node.on)) {
+          const transitions = normalizeTransitions(transition);
+
+          for (const trans of transitions) {
+            const normalizedTrans = typeof trans === 'string'
+              ? { target: trans }
+              : trans;
+
+            if (normalizedTrans && normalizedTrans.target) {
+              // Check if target state exists
+              // For relative paths, search from the current node's parent (for sibling states)
+              // For absolute paths or ID refs, search from root
+              let searchNode = node;
+              const target = normalizedTrans.target;
+
+              if (target.startsWith('#')) {
+                // ID reference - search from root
+                searchNode = rootNode;
+              } else if (!target.includes('.')) {
+                // Simple relative reference - search from parent for siblings
+                searchNode = node.parent || rootNode;
+              } else {
+                // Complex path - search from root
+                searchNode = rootNode;
+              }
+
+              const targetNode = findStateNode(searchNode, target);
+              if (!targetNode) {
+                errors.push({
+                  type: 'INVALID_TARGET',
+                  state: statePath,
+                  event: event,
+                  target: normalizedTrans.target
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // Recursively check child states
+      forEachChildState(node, statePath, checkTransitions);
+    };
+
+    checkTransitions(rootNode, '');
+    return { errors, warnings };
+  };
+
+  /**
+   * @returns {Array}
+   */
+  const validateGuardReferences = () => {
+    const errors = [];
+
+    const checkGuards = (node, statePath) => {
+      if (node.on) {
+        for (const [event, transition] of Object.entries(node.on)) {
+          const transitions = normalizeTransitions(transition);
+
+          for (const trans of transitions) {
+            if (trans && typeof trans === 'object' && trans.cond) {
+              const guard = trans.cond;
+
+              // Check string guard references
+              if (typeof guard === 'string') {
+                const guardName = guard.startsWith('!') ? guard.slice(1) : guard;
+                if (!guards[guardName]) {
+                  errors.push({
+                    type: 'MISSING_GUARD',
+                    guard: guardName,
+                    state: statePath,
+                    event: event
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Check wildcard event handlers
+      if (node.on && node.on['*']) {
+        const wildcardTransition = node.on['*'];
+        const transitions = normalizeTransitions(wildcardTransition);
+
+        for (const trans of transitions) {
+          if (trans && typeof trans === 'object' && trans.cond) {
+            const guard = trans.cond;
+
+            // Check string guard references
+            if (typeof guard === 'string') {
+              const guardName = guard.startsWith('!') ? guard.slice(1) : guard;
+              if (!guards[guardName]) {
+                errors.push({
+                  type: 'MISSING_GUARD',
+                  guard: guardName,
+                  state: statePath,
+                  event: '*'
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // Recursively check child states
+      forEachChildState(node, statePath, checkGuards);
+    };
+
+    checkGuards(rootNode, '');
+    return errors;
+  };
+
+  /**
+   * @returns {Array}
+   */
+  const validateActionReferences = () => {
+    const errors = [];
+
+    const checkActions = (node, statePath) => {
+      // Check entry and exit actions
+      const checkActionList = (actionList, actionType) => {
+        for (const action of actionList) {
+          if (typeof action === 'string' && !actions[action]) {
+            errors.push({
+              type: 'MISSING_ACTION',
+              action: action,
+              state: statePath,
+              actionType: actionType
+            });
+          }
+        }
+      };
+
+      if (node.entry && node.entry.length > 0) {
+        checkActionList(node.entry, 'entry');
+      }
+
+      if (node.exit && node.exit.length > 0) {
+        checkActionList(node.exit, 'exit');
+      }
+
+      // Check transition actions
+      if (node.on) {
+        for (const [event, transition] of Object.entries(node.on)) {
+          const transitions = normalizeTransitions(transition);
+
+          for (const trans of transitions) {
+            if (trans && typeof trans === 'object' && trans.actions) {
+              const transActions = Array.isArray(trans.actions) ? trans.actions : [trans.actions];
+              for (const action of transActions) {
+                if (typeof action === 'string' && !actions[action]) {
+                  errors.push({
+                    type: 'MISSING_ACTION',
+                    action: action,
+                    state: statePath,
+                    event: event
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Check wildcard event handlers
+      if (node.on && node.on['*']) {
+        const wildcardTransition = node.on['*'];
+        const transitions = normalizeTransitions(wildcardTransition);
+
+        for (const trans of transitions) {
+          if (trans && typeof trans === 'object' && trans.actions) {
+            const transActions = Array.isArray(trans.actions) ? trans.actions : [trans.actions];
+            for (const action of transActions) {
+              if (typeof action === 'string' && !actions[action]) {
+                errors.push({
+                  type: 'MISSING_ACTION',
+                  action: action,
+                  state: statePath,
+                  event: '*'
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // Recursively check child states
+      forEachChildState(node, statePath, checkActions);
+    };
+
+    checkActions(rootNode, '');
+    return errors;
+  };
+
+  /**
+   * @returns {Array}
+   */
+  const validateNestedStates = () => {
+    const errors = [];
+
+    const checkNestedInitial = (node, statePath) => {
+      // Check if compound state has valid initial state
+      if (node.states && Object.keys(node.states).length > 0 && node.initial) {
+        if (!node.states[node.initial]) {
+          errors.push({
+            type: 'INVALID_INITIAL',
+            state: statePath,
+            initial: node.initial
+          });
+        }
+      }
+
+      // Recursively check child states
+      forEachChildState(node, statePath, checkNestedInitial);
+    };
+
+    checkNestedInitial(rootNode, '');
+    return errors;
+  };
+
+  /**
+   * @returns {Array}
+   */
+  const validateStateReachability = () => {
+    const warnings = [];
+    const reachableStates = new Set();
+
+    // Mark initial state and its children as reachable
+    const markReachable = (statePath) => {
+      reachableStates.add(statePath);
+      const node = getStateNode(rootNode, statePath);
+      if (node && node.states) {
+        for (const childKey of Object.keys(node.states)) {
+          const childPath = statePath ? `${statePath}.${childKey}` : childKey;
+          markReachable(childPath);
+        }
+      }
+    };
+
+    // Start with initial state
+    markReachable(config.initial);
+
+    // Find all states that are targets of transitions
+    const findTransitionTargets = (node) => {
+      if (node.on) {
+        for (const transition of Object.values(node.on)) {
+          const transitions = normalizeTransitions(transition);
+          for (const trans of transitions) {
+            const target = typeof trans === 'string' ? trans : trans?.target;
+            if (target) {
+              // Resolve the target to get the actual state path
+              const targetNode = findStateNode(rootNode, target);
+              if (targetNode) {
+                // Extract state path from node id
+                const statePath = targetNode.id.replace(/^[^.]*\./, '');
+                markReachable(statePath);
+              }
+            }
+          }
+        }
+      }
+
+      // Check child states
+      if (node.states) {
+        for (const childNode of Object.values(node.states)) {
+          findTransitionTargets(childNode);
+        }
+      }
+    };
+
+    findTransitionTargets(rootNode);
+
+    // Check for unreachable states
+    const checkUnreachable = (node, statePath) => {
+      if (statePath && !reachableStates.has(statePath)) {
+        warnings.push({
+          type: 'UNREACHABLE_STATE',
+          state: statePath
+        });
+      }
+
+      forEachChildState(node, statePath, checkUnreachable);
+    };
+
+    checkUnreachable(rootNode, '');
+
+    // Check for empty states (states with no transitions, actions, or children)
+    const checkEmpty = (node, statePath) => {
+      const hasTransitions = node.on && Object.keys(node.on).length > 0;
+      const hasActions = (node.entry && node.entry.length > 0) || (node.exit && node.exit.length > 0);
+      const hasChildren = node.states && Object.keys(node.states).length > 0;
+
+      if (statePath && !hasTransitions && !hasActions && !hasChildren) {
+        warnings.push({
+          type: 'EMPTY_STATE',
+          state: statePath
+        });
+      }
+
+      forEachChildState(node, statePath, checkEmpty);
+    };
+
+    checkEmpty(rootNode, '');
+
+    return warnings;
+  };
 
   // Public API
   return {
@@ -275,6 +608,39 @@ export const Machine = (config, options = {}) => {
       notifySubscribers();
 
       return Promise.resolve({ state, context: cloneContext(_context) });
+    },
+
+    /**
+     * Validates the machine configuration and structure.
+     * Checks for invalid transitions, missing guards/actions, unreachable states, etc.
+     * @returns {{valid: boolean, errors: Array, warnings: Array}}
+     */
+    validate() {
+      const errors = [];
+      const warnings = [];
+
+      // Run all validation checks
+      const transitionValidation = validateStateTransitions();
+      errors.push(...transitionValidation.errors);
+      warnings.push(...transitionValidation.warnings);
+
+      const guardErrors = validateGuardReferences();
+      errors.push(...guardErrors);
+
+      const actionErrors = validateActionReferences();
+      errors.push(...actionErrors);
+
+      const nestedErrors = validateNestedStates();
+      errors.push(...nestedErrors);
+
+      const reachabilityWarnings = validateStateReachability();
+      warnings.push(...reachabilityWarnings);
+
+      return {
+        valid: errors.length === 0,
+        errors: errors,
+        warnings: warnings
+      };
     }
   };
 };

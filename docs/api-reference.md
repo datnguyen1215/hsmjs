@@ -305,6 +305,50 @@ if (savedState) {
 }
 ```
 
+### `machine.validate()`
+
+Validates machine configuration for errors and warnings.
+
+**Returns:** Object with validation results
+```javascript
+{
+  valid: boolean,      // true if no errors
+  errors: Array,       // Critical issues that prevent operation
+  warnings: Array      // Potential issues that don't break functionality
+}
+```
+
+**Error Types:**
+- `INVALID_TARGET`: Transition targets non-existent state
+- `MISSING_GUARD`: String guard reference not in guard registry
+- `MISSING_ACTION`: String action reference not in action registry
+- `INVALID_INITIAL`: Nested initial state doesn't exist
+
+**Warning Types:**
+- `UNREACHABLE_STATE`: State has no incoming transitions
+- `EMPTY_STATE`: State has no transitions, actions, or children
+
+**Example:**
+```javascript
+const result = machine.validate();
+if (!result.valid) {
+  console.error('Machine configuration errors:', result.errors);
+}
+if (result.warnings.length > 0) {
+  console.warn('Machine configuration warnings:', result.warnings);
+}
+```
+
+**Error Object Structure:**
+```javascript
+{
+  type: 'INVALID_TARGET',
+  state: 'idle',
+  event: 'START',
+  target: 'nonexistent'
+}
+```
+
 ## State Configuration
 
 ### Basic State
@@ -385,6 +429,40 @@ cond: (context, event) => event.type === 'PREMIUM_USER'
 
 // Combined guard
 cond: (context, event) => context.isValid && event.confirmed
+```
+
+### Wildcard Events
+
+Handle any unmatched event using `*` as the event key.
+
+**Syntax:**
+```javascript
+on: {
+  SPECIFIC_EVENT: 'targetState',
+  '*': {
+    actions: ['handleUnknownEvent']
+  }
+}
+```
+
+**Behavior:**
+- Wildcard only triggers if no specific event handler matches
+- Specific events always take precedence
+- Can have actions, guards, and target like any transition
+- Useful for logging, error handling, or fallback behavior
+
+**Example:**
+```javascript
+{
+  idle: {
+    on: {
+      START: 'active',
+      '*': {
+        actions: [(ctx, event) => console.log('Unknown event:', event.type)]
+      }
+    }
+  }
+}
 ```
 
 ## Action Types
