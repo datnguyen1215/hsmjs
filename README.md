@@ -15,13 +15,13 @@ A lightweight hierarchical state machine library for JavaScript with XState-like
 - ✅ **Context Management** - Built-in state with `assign()`
 - ✅ **Entry/Exit Actions** - Lifecycle hooks for states
 - ✅ **Async Action Support** - Promise-based actions
-- ✅ **TypeScript Support** - Full type definitions included
+- ✅ **JSDoc Type Support** - Full type definitions included
 - ✅ **Zero Dependencies** - Lightweight bundle
 - ✅ **Event Queuing** - Handles rapid event sequences
 - ✅ **Wildcard Events** - Handle any unmatched event with `*`
 - ✅ **Configuration Validation** - Built-in machine.validate() method
 - ✅ **History & Rollback** - Undo state changes with built-in history tracking
-- ✅ **State Visualization** - Generate Mermaid diagrams with machine.visualize()
+- ✅ **State Visualization** - Generate Mermaid & PlantUML diagrams with machine.visualize()
 
 ## Installation Options
 
@@ -53,25 +53,16 @@ const authMachine = createMachine({
         LOGIN: [
           {
             target: 'authenticated',
-            cond: (ctx, event) =>
-              event.username === 'admin' && event.password === 'pass',
-            actions: [
-              assign({
-                user: (ctx, event) => ({ username: event.username }),
-                loginAttempts: 0
-              })
-            ]
+            cond: 'isValidCredentials',
+            actions: ['setUser']
           },
           {
             target: 'locked',
-            cond: ctx => ctx.loginAttempts >= ctx.maxAttempts - 1,
-            actions: [assign({ loginAttempts: ctx => ctx.loginAttempts + 1 })]
+            cond: 'isTooManyAttempts',
+            actions: ['incrementAttempts']
           },
           {
-            actions: [
-              assign({ loginAttempts: ctx => ctx.loginAttempts + 1 }),
-              () => console.log('Invalid credentials')
-            ]
+            actions: ['incrementAttempts', 'logInvalidCredentials']
           }
         ],
         FORGOT_PASSWORD: 'passwordReset'
@@ -81,14 +72,14 @@ const authMachine = createMachine({
       initial: 'idle', // Nested states start here
       states: {
         idle: {
-          entry: [() => console.log('Welcome! You are in the idle state.')],
+          entry: ['logWelcome'],
           on: {
             VIEW_PROFILE: 'profile',
             VIEW_SETTINGS: 'settings'
           }
         },
         profile: {
-          entry: [() => console.log('Viewing profile...')],
+          entry: ['logViewingProfile'],
           on: {
             BACK: 'idle',
             EDIT: 'editingProfile'
@@ -98,24 +89,20 @@ const authMachine = createMachine({
           on: {
             SAVE: {
               target: 'profile',
-              actions: [
-                assign((ctx, event) => ({
-                  user: { ...ctx.user, ...event.data }
-                }))
-              ]
+              actions: ['updateUserProfile']
             },
             CANCEL: 'profile'
           }
         },
         settings: {
-          entry: [() => console.log('Viewing settings...')],
+          entry: ['logViewingSettings'],
           on: { BACK: 'idle' }
         }
       },
       on: {
         LOGOUT: {
           target: 'unauthenticated',
-          actions: [assign({ user: null })]
+          actions: ['clearUser']
         }
       }
     },
@@ -123,23 +110,46 @@ const authMachine = createMachine({
       on: {
         SEND_RESET_EMAIL: {
           target: 'unauthenticated',
-          actions: [() => console.log('Password reset email sent')]
+          actions: ['logPasswordReset']
         },
         CANCEL: 'unauthenticated'
       }
     },
     locked: {
-      entry: [
-        () => console.log('Account locked due to too many failed attempts')
-      ],
+      entry: ['logAccountLocked'],
       on: {
         UNLOCK: {
           target: 'unauthenticated',
-          cond: (ctx, event) => event.adminCode === 'UNLOCK123',
-          actions: [assign({ loginAttempts: 0 })]
+          cond: 'isValidAdminCode',
+          actions: ['resetAttempts']
         }
       }
     }
+  }
+}, {
+  guards: {
+    isValidCredentials: (ctx, event) =>
+      event.username === 'admin' && event.password === 'pass',
+    isTooManyAttempts: ctx => ctx.loginAttempts >= ctx.maxAttempts - 1,
+    isValidAdminCode: (ctx, event) => event.adminCode === 'UNLOCK123'
+  },
+  actions: {
+    setUser: assign({
+      user: (ctx, event) => ({ username: event.username }),
+      loginAttempts: 0
+    }),
+    incrementAttempts: assign({ loginAttempts: ctx => ctx.loginAttempts + 1 }),
+    logInvalidCredentials: () => console.log('Invalid credentials'),
+    resetAttempts: assign({ loginAttempts: 0 }),
+    clearUser: assign({ user: null }),
+    logPasswordReset: () => console.log('Password reset email sent'),
+    logAccountLocked: () => console.log('Account locked due to too many failed attempts'),
+    logWelcome: () => console.log('Welcome! You are in the idle state.'),
+    logViewingProfile: () => console.log('Viewing profile...'),
+    logViewingSettings: () => console.log('Viewing settings...'),
+    updateUserProfile: assign((ctx, event) => ({
+      user: { ...ctx.user, ...event.data }
+    }))
   }
 })
 
@@ -159,8 +169,8 @@ console.log(diagram)
 stateDiagram-v2
     direction TB
     [*] --> unauthenticated
-    unauthenticated --> authenticated : LOGIN
-    unauthenticated --> locked : LOGIN
+    unauthenticated --> authenticated : LOGIN [isValidCredentials] / setUser
+    unauthenticated --> locked : LOGIN [isTooManyAttempts] / incrementAttempts
     unauthenticated --> passwordReset : FORGOT_PASSWORD
     state authenticated {
         [*] --> idle
@@ -168,15 +178,57 @@ stateDiagram-v2
         idle --> settings : VIEW_SETTINGS
         profile --> idle : BACK
         profile --> editingProfile : EDIT
-        editingProfile --> profile : SAVE
+        editingProfile --> profile : SAVE / updateUserProfile
         editingProfile --> profile : CANCEL
         settings --> idle : BACK
     }
-    authenticated --> unauthenticated : LOGOUT
-    passwordReset --> unauthenticated : SEND_RESET_EMAIL
+    authenticated --> unauthenticated : LOGOUT / clearUser
+    passwordReset --> unauthenticated : SEND_RESET_EMAIL / logPasswordReset
     passwordReset --> unauthenticated : CANCEL
-    locked --> unauthenticated : UNLOCK
+    locked --> unauthenticated : UNLOCK [isValidAdminCode] / resetAttempts
 ```
+
+### PlantUML Diagrams
+
+PlantUML offers unique advantages for state machines with complex lifecycle actions. When your states have multiple entry/exit actions, PlantUML displays these actions as inline annotations within state boxes, making them more readable than traditional diagram formats. Choose PlantUML over Mermaid when you need clear visualization of state lifecycle behaviors.
+
+Generate PlantUML diagrams that show entry/exit actions inside state boxes:
+
+```javascript
+const plantUmlDiagram = authMachine.visualize({ type: 'plantuml' })
+console.log(plantUmlDiagram)
+```
+
+```plantuml
+@startuml
+[*] --> unauthenticated
+unauthenticated --> authenticated : LOGIN [isValidCredentials] / setUser
+unauthenticated --> locked : LOGIN [isTooManyAttempts] / incrementAttempts
+unauthenticated --> passwordReset : FORGOT_PASSWORD
+
+state authenticated {
+  [*] --> idle
+  idle : entry / logWelcome
+  idle --> profile : VIEW_PROFILE
+  idle --> settings : VIEW_SETTINGS
+  profile : entry / logViewingProfile
+  profile --> idle : BACK
+  profile --> editingProfile : EDIT
+  editingProfile --> profile : SAVE / updateUserProfile
+  editingProfile --> profile : CANCEL
+  settings : entry / logViewingSettings
+  settings --> idle : BACK
+}
+
+authenticated --> unauthenticated : LOGOUT / clearUser
+passwordReset --> unauthenticated : SEND_RESET_EMAIL / logPasswordReset
+passwordReset --> unauthenticated : CANCEL
+locked : entry / logAccountLocked
+locked --> unauthenticated : UNLOCK [isValidAdminCode] / resetAttempts
+@enduml
+```
+
+PlantUML diagrams display entry/exit actions as inline annotations within state boxes, making them more readable when states have multiple lifecycle actions.
 
 ### Usage Examples
 

@@ -6,6 +6,7 @@ import { createQueueManager } from './QueueManager.js';
 import { processEventSync, processEventAsync } from './EventProcessor.js';
 import { executeActionsSync } from './ActionRunner.js';
 import { generateMermaid } from '../visualizers/mermaid.js';
+import { generatePlantUML } from '../visualizers/plantuml.js';
 
 /**
  * Creates a machine instance
@@ -652,6 +653,9 @@ export const Machine = (config, options = {}) => {
       const type = options.type || 'mermaid';
       if (type === 'mermaid') {
         return generateMermaid(config, options);
+      }
+      if (type === 'plantuml') {
+        return generatePlantUML(config, options);
       }
       throw new Error(`Unsupported visualization type: ${type}`);
     }
