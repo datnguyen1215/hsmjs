@@ -137,7 +137,7 @@ Mock state machine implementation for fast unit testing and component testing. S
 
 ## Visualization
 
-### Generating State Diagrams
+### Generating State Diagrams (Mermaid & PlantUML)
 
 Visualize any state machine as a Mermaid diagram for documentation or debugging:
 
@@ -183,6 +183,55 @@ stateDiagram-v2
 */
 ```
 
+### PlantUML Diagrams
+
+PlantUML offers unique advantages for state machines with complex lifecycle actions. When your states have multiple entry/exit actions, PlantUML displays these actions as inline annotations within state boxes, making them more readable than traditional diagram formats.
+
+#### Basic PlantUML Generation
+
+Generate PlantUML diagrams for any state machine:
+
+```javascript
+// Generate PlantUML diagram
+const plantUmlDiagram = orderMachine.visualize({ type: 'plantuml' });
+console.log(plantUmlDiagram);
+/* Output:
+@startuml
+[*] --> pending
+pending --> processing : PAY
+pending --> cancelled : CANCEL
+processing --> completed : SUCCESS
+processing --> failed : FAILURE
+failed --> processing : RETRY
+@enduml
+*/
+```
+
+#### PlantUML with Entry/Exit Actions
+
+PlantUML diagrams are particularly useful when your states have entry/exit actions, as they display these actions directly inside the state boxes:
+
+```javascript
+const stateMachineWithActions = createMachine({
+  id: 'example',
+  initial: 'idle',
+  states: {
+    idle: {
+      entry: 'logEntry',
+      exit: 'logExit',
+      on: { START: 'active' }
+    },
+    active: {
+      entry: 'activateFeature',
+      on: { STOP: 'idle' }
+    }
+  }
+});
+
+const diagram = stateMachineWithActions.visualize({ type: 'plantuml' });
+// Shows entry/exit actions inside state boxes
+```
+
 ### Visualization Options
 
 Control how your state diagrams are generated:
@@ -193,9 +242,10 @@ Control how your state diagrams are generated:
   - `'BT'` - Bottom to Top
   - `'RL'` - Right to Left
 
-- **Show Guards**: Display guard conditions in transition labels
-  - `showGuards: true` - Shows [guardName] in labels
-  - `showGuards: false` - Simple event names only (default)
+- **Type**: Choose diagram format
+  - `'mermaid'` - Mermaid format (default)
+  - `'plantuml'` - PlantUML format with entry/exit actions in state boxes
+
 
 ### Advanced Example with Nested States
 
@@ -227,8 +277,8 @@ const authMachine = createMachine({
   }
 });
 
-// Visualize with guards shown
-const diagram = authMachine.visualize({ showGuards: true });
+// Visualize the machine
+const diagram = authMachine.visualize();
 ```
 
 ### Rendering Your Diagrams
@@ -241,9 +291,15 @@ const diagram = authMachine.visualize({ showGuards: true });
 ### Tips
 
 - Use `direction: 'LR'` for wide state machines
-- Enable `showGuards: true` when debugging conditional transitions
+- Guard conditions are automatically displayed when present
 - Wildcard events (*) are automatically excluded for cleaner diagrams
 - Nested states maintain proper hierarchy in the output
+- **PlantUML-specific tips**:
+  - **When to choose PlantUML**: Prefer PlantUML over Mermaid when your states have many entry/exit actions, as they're displayed as inline annotations within state boxes for better readability
+  - **Entry/Exit action formatting**: Actions appear as `entry / actionName` and `exit / actionName` inside state boxes, making lifecycle behaviors immediately visible
+  - **Nested state indentation**: PlantUML automatically indents nested states within composite state blocks, maintaining clear hierarchy
+  - **Tool support**: PlantUML diagrams can be rendered in many documentation tools, IDEs, and online editors
+  - **Complex state machines**: PlantUML handles deeply nested hierarchies better than Mermaid for visualization clarity
 
 ---
 

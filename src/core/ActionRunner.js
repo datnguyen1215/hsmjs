@@ -3,6 +3,38 @@ import { updateContext } from './ContextUpdater.js';
 import { hasAsyncActions } from '../utils/AsyncDetector.js';
 
 /**
+ * @typedef {Object} ActionResult
+ * @param {string} [name] - Action name if it's a string action
+ * @param {any} [value] - Action result value
+ */
+
+/**
+ * Process object assigners with function properties
+ * @param {Object} assigner - The assigner object to process
+ * @returns {Function} - A function that evaluates the assigner
+ */
+const processObjectAssigner = (assigner) => {
+  if (typeof assigner !== 'object' || assigner === null || Array.isArray(assigner) || typeof assigner === 'function') {
+    return assigner;
+  }
+
+  const hasFunctionProps = Object.values(assigner).some(val => typeof val === 'function');
+  if (!hasFunctionProps) {
+    return assigner;
+  }
+
+  // Cache entries to optimize performance
+  const entries = Object.entries(assigner);
+  return (ctx, evt) => {
+    const result = {};
+    for (const [key, value] of entries) {
+      result[key] = typeof value === 'function' ? value(ctx, evt) : value;
+    }
+    return result;
+  };
+};
+
+/**
  * @param {Function|string|Object} action
  * @param {Object} context
  * @param {Object} event
@@ -27,12 +59,14 @@ export const executeSyncAction = (action, context, event, actions = {}, throwOnA
   if (typeof action === 'string') {
     const resolvedAction = actions[action];
     if (!resolvedAction) {
+      console.warn(`Action '${action}' not found in registry`);
       return { hasAsync: false, contextUpdate: null, actionResult: { name: action, value: undefined } };
     }
 
     if (isAssignAction(resolvedAction)) {
-      const assigner = typeof resolvedAction.assigner === 'function' ? resolvedAction.assigner : () => resolvedAction.assigner;
-      const value = assigner(context, event);
+      const assigner = processObjectAssigner(resolvedAction.assigner);
+
+      const value = typeof assigner === 'function' ? assigner(context, event) : assigner;
       return {
         hasAsync: value && typeof value.then === 'function',
         contextUpdate: value && typeof value.then !== 'function' ? value : null,
@@ -92,6 +126,52 @@ export const executeActionsSync = (actionsList, context, event, actions = {}) =>
 };
 
 /**
+ * Execute actions synchronously for async context
+ * @param {Array} actionArray - Array of actions to execute
+ * @param {Object} context - Current context
+ * @param {Object} event - Event object
+ * @param {Object} actionRegistry - Action registry
+ * @returns {Object} - Execution result
+ */
+const executeActionsSyncForAsync = (actionArray, context, event, actionRegistry) => {
+  const results = [];
+  let currentContext = context;
+
+  for (const action of actionArray) {
+    const result = executeSyncActionForAsync(action, currentContext, event, actionRegistry);
+    if (result.contextUpdate) {
+      currentContext = result.contextUpdate;
+    }
+    results.push(result.actionResult);
+  }
+
+  return { context: currentContext, results };
+};
+
+/**
+ * Execute actions with async support
+ * @param {Array} actionArray - Array of actions to execute
+ * @param {Object} context - Current context
+ * @param {Object} event - Event object
+ * @param {Object} actionRegistry - Action registry
+ * @returns {Promise<Object>} - Execution result
+ */
+const executeActionsAsync = async (actionArray, context, event, actionRegistry) => {
+  const results = [];
+  let currentContext = context;
+
+  for (const action of actionArray) {
+    const result = await executeActionAsync(action, currentContext, event, actionRegistry);
+    if (result.contextUpdate) {
+      currentContext = result.contextUpdate;
+    }
+    results.push(result.actionResult);
+  }
+
+  return { context: currentContext, results };
+};
+
+/**
  * @param {Array} actions
  * @param {Object} context
  * @param {Object} event
@@ -103,35 +183,60 @@ export const executeActions = async (actions, context, event, actionRegistry = {
     return { context, results: [] };
   }
 
-  const results = [];
-  let currentContext = context;
-
   const actionArray = Array.isArray(actions) ? actions : [actions];
-
-  // Check if all actions are synchronous
   const isAsync = hasAsyncActions(actionArray, actionRegistry);
 
-  if (!isAsync) {
-    // Execute all actions synchronously
-    for (const action of actionArray) {
-      const result = executeSyncActionForAsync(action, currentContext, event, actionRegistry);
-      if (result.contextUpdate) {
-        currentContext = result.contextUpdate;
-      }
-      results.push(result.actionResult);
-    }
-  } else {
-    // Execute actions with async support
-    for (const action of actionArray) {
-      const result = await executeActionAsync(action, currentContext, event, actionRegistry);
-      if (result.contextUpdate) {
-        currentContext = result.contextUpdate;
-      }
-      results.push(result.actionResult);
-    }
+  return isAsync
+    ? await executeActionsAsync(actionArray, context, event, actionRegistry)
+    : executeActionsSyncForAsync(actionArray, context, event, actionRegistry);
+};
+
+/**
+ * Handle assign action for sync execution
+ * @param {Object} action - Assign action
+ * @param {Object} context - Current context
+ * @param {Object} event - Event object
+ * @returns {{contextUpdate: Object, actionResult: ActionResult}}
+ */
+const handleAssignActionSync = (action, context, event) => {
+  const newContext = updateContext(context, action.assigner, event);
+  return {
+    contextUpdate: newContext,
+    actionResult: { value: undefined }
+  };
+};
+
+/**
+ * Handle string action for sync execution
+ * @param {string} action - Action name
+ * @param {Object} context - Current context
+ * @param {Object} event - Event object
+ * @param {Object} actionRegistry - Action registry
+ * @returns {{contextUpdate?: Object, actionResult: ActionResult}}
+ */
+const handleStringActionSync = (action, context, event, actionRegistry) => {
+  const resolvedAction = actionRegistry[action];
+  if (!resolvedAction) {
+    console.warn(`Action '${action}' not found in registry`);
+    return { actionResult: { name: action, value: undefined } };
   }
 
-  return { context: currentContext, results };
+  if (isAssignAction(resolvedAction)) {
+    const assigner = processObjectAssigner(resolvedAction.assigner);
+    const newContext = updateContext(context, assigner, event);
+
+    if (newContext && typeof newContext.then === 'function') {
+      throw new Error(`Async action '${action}' cannot be used in sync context`);
+    }
+
+    return {
+      contextUpdate: newContext,
+      actionResult: { name: action, value: undefined }
+    };
+  }
+
+  const value = resolvedAction(context, event);
+  return { actionResult: { name: action, value } };
 };
 
 /**
@@ -142,47 +247,63 @@ export const executeActions = async (actions, context, event, actionRegistry = {
  * @returns {{contextUpdate?: Object, actionResult: ActionResult}}
  */
 const executeSyncActionForAsync = (action, context, event, actionRegistry) => {
-  // Handle assign action
   if (isAssignAction(action)) {
-    const newContext = updateContext(context, action.assigner, event);
-    return {
-      contextUpdate: newContext,
-      actionResult: { value: undefined }
-    };
+    return handleAssignActionSync(action, context, event);
   }
 
-  // Handle string action
   if (typeof action === 'string') {
-    const resolvedAction = actionRegistry[action];
-    if (!resolvedAction) {
-      // Action not found in registry
-      return { actionResult: { name: action, value: undefined } };
-    }
-
-    if (isAssignAction(resolvedAction)) {
-      const newContext = updateContext(context, resolvedAction.assigner, event);
-      // For sync execution, we don't await promises
-      if (newContext && typeof newContext.then === 'function') {
-        // Async assigner used in sync context
-        return { actionResult: { name: action, value: undefined } };
-      }
-      return {
-        contextUpdate: newContext,
-        actionResult: { name: action, value: undefined }
-      };
-    }
-
-    const value = resolvedAction(context, event);
-    return { actionResult: { name: action, value } };
+    return handleStringActionSync(action, context, event, actionRegistry);
   }
 
-  // Handle function action
   if (typeof action === 'function') {
     const value = action(context, event);
     return { actionResult: { value } };
   }
 
   return { actionResult: { value: undefined } };
+};
+
+/**
+ * Handle assign action for async execution
+ * @param {Object} action - Assign action
+ * @param {Object} context - Current context
+ * @param {Object} event - Event object
+ * @returns {Promise<{contextUpdate: Object, actionResult: ActionResult}>}
+ */
+const handleAssignActionAsync = async (action, context, event) => {
+  const newContext = await updateContext(context, action.assigner, event);
+  return {
+    contextUpdate: newContext,
+    actionResult: { value: undefined }
+  };
+};
+
+/**
+ * Handle string action for async execution
+ * @param {string} action - Action name
+ * @param {Object} context - Current context
+ * @param {Object} event - Event object
+ * @param {Object} actionRegistry - Action registry
+ * @returns {Promise<{contextUpdate?: Object, actionResult: ActionResult}>}
+ */
+const handleStringActionAsync = async (action, context, event, actionRegistry) => {
+  const resolvedAction = actionRegistry[action];
+  if (!resolvedAction) {
+    console.warn(`Action '${action}' not found in registry`);
+    return { actionResult: { name: action, value: undefined } };
+  }
+
+  if (isAssignAction(resolvedAction)) {
+    const assigner = processObjectAssigner(resolvedAction.assigner);
+    const newContext = await updateContext(context, assigner, event);
+    return {
+      contextUpdate: newContext,
+      actionResult: { name: action, value: undefined }
+    };
+  }
+
+  const value = await resolvedAction(context, event);
+  return { actionResult: { name: action, value } };
 };
 
 /**
@@ -193,36 +314,14 @@ const executeSyncActionForAsync = (action, context, event, actionRegistry) => {
  * @returns {Promise<{contextUpdate?: Object, actionResult: ActionResult}>}
  */
 const executeActionAsync = async (action, context, event, actionRegistry) => {
-  // Handle assign action
   if (isAssignAction(action)) {
-    const newContext = await updateContext(context, action.assigner, event);
-    return {
-      contextUpdate: newContext,
-      actionResult: { value: undefined }
-    };
+    return await handleAssignActionAsync(action, context, event);
   }
 
-  // Handle string action
   if (typeof action === 'string') {
-    const resolvedAction = actionRegistry[action];
-    if (!resolvedAction) {
-      // Action not found in registry
-      return { actionResult: { name: action, value: undefined } };
-    }
-
-    if (isAssignAction(resolvedAction)) {
-      const newContext = await updateContext(context, resolvedAction.assigner, event);
-      return {
-        contextUpdate: newContext,
-        actionResult: { name: action, value: undefined }
-      };
-    }
-
-    const value = await resolvedAction(context, event);
-    return { actionResult: { name: action, value } };
+    return await handleStringActionAsync(action, context, event, actionRegistry);
   }
 
-  // Handle function action
   if (typeof action === 'function') {
     const value = await action(context, event);
     return { actionResult: { value } };

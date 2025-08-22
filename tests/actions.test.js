@@ -386,6 +386,39 @@ describe('Actions', () => {
       expect(result.results[0].value).toBeUndefined();
       expect(result.results[1].value).toBe('other-value');
     });
+
+    test('should handle assign actions in registry with mixed function and object properties', () => {
+      const machine = createMachine({
+        id: 'test',
+        initial: 'idle',
+        context: { count: 0, status: 'initial', timestamp: null },
+        states: {
+          idle: {
+            on: {
+              UPDATE: {
+                target: 'idle',
+                actions: ['updateMixed']
+              }
+            }
+          }
+        }
+      }, {
+        actions: {
+          updateMixed: assign({
+            count: (ctx, event) => ctx.count + (event.increment || 1),
+            status: 'updated',
+            timestamp: () => Date.now()
+          })
+        }
+      });
+
+      const before = Date.now();
+      machine.send('UPDATE', { increment: 5 });
+
+      expect(machine.context.count).toBe(5);
+      expect(machine.context.status).toBe('updated');
+      expect(machine.context.timestamp).toBeGreaterThanOrEqual(before);
+    });
   });
 
   describe('Side effects execution', () => {

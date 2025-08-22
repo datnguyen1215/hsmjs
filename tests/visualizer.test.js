@@ -2,20 +2,28 @@ import { createMachine } from '../src/index.js';
 
 // Helper function to validate Mermaid syntax
 const isValidMermaidSyntax = (diagram) => {
-  const lines = diagram.split('\n');
+  const lines = diagram.split('\n').map(line => line.trim()).filter(line => line);
+
   // Must start with stateDiagram-v2
-  if (!lines[0].trim().startsWith('stateDiagram-v2')) return false;
-  // Check for valid patterns
+  if (!lines[0].startsWith('stateDiagram-v2')) return false;
+
+  // Define valid patterns for Mermaid syntax
   const validPatterns = [
-    /^\s*stateDiagram-v2$/,
-    /^\s*direction\s+(TB|LR|BT|RL)$/,
-    /^\s*\[\*\]\s+-->\s+\w+/,
-    /^\s*[\w.]+\s+-->\s+[\w.#]+\s*:\s*.+$/,
-    /^\s*state\s+\w+\s*\{$/,
-    /^\s*\}$/
+    /^stateDiagram-v2$/,
+    /^direction\s+(TB|LR|BT|RL)$/,
+    /^\[\*\]\s+-->\s+[\w.]+$/,
+    /^[\w.]+\s+-->\s+[\w.]+\s*:\s*.+$/,
+    /^state\s+[\w.]+\s*\{$/,
+    /^\}$/
   ];
-  // Basic validation
-  return true; // Simplified for now
+
+  // Validate each line matches at least one pattern
+  for (const line of lines) {
+    const isValid = validPatterns.some(pattern => pattern.test(line));
+    if (!isValid) return false;
+  }
+
+  return true;
 };
 
 // Test data fixtures
@@ -147,20 +155,12 @@ describe('Machine Visualizer', () => {
       expect(diagram).toContain('direction LR');
     });
 
-    test('should show guards when showGuards is true', () => {
-      const machine = createMachine(guardedMachine);
-      const diagram = machine.visualize({ showGuards: true });
-
-      expect(diagram).toContain('START [isAllowed]');
-      expect(diagram).toContain('START [isDenied]');
-    });
-
-    test('should hide guards by default', () => {
+    test('should always show guards when present', () => {
       const machine = createMachine(guardedMachine);
       const diagram = machine.visualize();
 
-      expect(diagram).not.toContain('[isAllowed]');
-      expect(diagram).not.toContain('[isDenied]');
+      expect(diagram).toContain('START [isAllowed]');
+      expect(diagram).toContain('START [isDenied]');
     });
   });
 
@@ -260,7 +260,7 @@ describe('Machine Visualizer', () => {
 
     test('should handle multiple transitions for same event', () => {
       const machine = createMachine(guardedMachine);
-      const diagram = machine.visualize({ showGuards: true });
+      const diagram = machine.visualize();
 
       // Should show both transitions for START event
       expect(diagram).toContain('idle --> allowed : START [isAllowed]');
