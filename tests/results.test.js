@@ -456,11 +456,11 @@ describe('Results API', () => {
               CALCULATE: {
                 target: 'idle',
                 actions: [
-                  (context, event) => context.multiplier * event.value,
-                  assign((context, event) => ({
+                  ({ context, event }) => context.multiplier * event.value,
+                  assign(({ context, event }) => ({
                     result: context.multiplier * event.value
                   })),
-                  (context) => `Result: ${context.result || 'unknown'}`
+                  ({ context }) => `Result: ${context.result || 'unknown'}`
                 ]
               }
             }

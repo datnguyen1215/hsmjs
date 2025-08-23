@@ -16,7 +16,7 @@ const runExample = async () => {
         on: {
           NUMBER: {
             target: 'operand1',
-            actions: [assign((ctx, event) => ({
+            actions: [assign(({ context, event }) => ({
               display: event.value,
               operand1: parseFloat(event.value)
             }))]
@@ -27,15 +27,15 @@ const runExample = async () => {
         on: {
           NUMBER: {
             actions: [assign({
-              display: (ctx, event) => ctx.display + event.value,
-              operand1: (ctx, event) => parseFloat(ctx.display + event.value)
+              display: ({ context, event }) => context.display + event.value,
+              operand1: ({ context, event }) => parseFloat(context.display + event.value)
             })]
           },
           OPERATOR: {
             target: 'operator',
             actions: [assign({
-              operator: (ctx, event) => event.value,
-              display: (ctx, event) => event.value
+              operator: ({ context, event }) => event.value,
+              display: ({ context, event }) => event.value
             })]
           },
           CLEAR: 'idle'
@@ -46,8 +46,8 @@ const runExample = async () => {
           NUMBER: {
             target: 'operand2',
             actions: [assign({
-              display: (ctx, event) => event.value,
-              operand2: (ctx, event) => parseFloat(event.value)
+              display: ({ context, event }) => event.value,
+              operand2: ({ context, event }) => parseFloat(event.value)
             })]
           },
           CLEAR: 'idle'
@@ -57,7 +57,7 @@ const runExample = async () => {
         on: {
           NUMBER: {
             actions: [assign({
-              display: (ctx, event) => ctx.display + event.value,
+              display: ({ context, event }) => context.display + event.value,
               operand2: (ctx, event) => parseFloat(ctx.display + event.value)
             })]
           },
@@ -91,9 +91,9 @@ const runExample = async () => {
                 }
                 return result;
               },
-              operator: (ctx, event) => event.value,
+              operator: ({ context, event }) => event.value,
               operand2: null,
-              display: (ctx, event) => event.value
+              display: ({ context, event }) => event.value
             })]
           },
           CLEAR: 'idle'
@@ -104,7 +104,7 @@ const runExample = async () => {
           NUMBER: {
             target: 'operand1',
             actions: [assign({
-              display: (ctx, event) => event.value,
+              display: ({ context, event }) => event.value,
               operand1: (ctx, event) => parseFloat(event.value),
               operand2: null,
               operator: null
@@ -114,9 +114,9 @@ const runExample = async () => {
             target: 'operator',
             actions: [assign({
               operand1: (ctx) => parseFloat(ctx.display),
-              operator: (ctx, event) => event.value,
+              operator: ({ context, event }) => event.value,
               operand2: null,
-              display: (ctx, event) => event.value
+              display: ({ context, event }) => event.value
             })]
           },
           CLEAR: 'idle'

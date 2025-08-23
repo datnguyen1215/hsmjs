@@ -227,21 +227,21 @@ describe('Async Operations', () => {
               PROCESS: {
                 target: 'idle',
                 actions: [
-                  assign(async (context) => {
+                  assign(async ({ context }) => {
                     await new Promise(r => setTimeout(r, 20));
                     return {
                       step: context.step + 1,
                       data: [...context.data, 'step1']
                     };
                   }),
-                  assign(async (context) => {
+                  assign(async ({ context }) => {
                     await new Promise(r => setTimeout(r, 20));
                     return {
                       step: context.step + 1,
                       data: [...context.data, 'step2']
                     };
                   }),
-                  assign(async (context) => {
+                  assign(async ({ context }) => {
                     await new Promise(r => setTimeout(r, 20));
                     return {
                       step: context.step + 1,
@@ -414,7 +414,7 @@ describe('Async Operations', () => {
             on: {
               PROCESS: {
                 target: 'idle',
-                actions: [async (context, event) => {
+                actions: [async ({ context, event }) => {
                   processingCount++;
                   await new Promise(resolve => setTimeout(resolve, 100));
                   results.push(event.id);
@@ -455,14 +455,14 @@ describe('Async Operations', () => {
             on: {
               FAST: {
                 target: 'idle',
-                actions: [async (context, event) => {
+                actions: [async ({ context, event }) => {
                   await new Promise(r => setTimeout(r, 10));
                   processedOrder.push(`fast-${event.id}`);
                 }]
               },
               SLOW: {
                 target: 'idle',
-                actions: [async (context, event) => {
+                actions: [async ({ context, event }) => {
                   await new Promise(r => setTimeout(r, 80));
                   processedOrder.push(`slow-${event.id}`);
                 }]
@@ -539,7 +539,7 @@ describe('Async Operations', () => {
             on: {
               NESTED: {
                 target: 'idle',
-                actions: [assign(async (context) => {
+                actions: [assign(async ({ context }) => {
                   const result1 = await new Promise(resolve => {
                     setTimeout(() => resolve('level1'), 50);
                   });

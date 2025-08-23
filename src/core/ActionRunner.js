@@ -25,10 +25,10 @@ const processObjectAssigner = (assigner) => {
 
   // Cache entries to optimize performance
   const entries = Object.entries(assigner);
-  return (ctx, evt) => {
+  return ({ context, event, machine }) => {
     const result = {};
     for (const [key, value] of entries) {
-      result[key] = typeof value === 'function' ? value(ctx, evt) : value;
+      result[key] = typeof value === 'function' ? value({ context, event, machine }) : value;
     }
     return result;
   };
@@ -39,16 +39,17 @@ const processObjectAssigner = (assigner) => {
  * @param {Object} context
  * @param {Object} event
  * @param {Object} actions
+ * @param {Object} machine
  * @param {boolean} [throwOnAsync]
  * @returns {Object}
  */
-export const executeSyncAction = (action, context, event, actions = {}, throwOnAsync = false) => {
+export const executeSyncAction = (action, context, event, actions = {}, machine, throwOnAsync = false) => {
   let hasAsync = false;
   let actionResult = { value: undefined };
 
   if (isAssignAction(action)) {
     const assigner = typeof action.assigner === 'function' ? action.assigner : () => action.assigner;
-    const value = assigner(context, event);
+    const value = assigner({ context, event, machine });
     return {
       hasAsync: value && typeof value.then === 'function',
       contextUpdate: value && typeof value.then !== 'function' ? value : null,
@@ -66,7 +67,7 @@ export const executeSyncAction = (action, context, event, actions = {}, throwOnA
     if (isAssignAction(resolvedAction)) {
       const assigner = processObjectAssigner(resolvedAction.assigner);
 
-      const value = typeof assigner === 'function' ? assigner(context, event) : assigner;
+      const value = typeof assigner === 'function' ? assigner({ context, event, machine }) : assigner;
       return {
         hasAsync: value && typeof value.then === 'function',
         contextUpdate: value && typeof value.then !== 'function' ? value : null,
@@ -74,12 +75,12 @@ export const executeSyncAction = (action, context, event, actions = {}, throwOnA
       };
     }
 
-    const value = resolvedAction(context, event);
+    const value = resolvedAction({ context, event, machine });
     return { hasAsync: false, contextUpdate: null, actionResult: { name: action, value } };
   }
 
   if (typeof action === 'function') {
-    const value = action(context, event);
+    const value = action({ context, event, machine });
 
     if (value && typeof value.then === 'function') {
       hasAsync = true;
@@ -100,9 +101,10 @@ export const executeSyncAction = (action, context, event, actions = {}, throwOnA
  * @param {Object} context
  * @param {Object} event
  * @param {Object} actions
+ * @param {Object} machine
  * @returns {Object}
  */
-export const executeActionsSync = (actionsList, context, event, actions = {}) => {
+export const executeActionsSync = (actionsList, context, event, actions = {}, machine) => {
   if (!actionsList || actionsList.length === 0) {
     return { hasAsync: false, context, results: [] };
   }
@@ -112,9 +114,9 @@ export const executeActionsSync = (actionsList, context, event, actions = {}) =>
   const results = [];
 
   for (const action of actionsList) {
-    const result = executeSyncAction(action, updatedContext, event, actions);
+    const result = executeSyncAction(action, updatedContext, event, actions, machine);
     if (result.contextUpdate) {
-      updatedContext = updateContext(updatedContext, result.contextUpdate);
+      updatedContext = updateContext(updatedContext, result.contextUpdate, event);
     }
     if (result.hasAsync) {
       hasAsync = true;
@@ -131,14 +133,15 @@ export const executeActionsSync = (actionsList, context, event, actions = {}) =>
  * @param {Object} context - Current context
  * @param {Object} event - Event object
  * @param {Object} actionRegistry - Action registry
- * @returns {Object} - Execution result
+ * @param {Object} machine - Machine reference
+ * @returns {Object} - Execution result with context and results properties
  */
-const executeActionsSyncForAsync = (actionArray, context, event, actionRegistry) => {
+const executeActionsSyncForAsync = (actionArray, context, event, actionRegistry, machine) => {
   const results = [];
   let currentContext = context;
 
   for (const action of actionArray) {
-    const result = executeSyncActionForAsync(action, currentContext, event, actionRegistry);
+    const result = executeSyncActionForAsync(action, currentContext, event, actionRegistry, machine);
     if (result.contextUpdate) {
       currentContext = result.contextUpdate;
     }
@@ -154,14 +157,15 @@ const executeActionsSyncForAsync = (actionArray, context, event, actionRegistry)
  * @param {Object} context - Current context
  * @param {Object} event - Event object
  * @param {Object} actionRegistry - Action registry
- * @returns {Promise<Object>} - Execution result
+ * @param {Object} machine - Machine reference
+ * @returns {Promise<Object>} - Promise resolving to execution result with context and results properties
  */
-const executeActionsAsync = async (actionArray, context, event, actionRegistry) => {
+const executeActionsAsync = async (actionArray, context, event, actionRegistry, machine) => {
   const results = [];
   let currentContext = context;
 
   for (const action of actionArray) {
-    const result = await executeActionAsync(action, currentContext, event, actionRegistry);
+    const result = await executeActionAsync(action, currentContext, event, actionRegistry, machine);
     if (result.contextUpdate) {
       currentContext = result.contextUpdate;
     }
@@ -172,11 +176,12 @@ const executeActionsAsync = async (actionArray, context, event, actionRegistry) 
 };
 
 /**
- * @param {Array} actions
- * @param {Object} context
- * @param {Object} event
- * @param {Object} actionRegistry
- * @returns {Promise<Object>}
+ * Execute actions with automatic sync/async detection
+ * @param {Array} actions - Array of actions to execute
+ * @param {Object} context - Current context
+ * @param {Object} event - Event object
+ * @param {Object} actionRegistry - Action registry with optional machine reference
+ * @returns {Promise<Object>} - Promise resolving to execution result with context and results properties
  */
 export const executeActions = async (actions, context, event, actionRegistry = {}) => {
   if (!actions || actions.length === 0) {
@@ -184,11 +189,12 @@ export const executeActions = async (actions, context, event, actionRegistry = {
   }
 
   const actionArray = Array.isArray(actions) ? actions : [actions];
-  const isAsync = hasAsyncActions(actionArray, actionRegistry);
+  const { actionRegistry: registry, machine } = actionRegistry;
+  const isAsync = hasAsyncActions(actionArray, registry || actionRegistry);
 
   return isAsync
-    ? await executeActionsAsync(actionArray, context, event, actionRegistry)
-    : executeActionsSyncForAsync(actionArray, context, event, actionRegistry);
+    ? await executeActionsAsync(actionArray, context, event, registry || actionRegistry, machine)
+    : executeActionsSyncForAsync(actionArray, context, event, registry || actionRegistry, machine);
 };
 
 /**
@@ -196,10 +202,11 @@ export const executeActions = async (actions, context, event, actionRegistry = {
  * @param {Object} action - Assign action
  * @param {Object} context - Current context
  * @param {Object} event - Event object
+ * @param {Object} machine - Machine reference
  * @returns {{contextUpdate: Object, actionResult: ActionResult}}
  */
-const handleAssignActionSync = (action, context, event) => {
-  const newContext = updateContext(context, action.assigner, event);
+const handleAssignActionSync = (action, context, event, machine) => {
+  const newContext = updateContext(context, action.assigner, event, machine);
   return {
     contextUpdate: newContext,
     actionResult: { value: undefined }
@@ -212,9 +219,10 @@ const handleAssignActionSync = (action, context, event) => {
  * @param {Object} context - Current context
  * @param {Object} event - Event object
  * @param {Object} actionRegistry - Action registry
+ * @param {Object} machine - Machine reference
  * @returns {{contextUpdate?: Object, actionResult: ActionResult}}
  */
-const handleStringActionSync = (action, context, event, actionRegistry) => {
+const handleStringActionSync = (action, context, event, actionRegistry, machine) => {
   const resolvedAction = actionRegistry[action];
   if (!resolvedAction) {
     console.warn(`Action '${action}' not found in registry`);
@@ -223,7 +231,7 @@ const handleStringActionSync = (action, context, event, actionRegistry) => {
 
   if (isAssignAction(resolvedAction)) {
     const assigner = processObjectAssigner(resolvedAction.assigner);
-    const newContext = updateContext(context, assigner, event);
+    const newContext = updateContext(context, assigner, event, machine);
 
     if (newContext && typeof newContext.then === 'function') {
       throw new Error(`Async action '${action}' cannot be used in sync context`);
@@ -235,28 +243,30 @@ const handleStringActionSync = (action, context, event, actionRegistry) => {
     };
   }
 
-  const value = resolvedAction(context, event);
+  const value = resolvedAction({ context, event, machine });
   return { actionResult: { name: action, value } };
 };
 
 /**
- * @param {Function|string|Object} action
- * @param {Object} context
- * @param {Object} event
- * @param {Object} actionRegistry
- * @returns {{contextUpdate?: Object, actionResult: ActionResult}}
+ * Execute a single action synchronously for async context
+ * @param {Function|string|Object} action - Action to execute (function, string reference, or assign action)
+ * @param {Object} context - Current context
+ * @param {Object} event - Event object
+ * @param {Object} actionRegistry - Action registry
+ * @param {Object} machine - Machine reference
+ * @returns {{contextUpdate?: Object, actionResult: ActionResult}} - Execution result with optional context update and action result
  */
-const executeSyncActionForAsync = (action, context, event, actionRegistry) => {
+const executeSyncActionForAsync = (action, context, event, actionRegistry, machine) => {
   if (isAssignAction(action)) {
-    return handleAssignActionSync(action, context, event);
+    return handleAssignActionSync(action, context, event, machine);
   }
 
   if (typeof action === 'string') {
-    return handleStringActionSync(action, context, event, actionRegistry);
+    return handleStringActionSync(action, context, event, actionRegistry, machine);
   }
 
   if (typeof action === 'function') {
-    const value = action(context, event);
+    const value = action({ context, event, machine });
     return { actionResult: { value } };
   }
 
@@ -268,10 +278,11 @@ const executeSyncActionForAsync = (action, context, event, actionRegistry) => {
  * @param {Object} action - Assign action
  * @param {Object} context - Current context
  * @param {Object} event - Event object
+ * @param {Object} machine - Machine reference
  * @returns {Promise<{contextUpdate: Object, actionResult: ActionResult}>}
  */
-const handleAssignActionAsync = async (action, context, event) => {
-  const newContext = await updateContext(context, action.assigner, event);
+const handleAssignActionAsync = async (action, context, event, machine) => {
+  const newContext = await updateContext(context, action.assigner, event, machine);
   return {
     contextUpdate: newContext,
     actionResult: { value: undefined }
@@ -284,9 +295,10 @@ const handleAssignActionAsync = async (action, context, event) => {
  * @param {Object} context - Current context
  * @param {Object} event - Event object
  * @param {Object} actionRegistry - Action registry
+ * @param {Object} machine - Machine reference
  * @returns {Promise<{contextUpdate?: Object, actionResult: ActionResult}>}
  */
-const handleStringActionAsync = async (action, context, event, actionRegistry) => {
+const handleStringActionAsync = async (action, context, event, actionRegistry, machine) => {
   const resolvedAction = actionRegistry[action];
   if (!resolvedAction) {
     console.warn(`Action '${action}' not found in registry`);
@@ -295,35 +307,37 @@ const handleStringActionAsync = async (action, context, event, actionRegistry) =
 
   if (isAssignAction(resolvedAction)) {
     const assigner = processObjectAssigner(resolvedAction.assigner);
-    const newContext = await updateContext(context, assigner, event);
+    const newContext = await updateContext(context, assigner, event, machine);
     return {
       contextUpdate: newContext,
       actionResult: { name: action, value: undefined }
     };
   }
 
-  const value = await resolvedAction(context, event);
+  const value = await resolvedAction({ context, event, machine });
   return { actionResult: { name: action, value } };
 };
 
 /**
- * @param {Function|string|Object} action
- * @param {Object} context
- * @param {Object} event
- * @param {Object} actionRegistry
- * @returns {Promise<{contextUpdate?: Object, actionResult: ActionResult}>}
+ * Execute a single action asynchronously
+ * @param {Function|string|Object} action - Action to execute (function, string reference, or assign action)
+ * @param {Object} context - Current context
+ * @param {Object} event - Event object
+ * @param {Object} actionRegistry - Action registry
+ * @param {Object} machine - Machine reference
+ * @returns {Promise<{contextUpdate?: Object, actionResult: ActionResult}>} - Promise resolving to execution result with optional context update and action result
  */
-const executeActionAsync = async (action, context, event, actionRegistry) => {
+const executeActionAsync = async (action, context, event, actionRegistry, machine) => {
   if (isAssignAction(action)) {
-    return await handleAssignActionAsync(action, context, event);
+    return await handleAssignActionAsync(action, context, event, machine);
   }
 
   if (typeof action === 'string') {
-    return await handleStringActionAsync(action, context, event, actionRegistry);
+    return await handleStringActionAsync(action, context, event, actionRegistry, machine);
   }
 
   if (typeof action === 'function') {
-    const value = await action(context, event);
+    const value = await action({ context, event, machine });
     return { actionResult: { value } };
   }
 

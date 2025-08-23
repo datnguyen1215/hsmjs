@@ -19,11 +19,11 @@ describe('Integration Tests', () => {
             }
           },
           authenticating: {
-            entry: [assign((context) => ({ attempts: context.attempts + 1 }))],
+            entry: [assign(({ context }) => ({ attempts: context.attempts + 1 }))],
             on: {
               SUCCESS: {
                 target: 'authenticated',
-                actions: [assign((context, event) => ({
+                actions: [assign(({ context, event }) => ({
                   user: event.user,
                   token: event.token,
                   attempts: 0
@@ -32,7 +32,7 @@ describe('Integration Tests', () => {
               FAILURE: [
                 {
                   target: 'locked',
-                  cond: (context) => context.attempts >= context.maxAttempts
+                  cond: ({ context }) => context.attempts >= context.maxAttempts
                 },
                 {
                   target: 'idle'
@@ -58,7 +58,7 @@ describe('Integration Tests', () => {
             on: {
               SUCCESS: {
                 target: 'authenticated',
-                actions: [assign((context, event) => ({
+                actions: [assign(({ context, event }) => ({
                   token: event.token
                 }))]
               },
@@ -143,7 +143,7 @@ describe('Integration Tests', () => {
             on: {
               ADD_ITEM: {
                 target: 'hasItems',
-                actions: [assign((context, event) => ({
+                actions: [assign(({ context, event }) => ({
                   items: [...context.items, event.item],
                   total: context.total + event.item.price
                 }))]
@@ -154,7 +154,7 @@ describe('Integration Tests', () => {
             on: {
               ADD_ITEM: {
                 target: 'hasItems',
-                actions: [assign((context, event) => ({
+                actions: [assign(({ context, event }) => ({
                   items: [...context.items, event.item],
                   total: context.total + event.item.price
                 }))]
@@ -162,7 +162,7 @@ describe('Integration Tests', () => {
               REMOVE_ITEM: [
                 {
                   target: 'empty',
-                  cond: (context, event) => {
+                  cond: ({ context, event }) => {
                     const remainingItems = context.items.filter(item => item.id !== event.itemId);
                     return remainingItems.length === 0;
                   },
@@ -175,7 +175,7 @@ describe('Integration Tests', () => {
                 },
                 {
                   target: 'hasItems',
-                  actions: [assign((context, event) => {
+                  actions: [assign(({ context, event }) => {
                     const itemToRemove = context.items.find(item => item.id === event.itemId);
                     const remainingItems = context.items.filter(item => item.id !== event.itemId);
                     return {
@@ -187,8 +187,8 @@ describe('Integration Tests', () => {
               ],
               APPLY_COUPON: {
                 target: 'hasItems',
-                cond: (context, event) => event.coupon && event.coupon.valid,
-                actions: [assign((context, event) => {
+                cond: ({ context, event }) => event.coupon && event.coupon.valid,
+                actions: [assign(({ context, event }) => {
                   const discountAmount = (context.total * event.coupon.discount) / 100;
                   return {
                     coupon: event.coupon,
@@ -292,7 +292,7 @@ describe('Integration Tests', () => {
             on: {
               SELECT_FILES: {
                 target: 'filesSelected',
-                actions: [assign((context, event) => ({
+                actions: [assign(({ context, event }) => ({
                   files: event.files,
                   errors: []
                 }))]
@@ -304,13 +304,13 @@ describe('Integration Tests', () => {
               START_UPLOAD: 'uploading',
               ADD_FILES: {
                 target: 'filesSelected',
-                actions: [assign((context, event) => ({
+                actions: [assign(({ context, event }) => ({
                   files: [...context.files, ...event.files]
                 }))]
               },
               REMOVE_FILE: {
                 target: 'filesSelected',
-                actions: [assign((context, event) => ({
+                actions: [assign(({ context, event }) => ({
                   files: context.files.filter(file => file.id !== event.fileId)
                 }))]
               }
@@ -318,7 +318,7 @@ describe('Integration Tests', () => {
           },
           uploading: {
             initial: 'inProgress',
-            entry: [assign((context) => ({
+            entry: [assign(({ context }) => ({
               currentUpload: context.files[0] || null,
               progress: 0
             }))],
@@ -327,18 +327,18 @@ describe('Integration Tests', () => {
                 on: {
                   PROGRESS: {
                     target: 'inProgress',
-                    actions: [assign((context, event) => ({
+                    actions: [assign(({ context, event }) => ({
                       progress: event.progress
                     }))]
                   },
                   FILE_COMPLETE: [
                     {
                       target: 'allComplete',
-                      cond: (context, event) => {
+                      cond: ({ context, event }) => {
                         const remainingFiles = context.files.filter(f => f.id !== event.fileId);
                         return remainingFiles.length === 0;
                       },
-                      actions: [assign((context, event) => ({
+                      actions: [assign(({ context, event }) => ({
                         files: context.files.filter(f => f.id !== event.fileId),
                         currentUpload: null,
                         progress: 100
@@ -346,7 +346,7 @@ describe('Integration Tests', () => {
                     },
                     {
                       target: 'inProgress',
-                      actions: [assign((context, event) => {
+                      actions: [assign(({ context, event }) => {
                         const remainingFiles = context.files.filter(f => f.id !== event.fileId);
                         return {
                           files: remainingFiles,
@@ -358,7 +358,7 @@ describe('Integration Tests', () => {
                   ],
                   ERROR: {
                     target: 'error',
-                    actions: [assign((context, event) => ({
+                    actions: [assign(({ context, event }) => ({
                       errors: [...context.errors, event.error]
                     }))]
                   },
@@ -371,11 +371,11 @@ describe('Integration Tests', () => {
                   SKIP: [
                     {
                       target: 'allComplete',
-                      cond: (context) => context.files.length <= 1
+                      cond: ({ context }) => context.files.length <= 1
                     },
                     {
                       target: 'inProgress',
-                      actions: [assign((context) => {
+                      actions: [assign(({ context }) => {
                         const remainingFiles = context.files.slice(1);
                         return {
                           files: remainingFiles,
@@ -472,7 +472,7 @@ describe('Integration Tests', () => {
                 on: {
                   TYPE: {
                     target: 'editing',
-                    actions: [assign((context, event) => ({
+                    actions: [assign(({ context, event }) => ({
                       document: context.document + event.text,
                       saved: false,
                       wordCount: (context.document + event.text).split(' ').filter(w => w).length
@@ -497,7 +497,7 @@ describe('Integration Tests', () => {
             },
             on: {
               TOGGLE_SPELLCHECK: {
-                actions: [assign((context) => ({
+                actions: [assign(({ context }) => ({
                   spellCheckEnabled: !context.spellCheckEnabled
                 }))]
               },
@@ -570,7 +570,7 @@ describe('Integration Tests', () => {
           },
           authenticated: {
             initial: 'dashboard',
-            entry: [assign((context, event) => ({ user: event.user }))],
+            entry: [assign(({ context, event }) => ({ user: event.user }))],
             states: {
               dashboard: {
                 initial: 'overview',
@@ -672,7 +672,7 @@ describe('Integration Tests', () => {
               },
               ADD_DATA: {
                 target: 'stable',
-                actions: [assign((context, event) => ({
+                actions: [assign(({ context, event }) => ({
                   data: [...context.data, event.item]
                 }))]
               },

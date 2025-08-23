@@ -127,24 +127,33 @@ describe('Edge Cases', () => {
 
       machine.send('NULL_EVENT', null);
       expect(actionFn).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({ type: 'NULL_EVENT' })
+        expect.objectContaining({
+          context: expect.any(Object),
+          event: expect.objectContaining({ type: 'NULL_EVENT' }),
+          machine: expect.any(Object)
+        })
       );
 
       actionFn.mockClear();
 
       machine.send('NULL_EVENT', undefined);
       expect(actionFn).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({ type: 'NULL_EVENT' })
+        expect.objectContaining({
+          context: expect.any(Object),
+          event: expect.objectContaining({ type: 'NULL_EVENT' }),
+          machine: expect.any(Object)
+        })
       );
 
       actionFn.mockClear();
 
       machine.send('NULL_EVENT');
       expect(actionFn).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({ type: 'NULL_EVENT' })
+        expect.objectContaining({
+          context: expect.any(Object),
+          event: expect.objectContaining({ type: 'NULL_EVENT' }),
+          machine: expect.any(Object)
+        })
       );
     });
 
@@ -326,7 +335,7 @@ describe('Edge Cases', () => {
             on: {
               ADD_ITEM: {
                 target: 'idle',
-                actions: [assign((context) => ({
+                actions: [assign(({ context }) => ({
                   items: [...context.items, context.items.length]
                 }))]
               }
@@ -366,7 +375,7 @@ describe('Edge Cases', () => {
             on: {
               UPDATE_DEEP: {
                 target: 'idle',
-                actions: [assign((context) => ({
+                actions: [assign(({ context }) => ({
                   deep: {
                     ...context.deep,
                     level1: {

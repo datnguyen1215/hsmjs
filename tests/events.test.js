@@ -93,11 +93,14 @@ describe('Events', () => {
       machine.send('SEND_DATA', { value: 42, message: 'test' });
 
       expect(actionFn).toHaveBeenCalledWith(
-        expect.any(Object), // context
         expect.objectContaining({
-          type: 'SEND_DATA',
-          value: 42,
-          message: 'test'
+          context: expect.any(Object),
+          event: expect.objectContaining({
+            type: 'SEND_DATA',
+            value: 42,
+            message: 'test'
+          }),
+          machine: expect.any(Object)
         })
       );
     });
@@ -112,7 +115,7 @@ describe('Events', () => {
             on: {
               SET_VALUE: {
                 target: 'idle',
-                actions: [assign((context, event) => ({
+                actions: [assign(({ context, event }) => ({
                   value: event.value,
                   count: context.count + 1
                 }))]
@@ -154,11 +157,14 @@ describe('Events', () => {
       machine.send('CONDITIONAL', { allowed: true, reason: 'test' });
 
       expect(guardFn).toHaveBeenCalledWith(
-        expect.any(Object), // context
         expect.objectContaining({
-          type: 'CONDITIONAL',
-          allowed: true,
-          reason: 'test'
+          context: expect.any(Object),
+          event: expect.objectContaining({
+            type: 'CONDITIONAL',
+            allowed: true,
+            reason: 'test'
+          }),
+          machine: expect.any(Object)
         })
       );
     });
@@ -409,8 +415,11 @@ describe('Events', () => {
 
       machine.send('UNKNOWN_EVENT');
       expect(wildcardAction).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({ type: 'UNKNOWN_EVENT' })
+        expect.objectContaining({
+          context: expect.any(Object),
+          event: expect.objectContaining({ type: 'UNKNOWN_EVENT' }),
+          machine: expect.any(Object)
+        })
       );
       expect(machine.state).toBe('idle');
 
@@ -434,11 +443,11 @@ describe('Events', () => {
               PROCESS: [
                 {
                   target: 'urgent',
-                  cond: (context) => context.priority === 'urgent'
+                  cond: ({ context }) => context.priority === 'urgent'
                 },
                 {
                   target: 'normal',
-                  cond: (context) => context.priority === 'normal'
+                  cond: ({ context }) => context.priority === 'normal'
                 },
                 {
                   target: 'low'
@@ -478,24 +487,33 @@ describe('Events', () => {
 
       machine.send('EVENT', null);
       expect(actionFn).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({ type: 'EVENT' })
+        expect.objectContaining({
+          context: expect.any(Object),
+          event: expect.objectContaining({ type: 'EVENT' }),
+          machine: expect.any(Object)
+        })
       );
 
       actionFn.mockClear();
 
       machine.send('EVENT', undefined);
       expect(actionFn).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({ type: 'EVENT' })
+        expect.objectContaining({
+          context: expect.any(Object),
+          event: expect.objectContaining({ type: 'EVENT' }),
+          machine: expect.any(Object)
+        })
       );
 
       actionFn.mockClear();
 
       machine.send('EVENT');
       expect(actionFn).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({ type: 'EVENT' })
+        expect.objectContaining({
+          context: expect.any(Object),
+          event: expect.objectContaining({ type: 'EVENT' }),
+          machine: expect.any(Object)
+        })
       );
     });
 
@@ -527,10 +545,13 @@ describe('Events', () => {
       machine.send('COMPLEX', complexPayload);
 
       expect(actionFn).toHaveBeenCalledWith(
-        expect.any(Object),
         expect.objectContaining({
-          type: 'COMPLEX',
-          ...complexPayload
+          context: expect.any(Object),
+          event: expect.objectContaining({
+            type: 'COMPLEX',
+            ...complexPayload
+          }),
+          machine: expect.any(Object)
         })
       );
     });

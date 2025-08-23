@@ -1,13 +1,15 @@
 import { findStateNode } from '../core/State.js';
 
 /**
- * @param {Function|string} guard
- * @param {Object} context
- * @param {Object} event
- * @param {Object} guardRegistry
- * @returns {boolean}
+ * Evaluate a guard condition with object-based arguments
+ * @param {Function|string} guard - Guard function or string reference
+ * @param {Object} context - Current context
+ * @param {Object} event - Event object
+ * @param {Object} guardRegistry - Registry of named guards
+ * @param {Object} machine - Machine reference
+ * @returns {boolean} - True if guard passes, false otherwise
  */
-export const evaluateGuard = (guard, context, event, guardRegistry = {}) => {
+export const evaluateGuard = (guard, context, event, guardRegistry = {}, machine) => {
   if (!guard) {
     return true;
   }
@@ -24,10 +26,10 @@ export const evaluateGuard = (guard, context, event, guardRegistry = {}) => {
     }
 
     try {
-      const result = !!guardFn(context, event);
+      const result = !!guardFn({ context, event, machine });
       return isNegated ? !result : result;
     } catch (error) {
-      // Guard evaluation error
+      console.error(`Guard evaluation error for guard '${guardName}':`, error);
       return false;
     }
   }
@@ -35,9 +37,9 @@ export const evaluateGuard = (guard, context, event, guardRegistry = {}) => {
   // Handle function guards
   if (typeof guard === 'function') {
     try {
-      return !!guard(context, event);
+      return !!guard({ context, event, machine });
     } catch (error) {
-      // Guard evaluation error
+      console.error('Guard function evaluation error:', error);
       return false;
     }
   }
@@ -45,13 +47,13 @@ export const evaluateGuard = (guard, context, event, guardRegistry = {}) => {
   // Handle complex guard objects (for AND/OR combinations)
   if (typeof guard === 'object' && guard !== null) {
     if (guard.type === 'and') {
-      return guard.guards.every(g => evaluateGuard(g, context, event, guardRegistry));
+      return guard.guards.every(g => evaluateGuard(g, context, event, guardRegistry, machine));
     }
     if (guard.type === 'or') {
-      return guard.guards.some(g => evaluateGuard(g, context, event, guardRegistry));
+      return guard.guards.some(g => evaluateGuard(g, context, event, guardRegistry, machine));
     }
     if (guard.type === 'not') {
-      return !evaluateGuard(guard.guard, context, event, guardRegistry);
+      return !evaluateGuard(guard.guard, context, event, guardRegistry, machine);
     }
   }
 
@@ -59,24 +61,26 @@ export const evaluateGuard = (guard, context, event, guardRegistry = {}) => {
 };
 
 /**
- * @param {Array|Object} transitions
- * @param {Object} context
- * @param {Object} event
- * @param {Object} guardRegistry
- * @returns {Object|null}
+ * Select the first valid transition from available options
+ * @param {Array|Object} transitions - Single transition or array of transitions
+ * @param {Object} context - Current context
+ * @param {Object} event - Event object
+ * @param {Object} guardRegistry - Registry of named guards
+ * @param {Object} machine - Machine reference
+ * @returns {Object|null} - Selected transition or null if none match
  */
-export const selectTransition = (transitions, context, event, guardRegistry = {}) => {
+export const selectTransition = (transitions, context, event, guardRegistry = {}, machine) => {
   if (!transitions) return null;
 
   // Handle single transition
   if (!Array.isArray(transitions)) {
-    const passes = evaluateGuard(transitions.cond, context, event, guardRegistry);
+    const passes = evaluateGuard(transitions.cond, context, event, guardRegistry, machine);
     return passes ? transitions : null;
   }
 
   // Handle array of transitions
   for (const transition of transitions) {
-    const passes = evaluateGuard(transition.cond, context, event, guardRegistry);
+    const passes = evaluateGuard(transition.cond, context, event, guardRegistry, machine);
     if (passes) {
       return transition;
     }
@@ -93,14 +97,16 @@ export const selectTransition = (transitions, context, event, guardRegistry = {}
  */
 
 /**
- * @param {Object} stateNode
- * @param {string} eventType
- * @param {Object} context
- * @param {Object} event
- * @param {Object} guardRegistry
- * @returns {TransitionConfig|null}
+ * Resolve a transition from a state node for the given event
+ * @param {Object} stateNode - Source state node
+ * @param {string} eventType - Type of event to handle
+ * @param {Object} context - Current context
+ * @param {Object} event - Event object
+ * @param {Object} guardRegistry - Registry of named guards
+ * @param {Object} machine - Machine reference
+ * @returns {TransitionConfig|null} - Resolved transition configuration or null
  */
-export const resolveTransition = (stateNode, eventType, context, event, guardRegistry = {}) => {
+export const resolveTransition = (stateNode, eventType, context, event, guardRegistry = {}, machine) => {
   const transitions = stateNode.on[eventType];
 
   if (!transitions) {
@@ -110,7 +116,7 @@ export const resolveTransition = (stateNode, eventType, context, event, guardReg
       if (typeof wildcardTransitions === 'string') {
         return { target: wildcardTransitions, actions: [] };
       }
-      const selected = selectTransition(wildcardTransitions, context, event, guardRegistry);
+      const selected = selectTransition(wildcardTransitions, context, event, guardRegistry, machine);
       if (selected) {
         return normalizeTransition(selected);
       }
@@ -124,7 +130,7 @@ export const resolveTransition = (stateNode, eventType, context, event, guardReg
   }
 
   // Handle transition config or array
-  const selected = selectTransition(transitions, context, event, guardRegistry);
+  const selected = selectTransition(transitions, context, event, guardRegistry, machine);
 
   if (selected) {
     return normalizeTransition(selected);
@@ -134,8 +140,9 @@ export const resolveTransition = (stateNode, eventType, context, event, guardReg
 };
 
 /**
- * @param {string|TransitionConfig} transition
- * @returns {TransitionConfig}
+ * Normalize a transition to standard configuration format
+ * @param {string|TransitionConfig} transition - Transition to normalize
+ * @returns {TransitionConfig} - Normalized transition with target, actions, and optional cond
  */
 const normalizeTransition = (transition) => {
   if (typeof transition === 'string') {
@@ -152,10 +159,11 @@ const normalizeTransition = (transition) => {
 };
 
 /**
- * @param {Object} rootNode
- * @param {Object} currentNode
- * @param {string} target
- * @returns {Object|null}
+ * Resolve target node from string reference using hierarchical search
+ * @param {Object} rootNode - Root state node
+ * @param {Object} currentNode - Current state node for relative resolution
+ * @param {string} target - Target state reference (path or ID)
+ * @returns {Object|null} - Resolved target state node or null if not found
  */
 export const resolveTargetNode = (rootNode, currentNode, target) => {
   // Internal transition - no target means stay in current state

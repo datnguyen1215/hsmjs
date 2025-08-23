@@ -46,7 +46,7 @@ describe('History and Rollback', () => {
           idle: {
             on: {
               INCREMENT: {
-                actions: [assign((ctx) => ({ count: ctx.count + 1 }))]
+                actions: [assign(({ context }) => ({ count: context.count + 1 }))]
               }
             }
           }
