@@ -31,7 +31,7 @@ export const Machine = (config, options = {}) => {
   const _stateHistory = [];
 
   // Only track last event for notifications
-  let _lastEvent = null;
+  let lastEvent = null;
 
   const pushToHistory = () => {
     _stateHistory.push({
@@ -55,11 +55,14 @@ export const Machine = (config, options = {}) => {
     setTimeout(() => isAsync ? processNextQueuedEvent() : processNextQueuedEventSync(), 0);
   };
 
+  // Machine reference that will be passed to actions and guards
+  let machineRef = null;
+
   // Create event processing functions that update our local state
   const processEvent = (event) => {
-    _lastEvent = event;
+    lastEvent = event;
 
-    const result = processEventSync(event, state, _context, rootNode, guards, actions, executeActionsSync);
+    const result = processEventSync(event, state, _context, rootNode, guards, actions, executeActionsSync, machineRef);
     if (!result.wasAsync) {
       applyStateUpdate(result.value.state, result.value.context);
     }
@@ -67,9 +70,9 @@ export const Machine = (config, options = {}) => {
   };
 
   const processEventAsyncHandler = async (event) => {
-    _lastEvent = event;
+    lastEvent = event;
 
-    const result = await processEventAsync(event, state, _context, rootNode, guards, actions);
+    const result = await processEventAsync(event, state, _context, rootNode, guards, actions, machineRef);
     applyStateUpdate(result.state, result.context);
     return result;
   };
@@ -87,7 +90,7 @@ export const Machine = (config, options = {}) => {
     const transition = {
       previousState: previousSnapshot,
       nextState: currentSnapshot,
-      event: _lastEvent
+      event: lastEvent
     };
     eventEmitter.notify(transition);
   };
@@ -95,10 +98,236 @@ export const Machine = (config, options = {}) => {
   // Initialize with initial state, handling nested initial states
   let state = initializeState(rootNode, config.initial);
 
+  // Public API
+  const machine = {
+    get config() { return config; },
+    get options() { return options; },
+    get id() { return config.id; },
+    get initial() { return config.initial; },
+    get rootNode() { return rootNode; },
+    get actions() { return actions; },
+    get guards() { return guards; },
+    get state() { return state; },
+    get context() { return cloneContext(_context); },
+    get isTransitioning() { return queueManager.getIsTransitioning(); },
+    get eventQueue() { return queueManager.eventQueue; },
+    get historySize() { return _stateHistory.length; },
+    get history() { return [..._stateHistory]; },
+    get snapshot() {
+      // Return the last history entry as the current snapshot
+      return _stateHistory[_stateHistory.length - 1] || { state, context: cloneContext(_context) };
+    },
+
+    /**
+     * @param {string} eventType
+     * @param {Object} [payload]
+     * @returns {Promise<{state: string, context: Object, results: Array}>}
+     */
+    send(eventType, payload = {}) {
+      const event = { type: eventType, ...payload };
+
+      // Queue event if currently transitioning
+      if (queueManager.getIsTransitioning()) {
+        return new Promise((resolve, reject) => {
+          queueManager.enqueue(event, resolve, reject);
+        });
+      }
+
+      queueManager.setIsTransitioning(true);
+
+      try {
+        // Try synchronous execution first
+        const result = processEvent(event);
+
+        if (result.wasAsync) {
+          // Switch to async processing
+          return processEventAsyncHandler(event).finally(() => {
+            queueManager.setIsTransitioning(false);
+            scheduleNextEvent(true);
+          });
+        } else {
+          queueManager.setIsTransitioning(false);
+          // Process next queued event synchronously
+          scheduleNextEvent(false);
+          return Promise.resolve(result.value);
+        }
+      } catch (error) {
+        queueManager.setIsTransitioning(false);
+        return Promise.reject(error);
+      }
+    },
+
+    /**
+     * Clear all queued events
+     * @returns {number} Number of events cleared
+     */
+    clearQueue() {
+      return queueManager.clearQueue();
+    },
+
+    /**
+     * Send event with priority (clears queue and processes immediately)
+     * @param {string} eventType
+     * @param {Object} [payload]
+     * @returns {Promise<{state: string, context: Object, results: Array}>}
+     */
+    sendPriority(eventType, payload = {}) {
+      // Clear the current queue first, rejecting all pending events
+      this.clearQueue();
+
+      // Then send the priority event normally
+      return this.send(eventType, payload);
+    },
+
+    /**
+     * @param {string|Object} stateValue
+     * @returns {boolean}
+     */
+    matches(stateValue) {
+      if (typeof stateValue === 'string') {
+        // Check exact match
+        if (state === stateValue) {
+          return true;
+        }
+        // Check if current state is a descendant
+        if (state.startsWith(stateValue + '.')) {
+          return true;
+        }
+        return false;
+      }
+
+      // Handle nested object notation
+      if (typeof stateValue === 'object' && stateValue !== null) {
+        const currentParts = state.split('.');
+
+        const checkNested = (obj, level = 0) => {
+          if (level >= currentParts.length) return false;
+
+          for (const key in obj) {
+            if (currentParts[level] !== key) {
+              continue;
+            }
+            if (typeof obj[key] === 'object' && obj[key] !== null) {
+              return checkNested(obj[key], level + 1);
+            }
+            if (typeof obj[key] === 'string') {
+              return currentParts.slice(level + 1).join('.') === obj[key] ||
+                     currentParts.slice(level + 1).join('.').startsWith(obj[key] + '.');
+            }
+            return level === currentParts.length - 1;
+          }
+          return false;
+        };
+
+        return checkNested(stateValue);
+      }
+
+      return false;
+    },
+
+    /**
+     * @param {Function} callback
+     * @returns {Function}
+     */
+    subscribe(callback) {
+      return eventEmitter.subscribe(callback);
+    },
+
+    /**
+     * Restore machine to a specific snapshot state.
+     * Note: This does NOT execute entry/exit actions.
+     * @param {Object} snapshot - Object with state and context properties
+     * @returns {Promise<{state: string, context: Object}>}
+     */
+    restore(snapshot) {
+      // Validate snapshot parameter
+      if (!snapshot || typeof snapshot !== 'object') {
+        return Promise.reject(new Error('Snapshot must be an object'));
+      }
+      if (!snapshot.hasOwnProperty('state') || !snapshot.hasOwnProperty('context')) {
+        return Promise.reject(new Error('Snapshot must have state and context properties'));
+      }
+
+      // Validate that the state exists in the machine definition
+      const stateNode = getStateNode(rootNode, snapshot.state);
+      if (!stateNode) {
+        return Promise.reject(new Error(`Invalid state in snapshot: ${snapshot.state}`));
+      }
+
+      lastEvent = { type: 'RESTORE' };
+
+      // Restore state and context from snapshot
+      state = snapshot.state;
+      _context = cloneContext(snapshot.context);
+
+      // Clear any queued events
+      queueManager.clearQueue();
+
+      // Push to history
+      pushToHistory();
+
+      // Notify subscribers
+      notifySubscribers();
+
+      return Promise.resolve({ state, context: cloneContext(_context) });
+    },
+
+    /**
+     * Validates the machine configuration and structure.
+     * Checks for invalid transitions, missing guards/actions, unreachable states, etc.
+     * @returns {{valid: boolean, errors: Array, warnings: Array}}
+     */
+    validate() {
+      const errors = [];
+      const warnings = [];
+
+      // Run all validation checks
+      const transitionValidation = validateStateTransitions();
+      errors.push(...transitionValidation.errors);
+      warnings.push(...transitionValidation.warnings);
+
+      const guardErrors = validateGuardReferences();
+      errors.push(...guardErrors);
+
+      const actionErrors = validateActionReferences();
+      errors.push(...actionErrors);
+
+      const nestedErrors = validateNestedStates();
+      errors.push(...nestedErrors);
+
+      const reachabilityWarnings = validateStateReachability();
+      warnings.push(...reachabilityWarnings);
+
+      return {
+        valid: errors.length === 0,
+        errors: errors,
+        warnings: warnings
+      };
+    },
+
+    /**
+     * @param {Object} options
+     * @returns {string}
+     */
+    visualize(options = {}) {
+      const type = options.type || 'mermaid';
+      if (type === 'mermaid') {
+        return generateMermaid(config, options);
+      }
+      if (type === 'plantuml') {
+        return generatePlantUML(config, options);
+      }
+      throw new Error(`Unsupported visualization type: ${type}`);
+    }
+  };
+
+  // Set the machine reference now that we have the machine object
+  machineRef = machine;
+
   // Execute initial entry actions
   const initialNode = getStateNode(rootNode, state);
   if (initialNode && initialNode.entry.length > 0) {
-    const result = executeActionsSync(initialNode.entry, _context, {}, actions);
+    const result = executeActionsSync(initialNode.entry, _context, {}, actions, machineRef);
     _context = result.context;
   }
 
@@ -438,226 +667,5 @@ export const Machine = (config, options = {}) => {
     return warnings;
   };
 
-  // Public API
-  return {
-    get config() { return config; },
-    get options() { return options; },
-    get id() { return config.id; },
-    get initial() { return config.initial; },
-    get rootNode() { return rootNode; },
-    get actions() { return actions; },
-    get guards() { return guards; },
-    get state() { return state; },
-    get context() { return cloneContext(_context); },
-    get isTransitioning() { return queueManager.getIsTransitioning(); },
-    get eventQueue() { return queueManager.eventQueue; },
-    get historySize() { return _stateHistory.length; },
-    get history() { return [..._stateHistory]; },
-    get snapshot() {
-      // Return the last history entry as the current snapshot
-      return _stateHistory[_stateHistory.length - 1] || { state, context: cloneContext(_context) };
-    },
-
-    /**
-     * @param {string} eventType
-     * @param {Object} [payload]
-     * @returns {Promise<{state: string, context: Object, results: Array}>}
-     */
-    send(eventType, payload = {}) {
-      const event = { type: eventType, ...payload };
-
-      // Queue event if currently transitioning
-      if (queueManager.getIsTransitioning()) {
-        return new Promise((resolve, reject) => {
-          queueManager.enqueue(event, resolve, reject);
-        });
-      }
-
-      queueManager.setIsTransitioning(true);
-
-      try {
-        // Try synchronous execution first
-        const result = processEvent(event);
-
-        if (result.wasAsync) {
-          // Switch to async processing
-          return processEventAsyncHandler(event).finally(() => {
-            queueManager.setIsTransitioning(false);
-            scheduleNextEvent(true);
-          });
-        } else {
-          queueManager.setIsTransitioning(false);
-          // Process next queued event synchronously
-          scheduleNextEvent(false);
-          return Promise.resolve(result.value);
-        }
-      } catch (error) {
-        queueManager.setIsTransitioning(false);
-        return Promise.reject(error);
-      }
-    },
-
-    /**
-     * Clear all queued events
-     * @returns {number} Number of events cleared
-     */
-    clearQueue() {
-      return queueManager.clearQueue();
-    },
-
-    /**
-     * Send event with priority (clears queue and processes immediately)
-     * @param {string} eventType
-     * @param {Object} [payload]
-     * @returns {Promise<{state: string, context: Object, results: Array}>}
-     */
-    sendPriority(eventType, payload = {}) {
-      // Clear the current queue first, rejecting all pending events
-      this.clearQueue();
-
-      // Then send the priority event normally
-      return this.send(eventType, payload);
-    },
-
-    /**
-     * @param {string|Object} stateValue
-     * @returns {boolean}
-     */
-    matches(stateValue) {
-      if (typeof stateValue === 'string') {
-        // Check exact match
-        if (state === stateValue) {
-          return true;
-        }
-        // Check if current state is a descendant
-        if (state.startsWith(stateValue + '.')) {
-          return true;
-        }
-        return false;
-      }
-
-      // Handle nested object notation
-      if (typeof stateValue === 'object' && stateValue !== null) {
-        const currentParts = state.split('.');
-
-        const checkNested = (obj, level = 0) => {
-          if (level >= currentParts.length) return false;
-
-          for (const key in obj) {
-            if (currentParts[level] !== key) {
-              continue;
-            }
-            if (typeof obj[key] === 'object' && obj[key] !== null) {
-              return checkNested(obj[key], level + 1);
-            }
-            if (typeof obj[key] === 'string') {
-              return currentParts.slice(level + 1).join('.') === obj[key] ||
-                     currentParts.slice(level + 1).join('.').startsWith(obj[key] + '.');
-            }
-            return level === currentParts.length - 1;
-          }
-          return false;
-        };
-
-        return checkNested(stateValue);
-      }
-
-      return false;
-    },
-
-    /**
-     * @param {Function} callback
-     * @returns {Function}
-     */
-    subscribe(callback) {
-      return eventEmitter.subscribe(callback);
-    },
-
-    /**
-     * Restore machine to a specific snapshot state.
-     * Note: This does NOT execute entry/exit actions.
-     * @param {Object} snapshot - Object with state and context properties
-     * @returns {Promise<{state: string, context: Object}>}
-     */
-    restore(snapshot) {
-      // Validate snapshot parameter
-      if (!snapshot || typeof snapshot !== 'object') {
-        return Promise.reject(new Error('Snapshot must be an object'));
-      }
-      if (!snapshot.hasOwnProperty('state') || !snapshot.hasOwnProperty('context')) {
-        return Promise.reject(new Error('Snapshot must have state and context properties'));
-      }
-
-      // Validate that the state exists in the machine definition
-      const stateNode = getStateNode(rootNode, snapshot.state);
-      if (!stateNode) {
-        return Promise.reject(new Error(`Invalid state in snapshot: ${snapshot.state}`));
-      }
-
-      _lastEvent = { type: 'RESTORE' };
-
-      // Restore state and context from snapshot
-      state = snapshot.state;
-      _context = cloneContext(snapshot.context);
-
-      // Clear any queued events
-      queueManager.clearQueue();
-
-      // Push to history
-      pushToHistory();
-
-      // Notify subscribers
-      notifySubscribers();
-
-      return Promise.resolve({ state, context: cloneContext(_context) });
-    },
-
-    /**
-     * Validates the machine configuration and structure.
-     * Checks for invalid transitions, missing guards/actions, unreachable states, etc.
-     * @returns {{valid: boolean, errors: Array, warnings: Array}}
-     */
-    validate() {
-      const errors = [];
-      const warnings = [];
-
-      // Run all validation checks
-      const transitionValidation = validateStateTransitions();
-      errors.push(...transitionValidation.errors);
-      warnings.push(...transitionValidation.warnings);
-
-      const guardErrors = validateGuardReferences();
-      errors.push(...guardErrors);
-
-      const actionErrors = validateActionReferences();
-      errors.push(...actionErrors);
-
-      const nestedErrors = validateNestedStates();
-      errors.push(...nestedErrors);
-
-      const reachabilityWarnings = validateStateReachability();
-      warnings.push(...reachabilityWarnings);
-
-      return {
-        valid: errors.length === 0,
-        errors: errors,
-        warnings: warnings
-      };
-    },
-
-    /**
-     * @param {Object} options
-     * @returns {string}
-     */
-    visualize(options = {}) {
-      const type = options.type || 'mermaid';
-      if (type === 'mermaid') {
-        return generateMermaid(config, options);
-      }
-      if (type === 'plantuml') {
-        return generatePlantUML(config, options);
-      }
-      throw new Error(`Unsupported visualization type: ${type}`);
-    }
-  };
+  return machine;
 };

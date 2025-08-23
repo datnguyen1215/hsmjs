@@ -98,7 +98,7 @@ describe('Machine', () => {
             on: {
               INCREMENT: {
                 target: 'idle',
-                actions: [assign(ctx => ({ count: ctx.count + 1 }))]
+                actions: [assign(({ context }) => ({ count: context.count + 1 }))]
               }
             }
           }
@@ -203,7 +203,7 @@ describe('Machine', () => {
             on: {
               UPDATE: {
                 target: 'active',
-                actions: [assign((ctx, event) => ({ value: event.newValue }))]
+                actions: [assign(({ context, event }) => ({ value: event.newValue }))]
               }
             }
           },
@@ -219,10 +219,10 @@ describe('Machine', () => {
       });
 
       machine.subscribe(subscriber);
-      
+
       // First transition
       machine.send('UPDATE', { newValue: 'updated' });
-      
+
       expect(subscriber).toHaveBeenCalledWith({
         previousState: {
           state: 'idle',
@@ -234,12 +234,12 @@ describe('Machine', () => {
         },
         event: { type: 'UPDATE', newValue: 'updated' }
       });
-      
+
       subscriber.mockClear();
-      
+
       // Second transition
       machine.send('RESET');
-      
+
       expect(subscriber).toHaveBeenCalledWith({
         previousState: {
           state: 'active',
@@ -265,7 +265,7 @@ describe('Machine', () => {
             on: {
               INCREMENT: {
                 target: 'idle',
-                actions: [assign(ctx => ({ count: ctx.count + 1 }))]
+                actions: [assign(({ context }) => ({ count: context.count + 1 }))]
               }
             }
           }
@@ -295,8 +295,8 @@ describe('Machine', () => {
             on: {
               UPDATE: {
                 target: 'idle',
-                actions: [assign(ctx => ({
-                  nested: { ...ctx.nested, value: ctx.nested.value + 1 }
+                actions: [assign(({ context }) => ({
+                  nested: { ...context.nested, value: context.nested.value + 1 }
                 }))]
               }
             }
@@ -374,7 +374,7 @@ describe('Machine', () => {
             on: {
               INCREMENT: {
                 target: 'active',
-                actions: [assign(ctx => ({ count: ctx.count + 1 }))]
+                actions: [assign(({ context }) => ({ count: context.count + 1 }))]
               }
             }
           },

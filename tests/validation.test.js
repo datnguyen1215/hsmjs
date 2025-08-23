@@ -234,7 +234,7 @@ describe('Machine Validation', () => {
             on: {
               START: {
                 target: 'running',
-                cond: (ctx) => ctx.canStart
+                cond: ({ context }) => context.canStart
               }
             }
           },
@@ -332,12 +332,12 @@ describe('Machine Validation', () => {
         initial: 'idle',
         states: {
           idle: {
-            entry: [(ctx) => console.log('entry')],
+            entry: [({ context }) => console.log('entry')],
             exit: [() => console.log('exit')],
             on: {
               START: {
                 target: 'running',
-                actions: [(ctx, event) => console.log('transition')]
+                actions: [({ context, event }) => console.log('transition')]
               }
             }
           },
@@ -361,7 +361,7 @@ describe('Machine Validation', () => {
             on: {
               INCREMENT: {
                 target: 'idle',
-                actions: [assign({ count: (ctx) => ctx.count + 1 })]
+                actions: [assign({ count: ({ context }) => context.count + 1 })]
               }
             }
           }

@@ -47,7 +47,7 @@ describe('Registry Tests', () => {
       }, {
         actions: {
           updateContext: assign({
-            count: (ctx) => ctx.count + 1,
+            count: ({ context }) => context.count + 1,
             name: 'updated'
           })
         }
@@ -76,7 +76,7 @@ describe('Registry Tests', () => {
         }
       }, {
         actions: {
-          doubleValue: assign((ctx) => ({ value: ctx.value * 2 }))
+          doubleValue: assign(({ context }) => ({ value: context.value * 2 }))
         }
       });
 
@@ -135,7 +135,7 @@ describe('Registry Tests', () => {
         }
       }, {
         actions: {
-          incrementCount: assign({ count: (ctx) => ctx.count + 1 }),
+          incrementCount: assign({ count: ({ context }) => context.count + 1 }),
           logAction: () => order.push('logged')
         }
       });
@@ -243,7 +243,7 @@ describe('Registry Tests', () => {
         }
       }, {
         guards: {
-          isCountBelowTen: (ctx, event) => ctx.count < 10
+          isCountBelowTen: ({ context }) => context.count < 10
         }
       });
 
@@ -304,8 +304,8 @@ describe('Registry Tests', () => {
         }
       }, {
         guards: {
-          isHigh: (ctx) => ctx.value > 10,
-          isMedium: (ctx) => ctx.value >= 5
+          isHigh: ({ context }) => context.value > 10,
+          isMedium: ({ context }) => context.value >= 5
         }
       });
 
@@ -340,11 +340,11 @@ describe('Registry Tests', () => {
         }
       }, {
         guards: {
-          isValid: (ctx) => ctx.attempts < 2
+          isValid: ({ context }) => context.attempts < 2
         },
         actions: {
-          markSuccess: assign({ count: (ctx) => ctx.count + 1 }),
-          incrementAttempts: assign({ attempts: (ctx) => ctx.attempts + 1 })
+          markSuccess: assign({ count: ({ context }) => context.count + 1 }),
+          incrementAttempts: assign({ attempts: ({ context }) => context.attempts + 1 })
         }
       });
 
@@ -378,11 +378,11 @@ describe('Registry Tests', () => {
         }
       }, {
         guards: {
-          isValid: (ctx) => ctx.attempts < 2
+          isValid: ({ context }) => context.attempts < 2
         },
         actions: {
-          markSuccess: assign({ count: (ctx) => ctx.count + 1 }),
-          incrementAttempts: assign({ attempts: (ctx) => ctx.attempts + 1 })
+          markSuccess: assign({ count: ({ context }) => context.count + 1 }),
+          incrementAttempts: assign({ attempts: ({ context }) => context.attempts + 1 })
         }
       });
 
@@ -415,10 +415,10 @@ describe('Registry Tests', () => {
         }
       }, {
         guards: {
-          canAdvance: (ctx) => ctx.level >= 1
+          canAdvance: ({ context }) => context.level >= 1
         },
         actions: {
-          advanceLevel: assign({ level: (ctx) => ctx.level + 1 })
+          advanceLevel: assign({ level: ({ context }) => context.level + 1 })
         }
       });
 
@@ -451,6 +451,39 @@ describe('Registry Tests', () => {
 
       await machine.send('SET');
       expect(machine.context.data).toBe('sync-value');
+    });
+
+    test('should pass machine parameter to registry actions', () => {
+      let capturedMachine = null;
+
+      const machine = createMachine({
+        id: 'test',
+        initial: 'idle',
+        states: {
+          idle: {
+            on: {
+              TEST: {
+                target: 'idle',
+                actions: ['captureParams']
+              }
+            }
+          }
+        }
+      }, {
+        actions: {
+          captureParams: ({ context, event, machine }) => {
+            capturedMachine = machine;
+            return 'action-result';
+          }
+        }
+      });
+
+      machine.send('TEST');
+
+      expect(capturedMachine).not.toBeNull();
+      expect(capturedMachine.id).toBe('test');
+      expect(capturedMachine.state).toBe('idle');
+      expect(typeof capturedMachine.send).toBe('function');
     });
   });
 });

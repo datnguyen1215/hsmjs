@@ -12,7 +12,7 @@ describe('Guards', () => {
             on: {
               CONDITIONAL: {
                 target: 'active',
-                cond: (context) => context.count > 5
+                cond: ({ context }) => context.count > 5
               }
             }
           },
@@ -33,7 +33,7 @@ describe('Guards', () => {
             on: {
               CONDITIONAL: {
                 target: 'active',
-                cond: (context) => context.count > 5
+                cond: ({ context }) => context.count > 5
               }
             }
           },
@@ -68,8 +68,11 @@ describe('Guards', () => {
       machine.send('EVENT', { data: 'payload' });
 
       expect(guardFn).toHaveBeenCalledWith(
-        expect.objectContaining({ value: 'test' }),
-        expect.objectContaining({ type: 'EVENT', data: 'payload' })
+        expect.objectContaining({
+          context: expect.objectContaining({ value: 'test' }),
+          event: expect.objectContaining({ type: 'EVENT', data: 'payload' }),
+          machine: expect.any(Object)
+        })
       );
     });
 
@@ -271,11 +274,11 @@ describe('Guards', () => {
             on: {
               WRITE: {
                 target: 'writing',
-                cond: (context) => context.permissions.includes('write')
+                cond: ({ context }) => context.permissions.includes('write')
               },
               READ: {
                 target: 'reading',
-                cond: (context) => context.permissions.includes('read')
+                cond: ({ context }) => context.permissions.includes('read')
               }
             }
           },
@@ -301,11 +304,11 @@ describe('Guards', () => {
               PROCESS: [
                 {
                   target: 'priority',
-                  cond: (context, event) => event.priority === 'high'
+                  cond: ({ context, event }) => event.priority === 'high'
                 },
                 {
                   target: 'normal',
-                  cond: (context, event) => event.priority === 'normal'
+                  cond: ({ context, event }) => event.priority === 'normal'
                 },
                 { target: 'low' } // Default case with no guard
               ]
@@ -342,7 +345,7 @@ describe('Guards', () => {
             on: {
               ACTION: {
                 target: 'done',
-                cond: (context) => context.allowed,
+                cond: ({ context }) => context.allowed,
                 actions: [() => { actionExecuted = true; }]
               }
             }
@@ -369,7 +372,7 @@ describe('Guards', () => {
             on: {
               ACTION: {
                 target: 'done',
-                cond: (context) => context.allowed,
+                cond: ({ context }) => context.allowed,
                 actions: [() => { actionExecuted = true; }]
               }
             }
@@ -399,7 +402,7 @@ describe('Guards', () => {
                 on: {
                   NEXT: {
                     target: 'child2',
-                    cond: (context) => context.level >= 2
+                    cond: ({ context }) => context.level >= 2
                   }
                 }
               },
@@ -427,7 +430,7 @@ describe('Guards', () => {
                 on: {
                   NEXT: {
                     target: 'child2',
-                    cond: (context) => context.level >= 2
+                    cond: ({ context }) => context.level >= 2
                   }
                 }
               },

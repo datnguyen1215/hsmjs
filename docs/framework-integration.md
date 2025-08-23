@@ -38,10 +38,10 @@ const counterMachine = createMachine({
     idle: {
       on: {
         INCREMENT: {
-          actions: [assign({ count: ctx => ctx.count + 1 })]
+          actions: [assign({ count: ({ context }) => context.count + 1 })]
         },
         DECREMENT: {
-          actions: [assign({ count: ctx => ctx.count - 1 })]
+          actions: [assign({ count: ({ context }) => context.count - 1 })]
         },
         RESET: {
           actions: [assign({ count: 0 })]
@@ -87,12 +87,12 @@ const formMachine = createMachine({
       on: {
         CHANGE: {
           actions: [assign({
-            values: (ctx, event) => ({
-              ...ctx.values,
+            values: ({ context, event }) => ({
+              ...context.values,
               [event.field]: event.value
             }),
-            errors: (ctx, event) => {
-              const { [event.field]: removed, ...remaining } = ctx.errors;
+            errors: ({ context, event }) => {
+              const { [event.field]: removed, ...remaining } = context.errors;
               return remaining; // Clear field error on change
             }
           })]
@@ -101,20 +101,20 @@ const formMachine = createMachine({
       }
     },
     validating: {
-      entry: [(ctx) => {
+      entry: [({ context }) => {
         const errors = {};
 
-        if (!ctx.values.name.trim()) {
+        if (!context.values.name.trim()) {
           errors.name = 'Name is required';
         }
 
-        if (!ctx.values.email.trim()) {
+        if (!context.values.email.trim()) {
           errors.email = 'Email is required';
-        } else if (!/\S+@\S+\.\S+/.test(ctx.values.email)) {
+        } else if (!/\S+@\S+\.\S+/.test(context.values.email)) {
           errors.email = 'Email is invalid';
         }
 
-        if (!ctx.values.message.trim()) {
+        if (!context.values.message.trim()) {
           errors.message = 'Message is required';
         }
 
@@ -128,12 +128,12 @@ const formMachine = createMachine({
         VALID: 'submitting',
         INVALID: {
           target: 'editing',
-          actions: [assign({ errors: (ctx, event) => event.errors })]
+          actions: [assign({ errors: ({ context, event }) => event.errors })]
         }
       }
     },
     submitting: {
-      entry: [async (ctx) => {
+      entry: [async ({ context }) => {
         try {
           await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API
           machine.send('SUCCESS');
@@ -271,25 +271,25 @@ const appMachine = createMachine({
     ready: {
       on: {
         LOGIN: {
-          actions: [assign({ user: (ctx, event) => event.user })]
+          actions: [assign({ user: ({ context, event }) => event.user })]
         },
         LOGOUT: {
           actions: [assign({ user: null })]
         },
         TOGGLE_THEME: {
           actions: [assign({
-            theme: ctx => ctx.theme === 'light' ? 'dark' : 'light'
+            theme: ({ context }) => context.theme === 'light' ? 'dark' : 'light'
           })]
         },
         ADD_NOTIFICATION: {
           actions: [assign({
-            notifications: (ctx, event) => [...ctx.notifications, event.notification]
+            notifications: ({ context, event }) => [...context.notifications, event.notification]
           })]
         },
         REMOVE_NOTIFICATION: {
           actions: [assign({
-            notifications: (ctx, event) =>
-              ctx.notifications.filter(n => n.id !== event.id)
+            notifications: ({ context, event }) =>
+              context.notifications.filter(n => n.id !== event.id)
           })]
         }
       }
@@ -359,10 +359,10 @@ export const createMachineStore = (machine) => {
       idle: {
         on: {
           INCREMENT: {
-            actions: [assign({ count: ctx => ctx.count + 1 })]
+            actions: [assign({ count: ({ context }) => context.count + 1 })]
           },
           DECREMENT: {
-            actions: [assign({ count: ctx => ctx.count - 1 })]
+            actions: [assign({ count: ({ context }) => context.count - 1 })]
           },
           RESET: {
             actions: [assign({ count: 0 })]
@@ -406,13 +406,13 @@ export const createMachineStore = (machine) => {
       idle: {
         on: {
           ADD_TODO: {
-            cond: (ctx) => ctx.newTodo.trim().length > 0,
+            cond: ({ context }) => context.newTodo.trim().length > 0,
             actions: [assign({
-              todos: (ctx) => [
-                ...ctx.todos,
+              todos: ({ context }) => [
+                ...context.todos,
                 {
                   id: Date.now(),
-                  text: ctx.newTodo.trim(),
+                  text: context.newTodo.trim(),
                   completed: false
                 }
               ],
@@ -420,11 +420,11 @@ export const createMachineStore = (machine) => {
             })]
           },
           UPDATE_NEW_TODO: {
-            actions: [assign({ newTodo: (ctx, event) => event.value })]
+            actions: [assign({ newTodo: ({ context, event }) => event.value })]
           },
           TOGGLE_TODO: {
             actions: [assign({
-              todos: (ctx, event) => ctx.todos.map(todo =>
+              todos: ({ context, event }) => context.todos.map(todo =>
                 todo.id === event.id
                   ? { ...todo, completed: !todo.completed }
                   : todo
@@ -433,15 +433,15 @@ export const createMachineStore = (machine) => {
           },
           DELETE_TODO: {
             actions: [assign({
-              todos: (ctx, event) => ctx.todos.filter(todo => todo.id !== event.id)
+              todos: ({ context, event }) => context.todos.filter(todo => todo.id !== event.id)
             })]
           },
           SET_FILTER: {
-            actions: [assign({ filter: (ctx, event) => event.filter })]
+            actions: [assign({ filter: ({ context, event }) => event.filter })]
           },
           CLEAR_COMPLETED: {
             actions: [assign({
-              todos: (ctx) => ctx.todos.filter(todo => !todo.completed)
+              todos: ({ context }) => context.todos.filter(todo => !todo.completed)
             })]
           }
         }
@@ -592,7 +592,7 @@ const appMachine = createMachine({
       on: {
         USER_LOADED: {
           target: 'authenticated',
-          actions: [assign({ user: (ctx, event) => event.user })]
+          actions: [assign({ user: ({ context, event }) => event.user })]
         },
         NO_USER: 'unauthenticated'
       }
@@ -613,8 +613,8 @@ const appMachine = createMachine({
         LOGIN: {
           target: 'authenticated',
           actions: [
-            assign({ user: (ctx, event) => event.user }),
-            (ctx, event) => localStorage.setItem('user', JSON.stringify(event.user))
+            assign({ user: ({ context, event }) => event.user }),
+            ({ context, event }) => localStorage.setItem('user', JSON.stringify(event.user))
           ]
         }
       }
@@ -624,10 +624,10 @@ const appMachine = createMachine({
 
 // Add global actions that work in any state
 appMachine.states.authenticated.on.TOGGLE_THEME = {
-  actions: [assign({ theme: ctx => ctx.theme === 'light' ? 'dark' : 'light' })]
+  actions: [assign({ theme: ({ context }) => context.theme === 'light' ? 'dark' : 'light' })]
 };
 appMachine.states.authenticated.on.TOGGLE_SIDEBAR = {
-  actions: [assign({ sidebarOpen: ctx => !ctx.sidebarOpen })]
+  actions: [assign({ sidebarOpen: ({ context }) => !context.sidebarOpen })]
 };
 
 export const appStore = createMachineStore(appMachine);
@@ -780,13 +780,13 @@ const timerMachine = createMachine({
   },
   states: {
     idle: {
-      entry: [assign({ seconds: ctx => ctx.duration })],
+      entry: [assign({ seconds: ({ context }) => context.duration })],
       on: {
         START: 'running',
         SET_DURATION: {
           actions: [assign({
-            duration: (ctx, event) => event.duration,
-            seconds: (ctx, event) => event.duration
+            duration: ({ context, event }) => event.duration,
+            seconds: ({ context, event }) => event.duration
           })]
         }
       }
@@ -799,19 +799,19 @@ const timerMachine = createMachine({
           }, 1000)
         })
       ],
-      exit: [(ctx) => {
-        if (ctx.interval) {
-          clearInterval(ctx.interval);
+      exit: [({ context }) => {
+        if (context.interval) {
+          clearInterval(context.interval);
         }
       }],
       on: {
         TICK: [
           {
             target: 'finished',
-            cond: (ctx) => ctx.seconds <= 1
+            cond: ({ context }) => context.seconds <= 1
           },
           {
-            actions: [assign({ seconds: ctx => ctx.seconds - 1 })]
+            actions: [assign({ seconds: ({ context }) => context.seconds - 1 })]
           }
         ],
         PAUSE: 'paused',
@@ -895,7 +895,7 @@ const errorBoundaryMachine = createMachine({
       on: {
         ERROR: {
           target: 'error',
-          actions: [assign({ error: (ctx, event) => event.error })]
+          actions: [assign({ error: ({ context, event }) => event.error })]
         }
       }
     },

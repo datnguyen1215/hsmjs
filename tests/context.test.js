@@ -39,7 +39,7 @@ describe('Context Management', () => {
             on: {
               INCREMENT: {
                 target: 'idle',
-                actions: [assign(ctx => ({ count: ctx.count + 1 }))]
+                actions: [assign(({ context }) => ({ count: context.count + 1 }))]
               }
             }
           }
@@ -92,7 +92,7 @@ describe('Context Management', () => {
             on: {
               INCREMENT: {
                 target: 'idle',
-                actions: [assign((context) => ({ count: context.count + 1 }))]
+                actions: [assign(({ context }) => ({ count: context.count + 1 }))]
               }
             }
           }
@@ -116,7 +116,7 @@ describe('Context Management', () => {
             on: {
               SET: {
                 target: 'idle',
-                actions: [assign((context, event) => ({ value: event.data }))]
+                actions: [assign(({ context, event }) => ({ value: event.data }))]
               }
             }
           }
@@ -191,7 +191,7 @@ describe('Context Management', () => {
             on: {
               UPDATE: {
                 target: 'idle',
-                actions: [assign((context) => ({
+                actions: [assign(({ context }) => ({
                   user: { ...context.user, age: 31 }
                 }))]
               }
@@ -230,7 +230,7 @@ describe('Context Management', () => {
             on: {
               UPDATE_THEME: {
                 target: 'idle',
-                actions: [assign((context) => ({
+                actions: [assign(({ context }) => ({
                   settings: {
                     ...context.settings,
                     theme: 'dark'
@@ -239,7 +239,7 @@ describe('Context Management', () => {
               },
               UPDATE_NOTIF: {
                 target: 'idle',
-                actions: [assign((context) => ({
+                actions: [assign(({ context }) => ({
                   settings: {
                     ...context.settings,
                     notifications: {
@@ -273,13 +273,13 @@ describe('Context Management', () => {
             on: {
               ADD_ITEM: {
                 target: 'idle',
-                actions: [assign((context, event) => ({
+                actions: [assign(({ context, event }) => ({
                   items: [...context.items, event.item]
                 }))]
               },
               REMOVE_ITEM: {
                 target: 'idle',
-                actions: [assign((context, event) => ({
+                actions: [assign(({ context, event }) => ({
                   items: context.items.filter(item => item !== event.item)
                 }))]
               }
@@ -307,7 +307,7 @@ describe('Context Management', () => {
             on: {
               START: {
                 target: 'active',
-                actions: [assign((ctx) => ({ count: ctx.count + 1 }))]
+                actions: [assign(({ context }) => ({ count: context.count + 1 }))]
               }
             }
           },
@@ -315,7 +315,7 @@ describe('Context Management', () => {
             on: {
               STOP: {
                 target: 'idle',
-                actions: [assign((ctx) => ({ count: ctx.count + 1 }))]
+                actions: [assign(({ context }) => ({ count: context.count + 1 }))]
               }
             }
           }
@@ -343,8 +343,8 @@ describe('Context Management', () => {
                 target: 'idle',
                 actions: [
                   assign({ a: 1 }),
-                  assign((ctx) => ({ b: ctx.a + 1 })),
-                  assign((ctx) => ({ c: ctx.b + 1 }))
+                  assign(({ context }) => ({ b: context.a + 1 })),
+                  assign(({ context }) => ({ c: context.b + 1 }))
                 ]
               }
             }
@@ -404,7 +404,7 @@ describe('Context Management', () => {
                     on: {
                       UPDATE: {
                         target: 'level3',
-                        actions: [assign((ctx) => ({ depth: ctx.depth + 1 }))]
+                        actions: [assign(({ context }) => ({ depth: context.depth + 1 }))]
                       }
                     }
                   }

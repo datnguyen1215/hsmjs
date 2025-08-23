@@ -349,7 +349,7 @@ describe('Actions', () => {
             on: {
               DOUBLE: {
                 target: 'idle',
-                actions: [assign(ctx => ({ count: ctx.count * 2 }))]
+                actions: [assign(({ context }) => ({ count: context.count * 2 }))]
               }
             }
           }
@@ -405,7 +405,7 @@ describe('Actions', () => {
       }, {
         actions: {
           updateMixed: assign({
-            count: (ctx, event) => ctx.count + (event.increment || 1),
+            count: ({ context, event }) => context.count + (event.increment || 1),
             status: 'updated',
             timestamp: () => Date.now()
           })
@@ -470,8 +470,11 @@ describe('Actions', () => {
       machine.send('EVENT', { data: 'payload' });
 
       expect(actionFn).toHaveBeenCalledWith(
-        expect.objectContaining({ value: 'test' }),
-        expect.objectContaining({ type: 'EVENT', data: 'payload' })
+        expect.objectContaining({
+          context: expect.objectContaining({ value: 'test' }),
+          event: expect.objectContaining({ type: 'EVENT', data: 'payload' }),
+          machine: expect.any(Object)
+        })
       );
     });
 

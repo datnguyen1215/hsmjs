@@ -59,7 +59,7 @@ const toggleMachine = createMachine({
       on: {
         TOGGLE: {
           target: 'on',   // Go to 'on' state
-          actions: [assign({ clickCount: ctx => ctx.clickCount + 1 })]
+          actions: [assign({ clickCount: ({ context }) => context.clickCount + 1 })]
         }
       }
     },
@@ -149,13 +149,13 @@ const counterMachine = createMachine({
       on: {
         INCREMENT: {
           actions: [assign({
-            count: ctx => ctx.count + 1,
+            count: ({ context }) => context.count + 1,
             lastAction: () => 'increment'
           })]
         },
         DECREMENT: {
           actions: [assign({
-            count: ctx => ctx.count - 1,
+            count: ({ context }) => context.count - 1,
             lastAction: () => 'decrement'
           })]
         },
@@ -202,7 +202,7 @@ actions: [
 ```javascript
 actions: [
   assign({
-    message: (context, event) => `Hello ${event.name}!`
+    message: ({ context, event }) => `Hello ${event.name}!`
   })
 ]
 ```
@@ -259,7 +259,7 @@ const fetchMachine = createMachine({
       on: { FETCH: 'loading' }
     },
     loading: {
-      entry: [async (ctx, event) => {
+      entry: [async ({ context, event }) => {
         try {
           const response = await fetch(event.url);
           const data = await response.json();
@@ -271,11 +271,11 @@ const fetchMachine = createMachine({
       on: {
         SUCCESS: {
           target: 'success',
-          actions: [assign({ data: (ctx, event) => event.data })]
+          actions: [assign({ data: ({ context, event }) => event.data })]
         },
         ERROR: {
           target: 'error',
-          actions: [assign({ error: (ctx, event) => event.error })]
+          actions: [assign({ error: ({ context, event }) => event.error })]
         }
       }
     },
@@ -303,8 +303,8 @@ const formMachine = createMachine({
       on: {
         CHANGE: {
           actions: [assign({
-            values: (ctx, event) => ({
-              ...ctx.values,
+            values: ({ context, event }) => ({
+              ...context.values,
               [event.field]: event.value
             })
           })]
@@ -313,8 +313,8 @@ const formMachine = createMachine({
       }
     },
     validating: {
-      entry: [(ctx) => {
-        const errors = validateForm(ctx.values);
+      entry: [({ context }) => {
+        const errors = validateForm(context.values);
         if (Object.keys(errors).length > 0) {
           machine.send('INVALID', { errors });
         } else {
@@ -325,14 +325,14 @@ const formMachine = createMachine({
         VALID: 'submitting',
         INVALID: {
           target: 'editing',
-          actions: [assign({ errors: (ctx, event) => event.errors })]
+          actions: [assign({ errors: ({ context, event }) => event.errors })]
         }
       }
     },
     submitting: {
-      entry: [async (ctx) => {
+      entry: [async ({ context }) => {
         try {
-          await submitForm(ctx.values);
+          await submitForm(context.values);
           machine.send('SUCCESS');
         } catch (error) {
           machine.send('FAILURE', { error });
@@ -374,7 +374,7 @@ machine.matches('state') // Check if in specific state
 
 // Context updates
 assign({ key: value })                    // Set static value
-assign({ key: (ctx, event) => newValue }) // Computed value
+assign({ key: ({ context, event }) => newValue }) // Computed value
 
 // Subscribe to changes
 const unsubscribe = machine.subscribe((state, context) => {

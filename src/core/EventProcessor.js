@@ -4,13 +4,15 @@ import { hasAsyncActions } from '../utils/AsyncDetector.js';
 import { executeActions } from './ActionRunner.js';
 
 /**
- * @param {Object} event
- * @param {string} currentState
- * @param {Object} rootNode
- * @param {Object} guards
- * @returns {Object|null}
+ * Find a valid transition for the given event from the current state
+ * @param {Object} event - Event object with type and context
+ * @param {string} currentState - Current state path
+ * @param {Object} rootNode - Root state node
+ * @param {Object} guards - Guard registry for condition evaluation
+ * @param {Object} machine - Machine reference
+ * @returns {Object|null} - Transition info object or null if no valid transition found
  */
-export const findTransition = (event, currentState, rootNode, guards) => {
+export const findTransition = (event, currentState, rootNode, guards, machine) => {
   const currentStateNode = getStateNode(rootNode, currentState);
   if (!currentStateNode) {
     return null;
@@ -20,7 +22,7 @@ export const findTransition = (event, currentState, rootNode, guards) => {
   let searchNode = currentStateNode;
 
   while (!transition && searchNode.parent) {
-    transition = resolveTransition(searchNode, event.type, event.context, event, guards);
+    transition = resolveTransition(searchNode, event.type, event.context, event, guards, machine);
     if (!transition) searchNode = searchNode.parent;
   }
 
@@ -54,11 +56,12 @@ export const findTransition = (event, currentState, rootNode, guards) => {
 };
 
 /**
- * @param {Object} currentStateNode
- * @param {Object} transition
- * @param {Object} targetNode
- * @param {boolean} isInternalTransition
- * @returns {Array}
+ * Collect all actions that need to be executed for a transition
+ * @param {Object} currentStateNode - Current state node
+ * @param {Object} transition - Transition configuration
+ * @param {Object} targetNode - Target state node
+ * @param {boolean} isInternalTransition - Whether this is an internal transition
+ * @returns {Array} - Array of action groups with type and actions properties
  */
 export const collectActionsToExecute = (currentStateNode, transition, targetNode, isInternalTransition) => {
   const actionsToExecute = [];
@@ -98,22 +101,24 @@ export const collectActionsToExecute = (currentStateNode, transition, targetNode
 };
 
 /**
- * @param {Object} event
- * @param {string} currentState
- * @param {Object} currentContext
- * @param {Object} rootNode
- * @param {Object} guards
- * @param {Object} actions
- * @param {Function} executeActionsSync
- * @returns {Object}
+ * Process event synchronously with immediate action execution
+ * @param {Object} event - Event object
+ * @param {string} currentState - Current state path
+ * @param {Object} currentContext - Current context
+ * @param {Object} rootNode - Root state node
+ * @param {Object} guards - Guard registry
+ * @param {Object} actions - Action registry
+ * @param {Function} executeActionsSync - Sync action executor function
+ * @param {Object} machine - Machine reference
+ * @returns {Object} - Processing result with wasAsync flag and value/state info
  */
-export const processEventSync = (event, currentState, currentContext, rootNode, guards, actions, executeActionsSync) => {
+export const processEventSync = (event, currentState, currentContext, rootNode, guards, actions, executeActionsSync, machine) => {
   const results = [];
   let state = currentState;
   let _context = currentContext;
 
   // Find transition and target
-  const transitionInfo = findTransition({ ...event, context: _context }, state, rootNode, guards);
+  const transitionInfo = findTransition({ ...event, context: _context }, state, rootNode, guards, machine);
   if (!transitionInfo) {
     return {
       wasAsync: false,
@@ -158,21 +163,21 @@ export const processEventSync = (event, currentState, currentContext, rootNode, 
   if (isInternalTransition) {
     // Internal transition - no exit/entry, just actions
     if (transition.actions.length > 0) {
-      const actionResult = executeActionsSync(transition.actions, _context, event, actions);
+      const actionResult = executeActionsSync(transition.actions, _context, event, actions, machine);
       _context = actionResult.context;
       results.push(...actionResult.results);
     }
   } else {
     // Exit current state
     if (currentStateNode.exit.length > 0) {
-      const exitResult = executeActionsSync(currentStateNode.exit, _context, event, actions);
+      const exitResult = executeActionsSync(currentStateNode.exit, _context, event, actions, machine);
       _context = exitResult.context;
       results.push(...exitResult.results);
     }
 
     // Execute transition actions
     if (transition.actions.length > 0) {
-      const transitionResult = executeActionsSync(transition.actions, _context, event, actions);
+      const transitionResult = executeActionsSync(transition.actions, _context, event, actions, machine);
       _context = transitionResult.context;
       results.push(...transitionResult.results);
     }
@@ -189,7 +194,7 @@ export const processEventSync = (event, currentState, currentContext, rootNode, 
 
     // Enter new state
     if (targetNode.entry.length > 0) {
-      const entryResult = executeActionsSync(targetNode.entry, _context, event, actions);
+      const entryResult = executeActionsSync(targetNode.entry, _context, event, actions, machine);
       _context = entryResult.context;
       results.push(...entryResult.results);
     }
@@ -204,7 +209,7 @@ export const processEventSync = (event, currentState, currentContext, rootNode, 
         if (currentNode.states && currentNode.states[part]) {
           currentNode = currentNode.states[part];
           if (currentNode.entry && currentNode.entry.length > 0) {
-            const nestedEntryResult = executeActionsSync(currentNode.entry, _context, event, actions);
+            const nestedEntryResult = executeActionsSync(currentNode.entry, _context, event, actions, machine);
             _context = nestedEntryResult.context;
             results.push(...nestedEntryResult.results);
           }
@@ -220,15 +225,17 @@ export const processEventSync = (event, currentState, currentContext, rootNode, 
 };
 
 /**
- * @param {Object} event
- * @param {string} currentState
- * @param {Object} currentContext
- * @param {Object} rootNode
- * @param {Object} guards
- * @param {Object} actions
- * @returns {Promise<Object>}
+ * Process event asynchronously with async action support
+ * @param {Object} event - Event object
+ * @param {string} currentState - Current state path
+ * @param {Object} currentContext - Current context
+ * @param {Object} rootNode - Root state node
+ * @param {Object} guards - Guard registry
+ * @param {Object} actions - Action registry
+ * @param {Object} machine - Machine reference
+ * @returns {Promise<Object>} - Promise resolving to processing result with state, context, and results
  */
-export const processEventAsync = async (event, currentState, currentContext, rootNode, guards, actions) => {
+export const processEventAsync = async (event, currentState, currentContext, rootNode, guards, actions, machine) => {
   const results = [];
   let state = currentState;
   let _context = currentContext;
@@ -244,7 +251,7 @@ export const processEventAsync = async (event, currentState, currentContext, roo
   let searchNode = currentStateNode;
 
   while (!transition && searchNode.parent) {
-    transition = resolveTransition(searchNode, event.type, _context, event, guards);
+    transition = resolveTransition(searchNode, event.type, _context, event, guards, machine);
     if (!transition) searchNode = searchNode.parent;
   }
 
@@ -265,7 +272,8 @@ export const processEventAsync = async (event, currentState, currentContext, roo
       // Internal transition - no exit/entry, just actions
       if (transition.actions.length > 0) {
         const actionResult = await executeActions(transition.actions, _context, event, {
-          actionRegistry: actions
+          actionRegistry: actions,
+          machine
         });
         _context = actionResult.context;
         results.push(...actionResult.results);
@@ -274,7 +282,8 @@ export const processEventAsync = async (event, currentState, currentContext, roo
       // Exit current state
       if (currentStateNode.exit.length > 0) {
         const exitResult = await executeActions(currentStateNode.exit, _context, event, {
-          actionRegistry: actions
+          actionRegistry: actions,
+          machine
         });
         _context = exitResult.context;
         results.push(...exitResult.results);
@@ -283,7 +292,8 @@ export const processEventAsync = async (event, currentState, currentContext, roo
       // Execute transition actions
       if (transition.actions.length > 0) {
         const transitionResult = await executeActions(transition.actions, _context, event, {
-          actionRegistry: actions
+          actionRegistry: actions,
+          machine
         });
         _context = transitionResult.context;
         results.push(...transitionResult.results);
@@ -302,7 +312,8 @@ export const processEventAsync = async (event, currentState, currentContext, roo
       // Enter new state
       if (targetNode.entry.length > 0) {
         const entryResult = await executeActions(targetNode.entry, _context, event, {
-          actionRegistry: actions
+          actionRegistry: actions,
+          machine
         });
         _context = entryResult.context;
         results.push(...entryResult.results);
@@ -319,7 +330,8 @@ export const processEventAsync = async (event, currentState, currentContext, roo
             currentNode = currentNode.states[part];
             if (currentNode.entry && currentNode.entry.length > 0) {
               const nestedEntryResult = await executeActions(currentNode.entry, _context, event, {
-                actionRegistry: actions
+                actionRegistry: actions,
+                machine
               });
               _context = nestedEntryResult.context;
               results.push(...nestedEntryResult.results);
