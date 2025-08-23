@@ -82,14 +82,14 @@ import { assign } from '@datnguyen1215/hsmjs';
 
 // Context updates with assign()
 actions: [
-  assign((context, event) => ({
+  assign(({ context, event }) => ({
     count: context.count + 1
   }))
 ]
 
 // Side effects that return values
 actions: [
-  async (context, event) => {
+  async ({ context, event }) => {
     const result = await api.fetchData();
     return result; // Available in send() result
   }
@@ -98,7 +98,7 @@ actions: [
 // Combining both
 actions: [
   assign({ loading: true }),
-  async (context, event) => {
+  async ({ context, event }) => {
     const data = await api.fetchData();
     return data;
   },
@@ -112,9 +112,9 @@ Actions can be referenced by string names for reusability:
 
 ```javascript
 const actions = {
-  increment: assign((context) => ({ count: context.count + 1 })),
+  increment: assign(({ context }) => ({ count: context.count + 1 })),
   reset: assign({ count: 0 }),
-  fetchData: async (context) => {
+  fetchData: async ({ context }) => {
     const data = await api.getData();
     return data; // Available in send() result
   }
@@ -144,7 +144,7 @@ Conditional transitions using `cond`:
 on: {
   SUBMIT: {
     target: 'success',
-    cond: (context) => context.isValid
+    cond: ({ context }) => context.isValid
   }
 }
 ```
@@ -158,11 +158,11 @@ on: {
   SUBMIT: [
     {
       target: 'premium',
-      cond: (ctx) => ctx.isPremium
+      cond: ({ context }) => context.isPremium
     },
     {
       target: 'standard',
-      cond: (ctx) => ctx.hasCredits
+      cond: ({ context }) => context.hasCredits
     },
     {
       target: 'denied'  // Fallback
@@ -196,7 +196,7 @@ states: {
 ### Async Actions
 
 ```javascript
-entry: [async (context, event) => {
+entry: [async ({ context, event }) => {
   const data = await fetchData();
   machine.send('SUCCESS', { data });
 }]
@@ -441,7 +441,7 @@ const fetchMachine = createMachine({
       }
     },
     loading: {
-      entry: [async (context, event) => {
+      entry: [async ({ context, event }) => {
         try {
           const response = await fetch(event.url);
           const data = await response.json();
@@ -453,17 +453,17 @@ const fetchMachine = createMachine({
       on: {
         SUCCESS: {
           target: 'success',
-          actions: [assign((ctx, event) => ({ data: event.data }))]
+          actions: [assign(({ context, event }) => ({ data: event.data }))]
         },
         FAILURE: [
           {
             target: 'loading',
-            cond: (ctx) => ctx.retries < 3,
-            actions: [assign((ctx) => ({ retries: ctx.retries + 1 }))]
+            cond: ({ context }) => context.retries < 3,
+            actions: [assign(({ context }) => ({ retries: context.retries + 1 }))]
           },
           {
             target: 'failure',
-            actions: [assign((ctx, event) => ({ error: event.error }))]
+            actions: [assign(({ context, event }) => ({ error: event.error }))]
           }
         ]
       }

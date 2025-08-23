@@ -70,14 +70,14 @@ assign({ loading: true, error: null })
 
 // Function form - computed values
 assign({
-  count: (context, event) => context.count + 1,
+  count: ({ context, event }) => context.count + 1,
   lastUpdated: () => Date.now()
 })
 
 // Mixed form
 assign({
   loading: false,                           // Static value
-  data: (context, event) => event.payload,  // From event
+  data: ({ context, event }) => event.payload,  // From event
   timestamp: () => Date.now()               // Computed value
 })
 ```
@@ -416,19 +416,19 @@ states: {
 
       // Transition with actions
       INCREMENT: {
-        actions: [assign({ count: ctx => ctx.count + 1 })]
+        actions: [assign({ count: ({ context }) => context.count + 1 })]
       },
 
       // Conditional transition
       SUBMIT: {
         target: 'success',
-        cond: (context, event) => context.isValid
+        cond: ({ context, event }) => context.isValid
       },
 
       // Multiple conditional transitions
       PROCESS: [
-        { target: 'premium', cond: ctx => ctx.isPremium },
-        { target: 'standard', cond: ctx => ctx.hasCredits },
+        { target: 'premium', cond: ({ context }) => context.isPremium },
+        { target: 'standard', cond: ({ context }) => context.hasCredits },
         { target: 'denied' }  // Fallback
       ]
     }
@@ -450,13 +450,13 @@ states: {
 ### Guard Functions
 ```javascript
 // Context-based guard
-cond: (context, event) => context.count > 5
+cond: ({ context, event }) => context.count > 5
 
 // Event-based guard
-cond: (context, event) => event.type === 'PREMIUM_USER'
+cond: ({ context, event }) => event.type === 'PREMIUM_USER'
 
 // Combined guard
-cond: (context, event) => context.isValid && event.confirmed
+cond: ({ context, event }) => context.isValid && event.confirmed
 ```
 
 ### Wildcard Events
@@ -486,7 +486,7 @@ on: {
     on: {
       START: 'active',
       '*': {
-        actions: [(ctx, event) => console.log('Unknown event:', event.type)]
+        actions: [({ context, event }) => console.log('Unknown event:', event.type)]
       }
     }
   }
@@ -500,8 +500,8 @@ on: {
 actions: [
   assign({ loading: true }),
   assign({
-    count: ctx => ctx.count + 1,
-    lastAction: (ctx, event) => event.type
+    count: ({ context }) => context.count + 1,
+    lastAction: ({ context, event }) => event.type
   })
 ]
 ```
@@ -510,11 +510,11 @@ actions: [
 ```javascript
 actions: [
   () => console.log('Side effect'),
-  async (context, event) => {
+  async ({ context, event }) => {
     const data = await fetch('/api/data');
     return data; // Available in results
   },
-  (context, event) => {
+  ({ context, event }) => {
     // Access context and event data
     console.log('Count:', context.count);
     console.log('Event:', event.type);
@@ -526,8 +526,8 @@ actions: [
 ```javascript
 const actions = {
   logEntry: () => console.log('Entering state'),
-  incrementCounter: assign({ count: ctx => ctx.count + 1 }),
-  fetchData: async (ctx, event) => {
+  incrementCounter: assign({ count: ({ context }) => context.count + 1 }),
+  fetchData: async ({ context, event }) => {
     const response = await fetch(event.url);
     return response.json();
   }
@@ -608,7 +608,7 @@ Events passed to actions and guards:
 machine.send('SET_USER', { name: 'John', id: 123 });
 
 // Actions receive:
-(context, event) => {
+({ context, event }) => {
   console.log(event.type);  // 'SET_USER'
   console.log(event.name);  // 'John'
   console.log(event.id);    // 123
@@ -657,10 +657,10 @@ const config: MachineConfig<Context, Events> = {
     idle: {
       on: {
         INCREMENT: {
-          actions: [assign({ count: ctx => ctx.count + 1 })]
+          actions: [assign({ count: ({ context }) => context.count + 1 })]
         },
         SET_USER: {
-          actions: [assign({ user: (ctx, event) => event.user })]
+          actions: [assign({ user: ({ context, event }) => event.user })]
         }
       }
     }
@@ -677,13 +677,13 @@ const machine = createMachine(config);
 // Keep actions pure and testable
 const actions = {
   // Good: Pure function
-  incrementCounter: assign({ count: ctx => ctx.count + 1 }),
+  incrementCounter: assign({ count: ({ context }) => context.count + 1 }),
 
   // Good: Clear side effect
-  logAction: (ctx, event) => console.log('Action:', event.type),
+  logAction: ({ context, event }) => console.log('Action:', event.type),
 
   // Good: Async with error handling
-  fetchData: async (ctx, event) => {
+  fetchData: async ({ context, event }) => {
     try {
       return await fetch(event.url).then(r => r.json());
     } catch (error) {

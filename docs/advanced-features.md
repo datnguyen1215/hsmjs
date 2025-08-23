@@ -132,12 +132,12 @@ const counterMachine = createMachine({
         INCREMENT: [
           {
             target: 'active',
-            cond: (ctx) => ctx.count < ctx.max,
-            actions: [assign({ count: ctx => ctx.count + 1 })]
+            cond: ({ context }) => context.count < context.max,
+            actions: [assign({ count: ({ context }) => context.count + 1 })]
           },
           {
             target: 'maxed',
-            cond: (ctx) => ctx.count >= ctx.max
+            cond: ({ context }) => context.count >= context.max
           }
         ]
       }
@@ -168,16 +168,16 @@ const validationMachine = createMachine({
         SUBMIT: [
           {
             target: 'success',
-            cond: (ctx, event) => event.isValid && ctx.attempts < 3
+            cond: ({ context, event }) => event.isValid && context.attempts < 3
           },
           {
             target: 'error',
-            actions: [assign({ attempts: ctx => ctx.attempts + 1 })],
-            cond: (ctx, event) => !event.isValid && ctx.attempts < 2
+            actions: [assign({ attempts: ({ context }) => context.attempts + 1 })],
+            cond: ({ context, event }) => !event.isValid && context.attempts < 2
           },
           {
             target: 'locked',
-            cond: (ctx, event) => ctx.attempts >= 2
+            cond: ({ context, event }) => context.attempts >= 2
           }
         ]
       }
@@ -202,9 +202,9 @@ For reusable guard logic:
 
 ```javascript
 const guards = {
-  isValidUser: (ctx, event) => event.user && event.user.verified,
-  hasPermission: (ctx, event) => ctx.permissions.includes(event.action),
-  withinLimit: (ctx, event) => ctx.count < ctx.limit
+  isValidUser: ({ context, event }) => event.user && event.user.verified,
+  hasPermission: ({ context, event }) => context.permissions.includes(event.action),
+  withinLimit: ({ context, event }) => context.count < context.limit
 };
 
 const machine = createMachine({
@@ -225,7 +225,7 @@ const machine = createMachine({
         ],
         INCREMENT: {
           cond: 'withinLimit',
-          actions: [assign({ count: ctx => ctx.count + 1 })]
+          actions: [assign({ count: ({ context }) => context.count + 1 })]
         }
       }
     },
@@ -253,7 +253,7 @@ const fetchMachine = createMachine({
     loading: {
       entry: [
         assign({ error: null }),
-        async (ctx, event) => {
+        async ({ context, event }) => {
           try {
             const response = await fetch(event.url);
             const data = await response.json();
@@ -266,11 +266,11 @@ const fetchMachine = createMachine({
       on: {
         SUCCESS: {
           target: 'success',
-          actions: [assign({ data: (ctx, event) => event.data })]
+          actions: [assign({ data: ({ context, event }) => event.data })]
         },
         ERROR: {
           target: 'error',
-          actions: [assign({ error: (ctx, event) => event.error })]
+          actions: [assign({ error: ({ context, event }) => event.error })]
         },
         CANCEL: 'idle'
       }
@@ -311,7 +311,7 @@ const uploadMachine = createMachine({
     },
     uploading: {
       entry: [
-        async (ctx, event) => {
+        async ({ context, event }) => {
           const formData = new FormData();
           formData.append('file', event.file);
 
@@ -357,7 +357,7 @@ const parallelMachine = createMachine({
     },
     processing: {
       entry: [
-        async (ctx, event) => {
+        async ({ context, event }) => {
           // Start multiple operations
           const promises = event.urls.map(url => fetch(url).then(r => r.json()));
           const results = await Promise.allSettled(promises);
@@ -369,7 +369,7 @@ const parallelMachine = createMachine({
         COMPLETE: {
           target: 'complete',
           actions: [assign({
-            results: (ctx, event) => event.results
+            results: ({ context, event }) => event.results
           })]
         }
       }
@@ -400,8 +400,8 @@ const retryMachine = createMachine({
     },
     attempting: {
       entry: [
-        assign({ attempts: ctx => ctx.attempts + 1 }),
-        async (ctx, event) => {
+        assign({ attempts: ({ context }) => context.attempts + 1 }),
+        async ({ context, event }) => {
           try {
             const response = await fetch(event.url);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -416,28 +416,28 @@ const retryMachine = createMachine({
         SUCCESS: {
           target: 'success',
           actions: [assign({
-            data: (ctx, event) => event.data,
+            data: ({ context, event }) => event.data,
             attempts: 0  // Reset on success
           })]
         },
         FAILURE: [
           {
             target: 'retrying',
-            cond: (ctx) => ctx.attempts < ctx.maxAttempts,
-            actions: [assign({ error: (ctx, event) => event.error })]
+            cond: ({ context }) => context.attempts < context.maxAttempts,
+            actions: [assign({ error: ({ context, event }) => event.error })]
           },
           {
             target: 'failed',
-            actions: [assign({ error: (ctx, event) => event.error })]
+            actions: [assign({ error: ({ context, event }) => event.error })]
           }
         ]
       }
     },
     retrying: {
       entry: [
-        async (ctx) => {
+        async ({ context }) => {
           // Exponential backoff
-          const delay = ctx.backoffMs * Math.pow(2, ctx.attempts - 1);
+          const delay = context.backoffMs * Math.pow(2, context.attempts - 1);
           await new Promise(resolve => setTimeout(resolve, delay));
           machine.send('RETRY');
         }
@@ -477,7 +477,7 @@ const authMachine = createMachine({
       on: { LOGIN: 'authenticating' }
     },
     authenticating: {
-      entry: [async (ctx, event) => {
+      entry: [async ({ context, event }) => {
         try {
           const user = await authenticate(event.credentials);
           machine.send('AUTH_SUCCESS', { user });
@@ -488,7 +488,7 @@ const authMachine = createMachine({
       on: {
         AUTH_SUCCESS: {
           target: 'loggedIn',
-          actions: [assign({ user: (ctx, event) => event.user })]
+          actions: [assign({ user: ({ context, event }) => event.user })]
         },
         AUTH_FAILURE: 'loggedOut'
       }
@@ -520,12 +520,12 @@ const appMachine = createMachine({
       on: {
         AUTH_CHANGED: {
           actions: [assign({
-            authState: (ctx, event) => event.authState
+            authState: ({ context, event }) => event.authState
           })]
         },
         // Delegate auth events to auth machine
         LOGIN: {
-          actions: [(ctx, event) => authMachine.send('LOGIN', event)]
+          actions: [({ context, event }) => authMachine.send('LOGIN', event)]
         },
         LOGOUT: {
           actions: [() => authMachine.send('LOGOUT')]
@@ -555,8 +555,8 @@ const auditMachine = createMachine({
           actions: [
             // Log all events
             assign({
-              eventLog: (ctx, event) => [
-                ...ctx.eventLog,
+              eventLog: ({ context, event }) => [
+                ...context.eventLog,
                 {
                   timestamp: Date.now(),
                   event: event.type,
@@ -565,7 +565,7 @@ const auditMachine = createMachine({
               ]
             }),
             // Handle specific events
-            (ctx, event) => {
+            ({ context, event }) => {
               switch (event.type) {
                 case 'UPDATE_DATA':
                   machine.send('DATA_UPDATED', event);
@@ -579,21 +579,21 @@ const auditMachine = createMachine({
         },
         DATA_UPDATED: {
           actions: [assign({
-            data: (ctx, event) => ({ ...ctx.data, ...event.updates })
+            data: ({ context, event }) => ({ ...context.data, ...event.updates })
           })]
         },
         DATA_DELETED: {
           actions: [assign({
-            data: (ctx, event) => {
-              const { [event.key]: deleted, ...remaining } = ctx.data;
+            data: ({ context, event }) => {
+              const { [event.key]: deleted, ...remaining } = context.data;
               return remaining;
             }
           })]
         },
         REPLAY_EVENTS: {
-          entry: [(ctx) => {
+          entry: [({ context }) => {
             // Replay events from log
-            ctx.eventLog.forEach(logEntry => {
+            context.eventLog.forEach(logEntry => {
               setTimeout(() => {
                 machine.send(logEntry.event, logEntry.payload);
               }, 0);
@@ -616,15 +616,15 @@ actions: [
   assign({
     // Only update what changed
     loading: false,
-    data: (ctx, event) => event.data
+    data: ({ context, event }) => event.data
     // Don't spread entire context unless needed
   })
 ]
 
 // Avoid: Unnecessary context spread
 actions: [
-  assign(ctx => ({
-    ...ctx,  // Avoid this - creates new object every time
+  assign(({ context }) => ({
+    ...context,  // Avoid this - creates new object every time
     loading: false
   }))
 ]
@@ -648,15 +648,15 @@ const searchMachine = createMachine({
     debouncing: {
       entry: [
         // Clear existing timer
-        (ctx) => {
-          if (ctx.debounceTimer) {
-            clearTimeout(ctx.debounceTimer);
+        ({ context }) => {
+          if (context.debounceTimer) {
+            clearTimeout(context.debounceTimer);
           }
         },
         // Set new timer
         assign({
-          query: (ctx, event) => event.query,
-          debounceTimer: (ctx, event) => setTimeout(() => {
+          query: ({ context, event }) => event.query,
+          debounceTimer: ({ context, event }) => setTimeout(() => {
             machine.send('SEARCH');
           }, 300)
         })
@@ -668,15 +668,15 @@ const searchMachine = createMachine({
     },
     searching: {
       entry: [
-        async (ctx) => {
-          const results = await searchAPI(ctx.query);
+        async ({ context }) => {
+          const results = await searchAPI(context.query);
           machine.send('RESULTS', { results });
         }
       ],
       on: {
         RESULTS: {
           target: 'idle',
-          actions: [assign({ results: (ctx, event) => event.results })]
+          actions: [assign({ results: ({ context, event }) => event.results })]
         },
         TYPE: 'debouncing'  // New input cancels search
       }
@@ -704,8 +704,8 @@ test('guards prevent invalid transitions', async () => {
           INCREMENT: [
             {
               target: 'active',
-              cond: (ctx) => ctx.count < 5,
-              actions: [assign({ count: ctx => ctx.count + 1 })]
+              cond: ({ context }) => context.count < 5,
+              actions: [assign({ count: ({ context }) => context.count + 1 })]
             },
             {
               target: 'maxed'
@@ -776,7 +776,7 @@ const machine = createMachine({
       on: {
         TYPE: {
           target: 'editing',
-          actions: [assign({ text: (ctx, event) => event.text, saved: false })]
+          actions: [assign({ text: ({ context, event }) => event.text, saved: false })]
         }
       }
     },
@@ -787,7 +787,7 @@ const machine = createMachine({
           actions: [assign({ saved: true })]
         },
         TYPE: {
-          actions: [assign({ text: (ctx, event) => event.text })]
+          actions: [assign({ text: ({ context, event }) => event.text })]
         }
       }
     }
@@ -885,10 +885,10 @@ const appMachine = createMachine({
     authenticated: {
       on: {
         UPDATE_PREFS: {
-          actions: [assign({ preferences: (ctx, event) => event.prefs })]
+          actions: [assign({ preferences: ({ context, event }) => event.prefs })]
         },
         LOAD_DATA: {
-          actions: [assign({ data: (ctx, event) => event.data })]
+          actions: [assign({ data: ({ context, event }) => event.data })]
         }
       }
     }
@@ -929,14 +929,14 @@ const textEditor = createMachine({
       on: {
         TYPE: {
           actions: [assign({
-            content: (ctx, event) => ctx.content + event.char,
-            cursor: ctx => ctx.cursor + 1
+            content: ({ context, event }) => context.content + event.char,
+            cursor: ({ context }) => context.cursor + 1
           })]
         },
         DELETE: {
           actions: [assign({
-            content: ctx => ctx.content.slice(0, -1),
-            cursor: ctx => Math.max(0, ctx.cursor - 1)
+            content: ({ context }) => context.content.slice(0, -1),
+            cursor: ({ context }) => Math.max(0, context.cursor - 1)
           })]
         },
         UNDO: {
@@ -976,8 +976,8 @@ const apiMachine = createMachine({
     loading: {
       entry: [
         // Save checkpoint before risky operation
-        assign({ checkpoint: (ctx) => apiMachine.snapshot }),
-        async (ctx, event) => {
+        assign({ checkpoint: ({ context }) => apiMachine.snapshot }),
+        async ({ context, event }) => {
           try {
             const data = await fetch(event.url);
             apiMachine.send('SUCCESS', { data });
@@ -989,11 +989,11 @@ const apiMachine = createMachine({
       on: {
         SUCCESS: {
           target: 'success',
-          actions: [assign({ data: (ctx, event) => event.data, checkpoint: null })]
+          actions: [assign({ data: ({ context, event }) => event.data, checkpoint: null })]
         },
         ERROR: {
           target: 'error',
-          actions: [assign({ error: (ctx, event) => event.error })]
+          actions: [assign({ error: ({ context, event }) => event.error })]
         }
       }
     },
@@ -1001,10 +1001,10 @@ const apiMachine = createMachine({
     error: {
       on: {
         RECOVER: {
-          actions: [async (ctx) => {
+          actions: [async ({ context }) => {
             // Restore to checkpoint before the failed operation
-            if (ctx.checkpoint) {
-              await apiMachine.restore(ctx.checkpoint);
+            if (context.checkpoint) {
+              await apiMachine.restore(context.checkpoint);
             }
           }]
         }
@@ -1026,7 +1026,7 @@ const debugMachine = createMachine({
       on: {
         STEP1: {
           target: 'middle',
-          actions: [assign({ steps: ctx => [...ctx.steps, 'step1'] })]
+          actions: [assign({ steps: ({ context }) => [...context.steps, 'step1'] })]
         }
       }
     },
@@ -1034,7 +1034,7 @@ const debugMachine = createMachine({
       on: {
         STEP2: {
           target: 'end',
-          actions: [assign({ steps: ctx => [...ctx.steps, 'step2'] })]
+          actions: [assign({ steps: ({ context }) => [...context.steps, 'step2'] })]
         }
       }
     },

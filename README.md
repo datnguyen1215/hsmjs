@@ -128,17 +128,17 @@ const authMachine = createMachine({
   }
 }, {
   guards: {
-    isValidCredentials: (ctx, event) =>
+    isValidCredentials: ({ context, event }) =>
       event.username === 'admin' && event.password === 'pass',
-    isTooManyAttempts: ctx => ctx.loginAttempts >= ctx.maxAttempts - 1,
-    isValidAdminCode: (ctx, event) => event.adminCode === 'UNLOCK123'
+    isTooManyAttempts: ({ context }) => context.loginAttempts >= context.maxAttempts - 1,
+    isValidAdminCode: ({ context, event }) => event.adminCode === 'UNLOCK123'
   },
   actions: {
     setUser: assign({
-      user: (ctx, event) => ({ username: event.username }),
+      user: ({ context, event }) => ({ username: event.username }),
       loginAttempts: 0
     }),
-    incrementAttempts: assign({ loginAttempts: ctx => ctx.loginAttempts + 1 }),
+    incrementAttempts: assign({ loginAttempts: ({ context }) => context.loginAttempts + 1 }),
     logInvalidCredentials: () => console.log('Invalid credentials'),
     resetAttempts: assign({ loginAttempts: 0 }),
     clearUser: assign({ user: null }),
@@ -147,8 +147,8 @@ const authMachine = createMachine({
     logWelcome: () => console.log('Welcome! You are in the idle state.'),
     logViewingProfile: () => console.log('Viewing profile...'),
     logViewingSettings: () => console.log('Viewing settings...'),
-    updateUserProfile: assign((ctx, event) => ({
-      user: { ...ctx.user, ...event.data }
+    updateUserProfile: assign(({ context, event }) => ({
+      user: { ...context.user, ...event.data }
     }))
   }
 })
