@@ -91,7 +91,7 @@ try {
         on: {
           INCREMENT: {
             actions: [
-              assign(ctx => ({ count: ctx.count + 1 }))
+              assign(({ context }) => ({ count: context.count + 1 }))
             ]
           }
         }
@@ -133,4 +133,118 @@ try {
   process.exit(1);
 }
 
-console.log('All CommonJS integration tests passed! ✓');
+// Test 5: Comprehensive action tests
+console.log('Test 5: Comprehensive action tests');
+try {
+  const machine = createMachine({
+    id: 'action-test',
+    initial: 'idle',
+    context: {
+      count: 0,
+      results: []
+    },
+    states: {
+      idle: {
+        on: {
+          START: {
+            target: 'working',
+            actions: [
+              // Test simple assign
+              assign({ count: 1 }),
+              // Test computed assign with context and event
+              assign(({ context, event }) => ({
+                results: [...context.results, `Started: ${event.payload || 'default'}`]
+              })),
+              // Test action that returns a value
+              ({ context, event }) => {
+                return `Action result: ${context.count}`;
+              },
+              // Test async action
+              async ({ context, event }) => {
+                return new Promise(resolve => {
+                  setTimeout(() => resolve('async result'), 10);
+                });
+              }
+            ]
+          }
+        }
+      },
+      working: {
+        entry: [
+          // Test entry action
+          ({ context }) => console.log('Entered working state'),
+          assign(({ context }) => ({ count: context.count + 10 }))
+        ],
+        exit: [
+          // Test exit action
+          ({ context }) => console.log('Exiting working state'),
+          assign({ count: 0 })
+        ],
+        on: {
+          FINISH: 'completed'
+        }
+      },
+      completed: {
+        entry: [
+          assign(({ context }) => ({
+            results: [...context.results, 'Completed!']
+          }))
+        ]
+      }
+    }
+  });
+
+  // Test initial state and context
+  if (machine.state !== 'idle' || machine.context.count !== 0) {
+    throw new Error('Initial state or context incorrect');
+  }
+
+  // Test transition with actions and get results
+  const result = machine.send('START', { payload: 'test-payload' });
+
+  // Wait for async actions to complete by checking state
+  let timeoutCount = 0;
+  const checkResult = () => {
+    if (machine.state !== 'working' && timeoutCount < 10) {
+      timeoutCount++;
+      setTimeout(checkResult, 5);
+      return;
+    }
+
+    if (machine.state !== 'working') {
+      throw new Error(`Expected state 'working', got '${machine.state}'`);
+    }
+
+    if (machine.context.count !== 11) { // 1 from assign + 10 from entry
+      throw new Error(`Expected count 11, got ${machine.context.count}`);
+    }
+
+    if (!machine.context.results.includes('Started: test-payload')) {
+      throw new Error('Action with event payload failed');
+    }
+
+    // Test exit actions
+    machine.send('FINISH');
+
+    if (machine.state !== 'completed') {
+      throw new Error(`Expected state 'completed', got '${machine.state}'`);
+    }
+
+    if (machine.context.count !== 0) { // Should be reset by exit action
+      throw new Error(`Expected count 0 after exit action, got ${machine.context.count}`);
+    }
+
+    if (!machine.context.results.includes('Completed!')) {
+      throw new Error('Entry action on completed state failed');
+    }
+
+    console.log('✓ Comprehensive action tests working correctly');
+
+    console.log('All CommonJS integration tests passed! ✓');
+  };
+
+  checkResult();
+} catch (error) {
+  console.error('✗ Test 5 failed:', error.message);
+  process.exit(1);
+}
