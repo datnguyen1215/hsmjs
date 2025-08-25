@@ -353,7 +353,7 @@ const formMachine = createMachine({
 Now that you understand the basics:
 
 - [API Reference](api-reference.md) - Complete method documentation
-- [Advanced Features](advanced-features.md) - Guards, nested states, async patterns
+- [Feature Guides](features/guards.md) - Guards, nested states, async patterns
 - [Framework Integration](framework-integration.md) - React, Svelte, Vue examples
 - [Examples & Patterns](examples.md) - Real-world use cases
 
