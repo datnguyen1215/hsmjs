@@ -26,6 +26,14 @@
   ],
   "author": "Dat Nguyen <datnguyen1215@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/datnguyen1215/hsmjs.git"
+  },
+  "homepage": "https://github.com/datnguyen1215/hsmjs#readme",
+  "bugs": {
+    "url": "https://github.com/datnguyen1215/hsmjs/issues"
+  },
   "files": [
     "dist/",
     "types/"
