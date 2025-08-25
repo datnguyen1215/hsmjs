@@ -14,7 +14,8 @@
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
     "test:watch": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --watch",
     "test:coverage": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --coverage",
-    "test:npm-consumers": "node tests/integration/run-integration-tests.js"
+    "test:npm-consumers": "node tests/integration/run-integration-tests.js",
+    "docs:serve": "npx docsify-cli serve docs"
   },
   "keywords": [
     "state-machine",
@@ -25,6 +26,14 @@
   ],
   "author": "Dat Nguyen <datnguyen1215@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/datnguyen1215/hsmjs.git"
+  },
+  "homepage": "https://github.com/datnguyen1215/hsmjs#readme",
+  "bugs": {
+    "url": "https://github.com/datnguyen1215/hsmjs/issues"
+  },
   "files": [
     "dist/",
     "types/"
