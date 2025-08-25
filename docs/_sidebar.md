@@ -1,6 +1,6 @@
 - **Quick Start**
-  - [Installation](getting-started.md#installation)
-  - [First Machine](getting-started.md#your-first-machine)
+  - [Installation](README.md#installation)
+  - [Quick Start](README.md#quick-start)
   - [Syntax Cheatsheet](syntax-cheatsheet.md)
   - [API Quick Reference](api-quick-reference.md)
 

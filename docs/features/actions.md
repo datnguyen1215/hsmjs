@@ -335,7 +335,7 @@ actions: [
 
 ## Common Pitfalls
 
-### ❌ Expecting Synchronous Results from Async Actions
+### [ERROR] Expecting Synchronous Results from Async Actions
 
 ```javascript
 // Wrong - can't access result immediately
@@ -352,7 +352,7 @@ entry: [async () => {
 }]
 ```
 
-### ❌ Mutating Context in Actions
+### [ERROR] Mutating Context in Actions
 
 ```javascript
 // Wrong - directly mutates context
@@ -366,7 +366,7 @@ actions: [assign({
 })]
 ```
 
-### ❌ Actions Depending on Order
+### [ERROR] Actions Depending on Order
 
 ```javascript
 // Risky - assumes previousAction sets something

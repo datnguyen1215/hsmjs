@@ -52,9 +52,9 @@ const machine = createMachine({
 });
 
 // Send events
-machine.send('TOGGLE');  // off → on
-machine.send('TOGGLE');  // on → off
-machine.send('FORCE_ON'); // off → on
+machine.send('TOGGLE');  // off -> on
+machine.send('TOGGLE');  // on -> off
+machine.send('FORCE_ON'); // off -> on
 ```
 
 ## Sending Events
@@ -69,7 +69,7 @@ machine.send('START');
 machine.send('NEXT');
 machine.send('FINISH');
 
-// Machine processes: START → NEXT → FINISH
+// Machine processes: START -> NEXT -> FINISH
 ```
 
 ### Awaiting Results
@@ -216,7 +216,7 @@ const machine = createMachine({
   }
 });
 
-machine.send('START');    // Handled: idle → active
+machine.send('START');    // Handled: idle -> active
 machine.send('UNKNOWN');  // Caught by wildcard
 machine.send('RANDOM');   // Caught by wildcard
 ```
@@ -317,7 +317,7 @@ machine.send('UPDATE', { value: 42, user: 'John' });
 
 ## Common Pitfalls
 
-### ❌ Assuming Immediate Processing
+### [ERROR] Assuming Immediate Processing
 
 ```javascript
 // Wrong - assuming synchronous
@@ -329,7 +329,7 @@ await machine.send('EVENT');
 console.log(machine.state);  // Now it's updated
 ```
 
-### ❌ Not Handling Queue Cleared Errors
+### [ERROR] Not Handling Queue Cleared Errors
 
 ```javascript
 // Wrong - not handling rejection
@@ -347,7 +347,7 @@ machine.send('EVENT')
   });
 ```
 
-### ❌ Overusing Priority Events
+### [ERROR] Overusing Priority Events
 
 ```javascript
 // Wrong - using priority for normal flow

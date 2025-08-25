@@ -322,13 +322,13 @@ states: {
   }
 }
 
-// LOGIN → modal.form
+// LOGIN -> modal.form
 // Logs: "Modal opened", "Form shown"
 
-// Inside modal: form → success
+// Inside modal: form -> success
 // Logs: "Success shown" (no parent entry/exit)
 
-// CLOSE from modal.success → otherState
+// CLOSE from modal.success -> otherState
 // Logs: "Modal closed"
 ```
 
@@ -469,7 +469,7 @@ const appMachine = createMachine({
 
 ## Common Pitfalls
 
-### ❌ Forgetting Initial State
+### [ERROR] Forgetting Initial State
 
 ```javascript
 // Wrong - parent needs initial
@@ -494,7 +494,7 @@ states: {
 }
 ```
 
-### ❌ Invalid State References
+### [ERROR] Invalid State References
 
 ```javascript
 // Wrong - missing # for ID reference
@@ -504,7 +504,7 @@ on: { EVENT: 'otherId' }  // Looks for sibling named 'otherId'
 on: { EVENT: '#otherId' }
 ```
 
-### ❌ Circular References
+### [ERROR] Circular References
 
 ```javascript
 // Avoid circular parent-child references
