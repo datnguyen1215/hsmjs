@@ -62,27 +62,27 @@ console.log(toggleMachine.context);   // { count: 1 }
 ## Documentation
 
 ### Quick Links
-- [**Quick Start**](docs/getting-started.md) - Get started in 5 minutes
-- [**Syntax Cheatsheet**](docs/syntax-cheatsheet.md) - All syntax on one page
-- [**API Quick Reference**](docs/api-quick-reference.md) - Most used methods
-- [**Migration from XState**](docs/migration-xstate.md) - Switching from XState
+- [**Quick Start**](https://datnguyen1215.github.io/hsmjs/#/README) - Get started in 5 minutes
+- [**Syntax Cheatsheet**](https://datnguyen1215.github.io/hsmjs/#/syntax-cheatsheet) - All syntax on one page
+- [**API Quick Reference**](https://datnguyen1215.github.io/hsmjs/#/api-quick-reference) - Most used methods
+- [**Migration from XState**](https://datnguyen1215.github.io/hsmjs/#/migration-xstate) - Switching from XState
 
 ### Feature Guides
-- [Context & assign()](docs/features/context-management.md)
-- [Actions](docs/features/actions.md)
-- [Guards](docs/features/guards.md)
-- [Events](docs/features/events.md)
-- [Nested States](docs/features/nested-states.md)
-- [Async Patterns](docs/features/async-patterns.md)
-- [History & Undo](docs/features/history-undo.md)
-- [Visualization](docs/features/visualization.md)
-- [Validation](docs/features/validation.md)
-- [Subscriptions](docs/features/subscriptions.md)
+- [Context & assign()](https://datnguyen1215.github.io/hsmjs/#/features/context-management)
+- [Actions](https://datnguyen1215.github.io/hsmjs/#/features/actions)
+- [Guards](https://datnguyen1215.github.io/hsmjs/#/features/guards)
+- [Events](https://datnguyen1215.github.io/hsmjs/#/features/events)
+- [Nested States](https://datnguyen1215.github.io/hsmjs/#/features/nested-states)
+- [Async Patterns](https://datnguyen1215.github.io/hsmjs/#/features/async-patterns)
+- [History & Undo](https://datnguyen1215.github.io/hsmjs/#/features/history-undo)
+- [Visualization](https://datnguyen1215.github.io/hsmjs/#/features/visualization)
+- [Validation](https://datnguyen1215.github.io/hsmjs/#/features/validation)
+- [Subscriptions](https://datnguyen1215.github.io/hsmjs/#/features/subscriptions)
 
 ### More Resources
-- [Framework Integration](docs/framework-integration.md) - React, Svelte, Vue
-- [Examples](docs/examples.md) - Real-world patterns
-- [Full API Reference](docs/api-reference.md) - Complete documentation
+- [Framework Integration](https://datnguyen1215.github.io/hsmjs/#/framework-integration) - React, Svelte, Vue
+- [Examples](https://datnguyen1215.github.io/hsmjs/#/examples) - Real-world patterns
+- [Full API Reference](https://datnguyen1215.github.io/hsmjs/#/api-reference) - Complete documentation
 
 ## License
 
