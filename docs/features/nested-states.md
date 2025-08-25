@@ -388,7 +388,7 @@ const wizardMachine = createMachine({
       on: {
         NEXT: {
           target: 'addressInfo',
-          actions: [assign({ data: ({ context, event }) =>
+          actions: [assign({ data: ({ context, event, machine }) =>
             ({ ...context.data, ...event.formData })
           })]
         }
@@ -398,7 +398,7 @@ const wizardMachine = createMachine({
       on: {
         NEXT: {
           target: 'payment',
-          actions: [assign({ data: ({ context, event }) =>
+          actions: [assign({ data: ({ context, event, machine }) =>
             ({ ...context.data, ...event.formData })
           })]
         },

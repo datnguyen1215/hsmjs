@@ -4,7 +4,7 @@
 
 ```javascript
 // Inline guard
-cond: ({ context, event }) => context.count < 10
+cond: ({ context, event, machine }) => context.count < 10
 
 // Named guard
 cond: 'isValidUser'
@@ -64,8 +64,8 @@ const counterMachine = createMachine({
 ### Guard Function Signature
 
 ```javascript
-// Guard function receives context and event
-const guardFunction = ({ context, event }) => {
+// Guard function receives context, event, and machine
+const guardFunction = ({ context, event, machine }) => {
   // Return boolean
   return true; // or false
 };
@@ -83,10 +83,10 @@ Define reusable guards in machine options:
 
 ```javascript
 const guards = {
-  isValidUser: ({ context, event }) =>
+  isValidUser: ({ context, event, machine }) =>
     event.user && event.user.verified,
 
-  hasPermission: ({ context, event }) =>
+  hasPermission: ({ context, event, machine }) =>
     context.permissions.includes(event.action),
 
   withinLimit: ({ context }) =>
@@ -146,12 +146,12 @@ states: {
       SUBMIT: [
         {
           target: 'success',
-          cond: ({ context, event }) =>
+          cond: ({ context, event, machine }) =>
             event.isValid && context.attempts < 3
         },
         {
           target: 'error',
-          cond: ({ context, event }) =>
+          cond: ({ context, event, machine }) =>
             !event.isValid && context.attempts < 2
         },
         {
@@ -168,18 +168,18 @@ states: {
 
 ```javascript
 // AND conditions
-cond: ({ context, event }) =>
+cond: ({ context, event, machine }) =>
   context.isAuthenticated &&
   context.hasPermission &&
   event.isValid
 
 // OR conditions
-cond: ({ context, event }) =>
+cond: ({ context, event, machine }) =>
   context.isAdmin ||
   context.userId === event.resourceOwnerId
 
 // Complex logic
-cond: ({ context, event }) => {
+cond: ({ context, event, machine }) => {
   const hasAccess = context.isAuthenticated && context.hasPermission;
   const isOwner = context.userId === event.resourceOwnerId;
   const isPublic = event.resourceType === 'public';
@@ -229,7 +229,7 @@ on: {
 
 ```javascript
 // Define guard separately for testing
-const isValidUser = ({ context, event }) =>
+const isValidUser = ({ context, event, machine }) =>
   event.user && event.user.verified;
 
 // Test the guard

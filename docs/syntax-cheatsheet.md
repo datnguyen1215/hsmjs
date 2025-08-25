@@ -61,7 +61,7 @@ on: {
 on: {
   EVENT: {
     target: 'targetState',
-    cond: ({ context, event }) => context.count > 0
+    cond: ({ context, event, machine }) => context.count > 0
   }
 }
 
@@ -98,24 +98,24 @@ assign({ loading: true })
 assign({ count: ({ context }) => context.count + 1 })
 
 // Computed from event
-assign({ user: ({ context, event }) => event.userData })
+assign({ user: ({ context, event, machine }) => event.userData })
 
 // Multiple updates
 assign({
   loading: false,
-  data: ({ context, event }) => event.data,
+  data: ({ context, event, machine }) => event.data,
   timestamp: () => Date.now()
 })
 
 // Array operations
 assign({
-  items: ({ context, event }) => [...context.items, event.item],
+  items: ({ context, event, machine }) => [...context.items, event.item],
   filtered: ({ context }) => context.items.filter(i => i.active)
 })
 
 // Object updates
 assign({
-  user: ({ context, event }) => ({ ...context.user, name: event.name })
+  user: ({ context, event, machine }) => ({ ...context.user, name: event.name })
 })
 ```
 
@@ -123,7 +123,7 @@ assign({
 
 ```javascript
 // Inline guard
-cond: ({ context, event }) => context.isValid && event.confirmed
+cond: ({ context, event, machine }) => context.isValid && event.confirmed
 
 // Named guard (defined in options)
 cond: 'isAuthorized'
@@ -131,7 +131,7 @@ cond: 'isAuthorized'
 // Guard options
 {
   guards: {
-    isAuthorized: ({ context, event }) => context.user !== null,
+    isAuthorized: ({ context, event, machine }) => context.user !== null,
     hasPermission: ({ context }) => context.role === 'admin'
   }
 }
@@ -147,7 +147,7 @@ actions: [() => console.log('Action executed')]
 actions: ['doSomething']
 
 // Async action
-actions: [async ({ context, event }) => {
+actions: [async ({ context, event, machine }) => {
   const result = await fetchData();
   machine.send('FETCH_COMPLETE', { result });
 }]
@@ -156,7 +156,7 @@ actions: [async ({ context, event }) => {
 {
   actions: {
     doSomething: () => console.log('Doing something'),
-    fetchData: async ({ context, event }) => { /* ... */ }
+    fetchData: async ({ context, event, machine }) => { /* ... */ }
   }
 }
 ```

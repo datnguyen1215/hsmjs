@@ -486,7 +486,7 @@ on: {
     on: {
       START: 'active',
       '*': {
-        actions: [({ context, event }) => console.log('Unknown event:', event.type)]
+        actions: [({ context, event, machine }) => console.log('Unknown event:', event.type)]
       }
     }
   }
@@ -660,7 +660,7 @@ const config: MachineConfig<Context, Events> = {
           actions: [assign({ count: ({ context }) => context.count + 1 })]
         },
         SET_USER: {
-          actions: [assign({ user: ({ context, event }) => event.user })]
+          actions: [assign({ user: ({ context, event, machine }) => event.user })]
         }
       }
     }

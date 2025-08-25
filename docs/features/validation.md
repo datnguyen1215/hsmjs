@@ -350,7 +350,7 @@ const machine = createMachine({
   }
 }, {
   guards: {
-    isValid: ({ context }) => context.isValid
+    isValid: ({ context, event, machine }) => context.isValid
     // Missing other guards would cause error
   },
   actions: {

@@ -271,9 +271,10 @@ machine.send('UPDATE', { value: 42 });
 Actions and guards receive:
 
 ```javascript
-({ context, event }) => {
+({ context, event, machine }) => {
   // context: Current context object
   // event: Event object with type and payload
+  // machine: Machine instance for sending events
 }
 ```
 

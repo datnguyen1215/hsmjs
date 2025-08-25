@@ -4,7 +4,7 @@
 
 ```javascript
 // Basic async action
-entry: [async ({ context, event }) => {
+entry: [async ({ context, event, machine }) => {
   const data = await fetchData();
   machine.send('SUCCESS', { data });
 }]
@@ -47,7 +47,7 @@ const fetchMachine = createMachine({
     loading: {
       entry: [
         assign({ error: null, loading: true }),
-        async ({ context, event }) => {
+        async ({ context, event, machine }) => {
           try {
             const response = await fetch(event.url);
             const data = await response.json();
@@ -61,14 +61,14 @@ const fetchMachine = createMachine({
         SUCCESS: {
           target: 'success',
           actions: [assign({
-            data: ({ context, event }) => event.data,
+            data: ({ context, event, machine }) => event.data,
             loading: false
           })]
         },
         ERROR: {
           target: 'error',
           actions: [assign({
-            error: ({ context, event }) => event.error,
+            error: ({ context, event, machine }) => event.error,
             loading: false
           })]
         },
@@ -107,7 +107,7 @@ Send events based on async results:
 
 ```javascript
 entry: [
-  async ({ context, event }) => {
+  async ({ context, event, machine }) => {
     const result = await processData(event.data);
 
     if (result.success) {
@@ -158,7 +158,7 @@ Execute multiple async operations in parallel:
 
 ```javascript
 entry: [
-  async ({ context, event }) => {
+  async ({ context, event, machine }) => {
     try {
       const [users, posts, comments] = await Promise.all([
         fetch('/api/users').then(r => r.json()),
@@ -180,7 +180,7 @@ Handle mixed success/failure:
 
 ```javascript
 entry: [
-  async ({ context, event }) => {
+  async ({ context, event, machine }) => {
     const results = await Promise.allSettled([
       fetch('/api/primary'),
       fetch('/api/backup'),
@@ -240,7 +240,7 @@ const retryMachine = createMachine({
     trying: {
       entry: [
         assign({ attempts: ({ context }) => context.attempts + 1 }),
-        async ({ context, event }) => {
+        async ({ context, event, machine }) => {
           try {
             const data = await fetchWithTimeout(event.url, 5000);
             machine.send('SUCCESS', { data });
@@ -253,7 +253,7 @@ const retryMachine = createMachine({
         SUCCESS: {
           target: 'success',
           actions: [assign({
-            data: ({ context, event }) => event.data,
+            data: ({ context, event, machine }) => event.data,
             attempts: 0
           })]
         },
@@ -319,7 +319,7 @@ const fetchMachine = createMachine({
         assign({
           abortController: () => new AbortController()
         }),
-        async ({ context, event }) => {
+        async ({ context, event, machine }) => {
           try {
             const response = await fetch(event.url, {
               signal: context.abortController.signal
@@ -375,7 +375,7 @@ const searchMachine = createMachine({
           }
         },
         assign({
-          query: ({ context, event }) => event.query,
+          query: ({ context, event, machine }) => event.query,
           debounceTimer: () => setTimeout(() => {
             machine.send('SEARCH');
           }, 300)
@@ -395,7 +395,7 @@ const searchMachine = createMachine({
         RESULTS: {
           target: 'idle',
           actions: [assign({
-            results: ({ context, event }) => event.results
+            results: ({ context, event, machine }) => event.results
           })]
         }
       }

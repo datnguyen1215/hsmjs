@@ -40,7 +40,7 @@ const editorMachine = createMachine({
       on: {
         TYPE: {
           actions: [assign({
-            text: ({ context, event }) => context.text + event.char,
+            text: ({ context, event, machine }) => context.text + event.char,
             saved: false
           })]
         },
@@ -234,7 +234,7 @@ const undoMachine = createMachine({
       on: {
         CHANGE: {
           actions: [assign({
-            value: ({ context, event }) => event.value
+            value: ({ context, event, machine }) => event.value
           })]
         },
         UNDO: {
@@ -471,14 +471,14 @@ const checkpointMachine = createMachine({
       on: {
         SAVE_CHECKPOINT: {
           actions: [assign({
-            checkpoints: ({ context, event }) => ({
+            checkpoints: ({ context, event, machine }) => ({
               ...context.checkpoints,
               [event.name]: checkpointMachine.snapshot
             })
           })]
         },
         RESTORE_CHECKPOINT: {
-          actions: [async ({ context, event }) => {
+          actions: [async ({ context, event, machine }) => {
             const checkpoint = context.checkpoints[event.name];
             if (checkpoint) {
               await checkpointMachine.restore(checkpoint);

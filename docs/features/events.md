@@ -103,14 +103,14 @@ Send data with events:
 machine.send('SET_USER', { name: 'John', id: 123 });
 
 // Access in actions
-actions: [({ context, event }) => {
+actions: [({ context, event, machine }) => {
   console.log(event.type);  // 'SET_USER'
   console.log(event.name);  // 'John'
   console.log(event.id);    // 123
 }]
 
 // Access in guards
-cond: ({ context, event }) => event.id === 123
+cond: ({ context, event, machine }) => event.id === 123
 ```
 
 ## Priority Events
@@ -206,7 +206,7 @@ const machine = createMachine({
         START: 'active',
         STOP: 'idle',
         '*': {  // Catches any other event
-          actions: [({ context, event }) => {
+          actions: [({ context, event, machine }) => {
             console.log(`Unknown event: ${event.type}`);
             // Log to analytics, show error, etc.
           }]
@@ -233,7 +233,7 @@ on: {
   KNOWN_EVENT: 'nextState',
   '*': {
     target: 'errorState',
-    cond: ({ context, event }) => !context.allowUnknown,
+    cond: ({ context, event, machine }) => !context.allowUnknown,
     actions: ['logUnknownEvent']
   }
 }
@@ -247,7 +247,7 @@ Send events from within actions:
 
 ```javascript
 entry: [
-  async ({ context, event }) => {
+  async ({ context, event, machine }) => {
     try {
       const data = await fetchData();
       machine.send('FETCH_SUCCESS', { data });
@@ -284,7 +284,7 @@ states: {
 
 ```javascript
 actions: [
-  ({ context, event }) => {
+  ({ context, event, machine }) => {
     if (context.retries < 3) {
       machine.send('RETRY');
     } else {

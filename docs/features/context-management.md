@@ -10,18 +10,18 @@ assign({ loading: true })
 assign({ count: ({ context }) => context.count + 1 })
 
 // Access event data
-assign({ user: ({ context, event }) => event.userData })
+assign({ user: ({ context, event, machine }) => event.userData })
 
 // Multiple updates
 assign({
   loading: false,
-  data: ({ context, event }) => event.data,
+  data: ({ context, event, machine }) => event.data,
   timestamp: () => Date.now()
 })
 
 // Nested object updates
 assign({
-  user: ({ context, event }) => ({
+  user: ({ context, event, machine }) => ({
     ...context.user,
     name: event.name
   })
@@ -101,13 +101,13 @@ assign({ items: [] })
 assign({ count: ({ context }) => context.count + 1 })
 
 // Computed from event
-assign({ searchQuery: ({ context, event }) => event.query })
+assign({ searchQuery: ({ context, event, machine }) => event.query })
 
 // Mixed static and computed
 assign({
   loading: true,  // Static
   timestamp: () => Date.now(),  // Computed
-  query: ({ context, event }) => event.text  // From event
+  query: ({ context, event, machine }) => event.text  // From event
 })
 ```
 
@@ -118,18 +118,18 @@ assign({
 ```javascript
 // Add item to array
 assign({
-  items: ({ context, event }) => [...context.items, event.item]
+  items: ({ context, event, machine }) => [...context.items, event.item]
 })
 
 // Remove item from array
 assign({
-  items: ({ context, event }) =>
+  items: ({ context, event, machine }) =>
     context.items.filter(item => item.id !== event.itemId)
 })
 
 // Update item in array
 assign({
-  items: ({ context, event }) =>
+  items: ({ context, event, machine }) =>
     context.items.map(item =>
       item.id === event.itemId
         ? { ...item, ...event.updates }
@@ -143,7 +143,7 @@ assign({
 ```javascript
 // Update nested property
 assign({
-  settings: ({ context, event }) => ({
+  settings: ({ context, event, machine }) => ({
     ...context.settings,
     theme: event.theme
   })
@@ -151,7 +151,7 @@ assign({
 
 // Deep nested update
 assign({
-  user: ({ context, event }) => ({
+  user: ({ context, event, machine }) => ({
     ...context.user,
     profile: {
       ...context.user.profile,
@@ -166,9 +166,9 @@ assign({
 ```javascript
 // Update based on condition
 assign({
-  status: ({ context, event }) =>
+  status: ({ context, event, machine }) =>
     event.success ? 'completed' : 'failed',
-  error: ({ context, event }) =>
+  error: ({ context, event, machine }) =>
     event.success ? null : event.error
 })
 ```
@@ -191,7 +191,7 @@ assign({ key: value })
 
 // Object with functions for computed values
 assign({
-  key: ({ context, event }) => computedValue
+  key: ({ context, event, machine }) => computedValue
 })
 
 // Mixed static and computed
@@ -213,10 +213,10 @@ machine.subscribe((state, context) => {
 });
 
 // Context in guards
-cond: ({ context, event }) => context.count < 10
+cond: ({ context, event, machine }) => context.count < 10
 
 // Context in actions
-actions: [({ context, event }) => {
+actions: [({ context, event, machine }) => {
   console.log('Current context:', context);
 }]
 ```
@@ -242,7 +242,7 @@ actions: [assign({
 ```javascript
 // Wrong - returns same array reference
 assign({
-  items: ({ context, event }) => {
+  items: ({ context, event, machine }) => {
     context.items.push(event.item);  // Mutation!
     return context.items;
   }
@@ -250,7 +250,7 @@ assign({
 
 // Correct - returns new array
 assign({
-  items: ({ context, event }) => [...context.items, event.item]
+  items: ({ context, event, machine }) => [...context.items, event.item]
 })
 ```
 

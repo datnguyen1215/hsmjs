@@ -51,7 +51,7 @@ const machine = createMachine({
     },
     loading: {
       entry: [
-        async ({ context, event }) => {
+        async ({ context, event, machine }) => {
           const data = await fetch(event.url);
           machine.send('SUCCESS', { data });
         }
@@ -59,7 +59,7 @@ const machine = createMachine({
       on: {
         SUCCESS: {
           target: 'idle',
-          actions: [assign({ data: ({ context, event }) => event.data })]
+          actions: [assign({ data: ({ context, event, machine }) => event.data })]
         }
       }
     }
@@ -76,9 +76,10 @@ Direct function definitions in the machine config:
 ```javascript
 actions: [
   () => console.log('Simple action'),
-  ({ context, event }) => {
+  ({ context, event, machine }) => {
     console.log('Context:', context);
     console.log('Event:', event);
+    console.log('Machine state:', machine.state);
   }
 ]
 ```
@@ -91,7 +92,7 @@ Define reusable actions in machine options:
 const actions = {
   logEntry: () => console.log('Entering state'),
   incrementCounter: assign({ count: ({ context }) => context.count + 1 }),
-  fetchData: async ({ context, event }) => {
+  fetchData: async ({ context, event, machine }) => {
     const response = await fetch(event.url);
     return response.json();
   }
@@ -124,12 +125,12 @@ actions: [
   assign({ count: ({ context }) => context.count + 1 }),
 
   // Computed from event
-  assign({ user: ({ context, event }) => event.userData }),
+  assign({ user: ({ context, event, machine }) => event.userData }),
 
   // Multiple updates
   assign({
     loading: false,
-    data: ({ context, event }) => event.data,
+    data: ({ context, event, machine }) => event.data,
     timestamp: () => Date.now()
   })
 ]
@@ -141,7 +142,7 @@ Actions can be asynchronous:
 
 ```javascript
 entry: [
-  async ({ context, event }) => {
+  async ({ context, event, machine }) => {
     try {
       const response = await fetch('/api/data');
       const data = await response.json();
@@ -193,13 +194,13 @@ states: {
 
 ## Action Parameters
 
-### Context and Event Access
+### Context, Event, and Machine Access
 
-All actions receive context and event:
+All actions receive context, event, and machine parameters:
 
 ```javascript
 actions: [
-  ({ context, event }) => {
+  ({ context, event, machine }) => {
     // Access current context
     console.log('Current count:', context.count);
 
@@ -207,12 +208,38 @@ actions: [
     console.log('Event type:', event.type);
     console.log('Event payload:', event.data);
 
-    // Use both
+    // Access machine instance
+    console.log('Current state:', machine.state);
+    console.log('Machine ID:', machine.id);
+
+    // Use all three
     const result = context.baseValue + event.increment;
     console.log('Result:', result);
   }
 ]
 ```
+
+### Machine Parameter
+
+All actions receive the machine instance as a third parameter:
+
+```javascript
+actions: [
+  ({ context, event, machine }) => {
+    // Send events to the same machine
+    machine.send('ANOTHER_EVENT');
+
+    // Access machine properties
+    console.log('Current state:', machine.state);
+    console.log('Machine ID:', machine.id);
+  }
+]
+```
+
+This enables actions to:
+- Send events without external machine reference
+- Access current state and context
+- Read machine configuration
 
 ## Action Results
 
@@ -294,10 +321,10 @@ actions: [
   ({ context }) => localStorage.setItem('state', JSON.stringify(context)),
 
   // Analytics
-  ({ context, event }) => analytics.track(event.type, { context }),
+  ({ context, event, machine }) => analytics.track(event.type, { context }),
 
   // API calls
-  async ({ context, event }) => {
+  async ({ context, event, machine }) => {
     await api.log({ action: event.type, timestamp: Date.now() });
   },
 
