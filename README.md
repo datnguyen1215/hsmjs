@@ -1,23 +1,25 @@
 # HSMJS
 
-![HSMJS Logo](images/logo.svg)
-
-Lightweight hierarchical state machine for JavaScript with XState-like syntax.
-
 [![NPM Version](https://img.shields.io/npm/v/@datnguyen1215/hsmjs.svg)](https://www.npmjs.com/package/@datnguyen1215/hsmjs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Stars](https://img.shields.io/github/stars/datnguyen1215/hsmjs.svg)](https://github.com/datnguyen1215/hsmjs)
 [![GitHub Issues](https://img.shields.io/github/issues/datnguyen1215/hsmjs.svg)](https://github.com/datnguyen1215/hsmjs/issues)
 
+Lightweight hierarchical state machine for JavaScript with XState-like syntax.
+
+<div style="text-align:center;"><img src="images/logo.svg" /></div>
+
 ## Features
 
-✅ **Zero Dependencies**
-✅ **XState-like Syntax**
-✅ **Nested States**
-✅ **Async Actions**
-✅ **TypeScript/JSDoc**
-✅ **History & Undo**
-✅ **State Visualization**
+<p style="line-height: 1.8; padding-left: 40px;">
+✅ Zero Dependencies <br />
+✅ XState-like Syntax <br />
+✅ Nested States <br />
+✅ Async Actions <br />
+✅ TypeScript/JSDoc <br />
+✅ History & Undo <br />
+✅ State Visualization
+</p>
 
 ## Installation
 
