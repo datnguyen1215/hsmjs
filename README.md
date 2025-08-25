@@ -12,11 +12,17 @@ Lightweight hierarchical state machine for JavaScript with XState-like syntax.
 ## Features
 
 ✅ **Zero Dependencies**
+
 ✅ **XState-like Syntax**
+
 ✅ **Nested States**
+
 ✅ **Async Actions**
+
 ✅ **TypeScript/JSDoc**
+
 ✅ **History & Undo**
+
 ✅ **State Visualization**
 
 ## Installation
