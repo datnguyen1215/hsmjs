@@ -1,92 +1,119 @@
-# HSMJS Documentation
+# Getting Started with HSMJS
 
-> A lightweight hierarchical state machine library for JavaScript with XState-like syntax
+A simplified state machine library for JavaScript applications.
 
-## Quick Start
-
-Install HSMJS in your project:
+## Installation
 
 ```bash
 npm install @datnguyen1215/hsmjs
 ```
 
-Create your first state machine:
+## Quick Start
 
 ```javascript
-import { createMachine } from '@datnguyen1215/hsmjs'
+import { createMachine, assign } from '@datnguyen1215/hsmjs';
 
 const toggleMachine = createMachine({
   id: 'toggle',
   initial: 'off',
+  context: { count: 0 },
   states: {
     off: {
-      on: { TOGGLE: 'on' }
+      on: {
+        TOGGLE: {
+          target: 'on',
+          actions: [assign({ count: ({ context }) => context.count + 1 })]
+        }
+      }
     },
     on: {
       on: { TOGGLE: 'off' }
     }
   }
-})
+});
 
-// Use the machine
-console.log(toggleMachine.state) // 'off'
-await toggleMachine.send('TOGGLE')
-console.log(toggleMachine.state) // 'on'
+// Usage
+await toggleMachine.send('TOGGLE');  // off -> on
+console.log(toggleMachine.state);    // 'on'
+console.log(toggleMachine.context);  // { count: 1 }
 ```
 
-## Key Features
+## Core Concepts
 
-- ✅ **Hierarchical States** - Build complex state logic with nested states
-- ✅ **XState-like Syntax** - Familiar configuration format for easy migration
-- ✅ **Guards & Conditions** - Control transitions with conditional logic
-- ✅ **Context Management** - Built-in state management with `assign()`
-- ✅ **Async Actions** - Handle promises and async operations seamlessly
-- ✅ **History Tracking** - Built-in undo/redo with configurable history
-- ✅ **State Visualization** - Generate Mermaid & PlantUML diagrams automatically
-- ✅ **Zero Dependencies** - Lightweight and performant
+### States & Transitions
+```javascript
+states: {
+  idle: {
+    on: { START: 'loading' }  // Event START transitions to loading state
+  }
+}
+```
 
-## Documentation Sections
+### Context (Persistent Data)
+```javascript
+context: { count: 0 },
+actions: [assign({ count: ({ context }) => context.count + 1 })]
+```
 
-### [Getting Started](getting-started.md)
-Learn the fundamentals of HSMJS, core concepts, and build your first state machine.
+### Actions (Side Effects)
+```javascript
+entry: [() => console.log('Entering')],   // On state entry
+exit: [() => console.log('Leaving')],     // On state exit
+actions: [async () => await fetchData()]  // During transition
+```
 
-### [API Reference](api-reference.md)
-Complete API documentation for all methods, configuration options, and utilities.
 
-### [Examples](examples.md)
-Real-world examples and patterns including UI components, data fetching, and game logic.
 
-### [Framework Integration](framework-integration.md)
-Integration guides for React, Vue, Svelte, and vanilla JavaScript applications.
 
-### [Advanced Features](advanced-features.md)
-Deep dive into hierarchical states, guards, async actions, and performance optimization.
+## Event Handling
 
-## Popular Use Cases
+```javascript
+// Fire and forget
+machine.send('EVENT');
 
-- **UI State Management** - Modals, dropdowns, navigation flows
-- **Form Validation** - Multi-step forms, field dependencies
-- **Data Fetching** - Loading states, retry logic, caching
-- **Authentication Flows** - Login, logout, session management
-- **Game Logic** - Turn-based games, player states
-- **Background Processes** - File uploads, synchronization
+// Await results
+const result = await machine.send('EVENT');
+console.log(result.state);    // New state
+console.log(result.context);  // Updated context
+console.log(result.results);  // Action return values
+```
 
-## Why HSMJS?
 
-HSMJS combines the power of hierarchical state machines with a simple, intuitive API. Unlike other solutions, it provides:
+## Visualization
 
-- **No build step required** - Works directly in the browser
-- **Familiar syntax** - If you know XState, you know HSMJS
-- **Lightweight** - Under 10KB minified
-- **Full TypeScript support** - Complete type definitions included
-- **Battle-tested** - Used in production applications
+```javascript
+const diagram = machine.visualize();
+// Outputs Mermaid diagram - render at mermaid.live
+```
 
-## Getting Help
+## API Quick Reference
 
-- [GitHub Issues](https://github.com/datnguyen1215/hsmjs/issues) - Report bugs or request features
-- [Discussions](https://github.com/datnguyen1215/hsmjs/discussions) - Ask questions and share ideas
-- [NPM Package](https://www.npmjs.com/package/@datnguyen1215/hsmjs) - View package details
+```javascript
+// Create machine
+const machine = createMachine(config);
 
-## License
+// Send events
+machine.send('EVENT');                      // Fire and forget
+const result = await machine.send('EVENT'); // Get results
 
-MIT © Dat Nguyen
+// Access state
+machine.state                               // Current state
+machine.context                             // Current context
+machine.matches('state')                    // Check state
+
+// Update context
+assign({ key: value })                      // Static value
+assign({ key: ({ context }) => newValue })  // Computed value
+
+// Subscribe to changes
+const unsubscribe = machine.subscribe((state, context) => {
+  console.log('State:', state, 'Context:', context);
+});
+```
+
+## Documentation
+
+- [API Reference](api-reference.md) - Complete method documentation
+- [Examples & Patterns](examples.md) - Common use cases
+- [Feature Guides](features/guards.md) - Advanced features
+- [Framework Integration](framework-integration.md) - React, Vue, Svelte

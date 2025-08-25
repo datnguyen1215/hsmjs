@@ -274,13 +274,13 @@ configs.forEach(config => {
   const validation = machine.validate();
 
   if (!validation.valid) {
-    console.error(`❌ ${config.name} has errors:`);
+    console.error(`[ERROR] ${config.name} has errors:`);
     validation.errors.forEach(e => console.error(`   ${e.type}`));
     hasErrors = true;
   }
 
   if (validation.warnings.length > 0) {
-    console.warn(`⚠️  ${config.name} has warnings:`);
+    console.warn(`[WARNING] ${config.name} has warnings:`);
     validation.warnings.forEach(w => console.warn(`   ${w.type}`));
   }
 });
@@ -472,7 +472,7 @@ states: {
 
 ## Common Pitfalls
 
-### ❌ Ignoring Warnings
+### [ERROR] Ignoring Warnings
 
 ```javascript
 // Warnings often indicate bugs
@@ -486,7 +486,7 @@ states: {
 // Investigate warnings - they usually matter
 ```
 
-### ❌ Validating in Production
+### [ERROR] Validating in Production
 
 ```javascript
 // Don't validate in production - wastes resources
@@ -497,7 +497,7 @@ if (process.env.NODE_ENV === 'production') {
 // Validate during development/testing only
 ```
 
-### ❌ Not Checking Validation Result
+### [ERROR] Not Checking Validation Result
 
 ```javascript
 // Wrong - calling validate but ignoring result

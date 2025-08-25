@@ -223,7 +223,7 @@ actions: [({ context, event, machine }) => {
 
 ## Common Pitfalls
 
-### ❌ Mutating Context Directly
+### [ERROR] Mutating Context Directly
 
 ```javascript
 // Wrong - mutates context
@@ -237,7 +237,7 @@ actions: [assign({
 })]
 ```
 
-### ❌ Forgetting to Return New Objects
+### [ERROR] Forgetting to Return New Objects
 
 ```javascript
 // Wrong - returns same array reference
@@ -254,7 +254,7 @@ assign({
 })
 ```
 
-### ❌ Overwriting Entire Context
+### [ERROR] Overwriting Entire Context
 
 ```javascript
 // Wrong - loses other context properties

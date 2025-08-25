@@ -105,8 +105,8 @@ const machine = createMachine({
 });
 
 // Each transition adds to history
-await machine.send('NEXT');  // state1 → state2
-await machine.send('NEXT');  // state2 → state3
+await machine.send('NEXT');  // state1 -> state2
+await machine.send('NEXT');  // state2 -> state3
 
 console.log(machine.history);
 // [
@@ -498,7 +498,7 @@ await machine.send('RESTORE_CHECKPOINT', { name: 'beforeExperiment' });
 
 ## Common Pitfalls
 
-### ❌ Modifying History Array
+### [ERROR] Modifying History Array
 
 ```javascript
 // Wrong - modifying history directly
@@ -508,7 +508,7 @@ machine.history.push(customSnapshot);  // Don't do this!
 await machine.restore(customSnapshot);
 ```
 
-### ❌ Expecting Actions on Restore
+### [ERROR] Expecting Actions on Restore
 
 ```javascript
 // Wrong - expecting entry actions
@@ -521,7 +521,7 @@ states: {
 // Actions only run on normal transitions, not restore
 ```
 
-### ❌ Storing Non-Serializable Data
+### [ERROR] Storing Non-Serializable Data
 
 ```javascript
 // Wrong - functions can't be serialized

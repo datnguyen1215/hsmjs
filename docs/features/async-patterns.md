@@ -444,7 +444,7 @@ const throttleMachine = createMachine({
 
 ## Common Pitfalls
 
-### ❌ Not Handling Errors
+### [ERROR] Not Handling Errors
 
 ```javascript
 // Wrong - no error handling
@@ -464,7 +464,7 @@ entry: [async () => {
 }]
 ```
 
-### ❌ Blocking State Transitions
+### [ERROR] Blocking State Transitions
 
 ```javascript
 // Wrong - blocks other events
@@ -478,7 +478,7 @@ on: {
 }
 ```
 
-### ❌ Memory Leaks with Timers
+### [ERROR] Memory Leaks with Timers
 
 ```javascript
 // Wrong - timer not cleaned up

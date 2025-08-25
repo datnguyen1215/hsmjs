@@ -301,6 +301,110 @@ const diagram = authMachine.visualize();
   - **Tool support**: PlantUML diagrams can be rendered in many documentation tools, IDEs, and online editors
   - **Complex state machines**: PlantUML handles deeply nested hierarchies better than Mermaid for visualization clarity
 
+## Common Patterns from Getting Started
+
+### Loading States Pattern
+
+```javascript
+const fetchMachine = createMachine({
+  id: 'fetch',
+  initial: 'idle',
+  context: { data: null, error: null },
+  states: {
+    idle: {
+      on: { FETCH: 'loading' }
+    },
+    loading: {
+      entry: [async ({ context, event }) => {
+        try {
+          const response = await fetch(event.url);
+          const data = await response.json();
+          machine.send('SUCCESS', { data });
+        } catch (error) {
+          machine.send('ERROR', { error });
+        }
+      }],
+      on: {
+        SUCCESS: {
+          target: 'success',
+          actions: [assign({ data: ({ context, event }) => event.data })]
+        },
+        ERROR: {
+          target: 'error',
+          actions: [assign({ error: ({ context, event }) => event.error })]
+        }
+      }
+    },
+    success: {
+      on: { FETCH: 'loading' }
+    },
+    error: {
+      on: { RETRY: 'loading' }
+    }
+  }
+});
+```
+
+### Form Validation Pattern
+
+```javascript
+const formMachine = createMachine({
+  id: 'form',
+  initial: 'editing',
+  context: {
+    values: {},
+    errors: {}
+  },
+  states: {
+    editing: {
+      on: {
+        CHANGE: {
+          actions: [assign({
+            values: ({ context, event }) => ({
+              ...context.values,
+              [event.field]: event.value
+            })
+          })]
+        },
+        SUBMIT: 'validating'
+      }
+    },
+    validating: {
+      entry: [({ context }) => {
+        const errors = validateForm(context.values);
+        if (Object.keys(errors).length > 0) {
+          machine.send('INVALID', { errors });
+        } else {
+          machine.send('VALID');
+        }
+      }],
+      on: {
+        VALID: 'submitting',
+        INVALID: {
+          target: 'editing',
+          actions: [assign({ errors: ({ context, event }) => event.errors })]
+        }
+      }
+    },
+    submitting: {
+      entry: [async ({ context }) => {
+        try {
+          await submitForm(context.values);
+          machine.send('SUCCESS');
+        } catch (error) {
+          machine.send('FAILURE', { error });
+        }
+      }],
+      on: {
+        SUCCESS: 'success',
+        FAILURE: 'editing'
+      }
+    },
+    success: {}
+  }
+});
+```
+
 ---
 
 These examples demonstrate real-world patterns and use cases for HSMJS. Each pattern can be adapted and extended based on your specific requirements. Run any example to see it in action, or use them as starting points for your own state machine implementations.

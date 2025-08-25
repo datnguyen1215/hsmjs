@@ -417,7 +417,7 @@ function autoUnsubscribe(component) {
 
 ## Common Pitfalls
 
-### ❌ Forgetting to Unsubscribe
+### [ERROR] Forgetting to Unsubscribe
 
 ```javascript
 // Wrong - memory leak
@@ -440,7 +440,7 @@ function setupListener() {
 }
 ```
 
-### ❌ Modifying State in Subscriber
+### [ERROR] Modifying State in Subscriber
 
 ```javascript
 // Wrong - causes infinite loop
@@ -458,7 +458,7 @@ machine.subscribe((state, context) => {
 });
 ```
 
-### ❌ Heavy Operations in Subscribers
+### [ERROR] Heavy Operations in Subscribers
 
 ```javascript
 // Wrong - blocks state machine

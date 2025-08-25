@@ -1,5 +1,7 @@
 # HSMJS
 
+![HSMJS Logo](images/logo.svg)
+
 Lightweight hierarchical state machine for JavaScript with XState-like syntax.
 
 [![NPM Version](https://img.shields.io/npm/v/@datnguyen1215/hsmjs.svg)](https://www.npmjs.com/package/@datnguyen1215/hsmjs)
@@ -9,7 +11,13 @@ Lightweight hierarchical state machine for JavaScript with XState-like syntax.
 
 ## Features
 
-✅ **Zero Dependencies** • **XState-like Syntax** • **Nested States** • **Async Actions** • **TypeScript/JSDoc** • **History & Undo** • **State Visualization**
+✅ **Zero Dependencies**
+✅ **XState-like Syntax**
+✅ **Nested States**
+✅ **Async Actions**
+✅ **TypeScript/JSDoc**
+✅ **History & Undo**
+✅ **State Visualization**
 
 ## Installation
 
@@ -43,7 +51,7 @@ const toggleMachine = createMachine({
 });
 
 // Use the machine
-await toggleMachine.send('TOGGLE');  // inactive → active, count: 1
+await toggleMachine.send('TOGGLE');  // inactive -> active, count: 1
 console.log(toggleMachine.state);     // 'active'
 console.log(toggleMachine.context);   // { count: 1 }
 ```

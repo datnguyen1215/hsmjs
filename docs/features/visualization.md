@@ -412,11 +412,11 @@ test('machine has expected structure', () => {
 
 | Feature | Mermaid | PlantUML |
 |---------|---------|----------|
-| **GitHub Support** | ✅ Native | ❌ Needs rendering |
-| **Entry/Exit Actions** | ❌ Not shown | ✅ Inline display |
-| **Direction Control** | ✅ In API | ❌ In renderer |
-| **Browser Rendering** | ✅ JavaScript | ❌ Needs server |
-| **Nested States** | ✅ Good | ✅ Excellent |
+| **GitHub Support** | Yes (Native) | No (Needs rendering) |
+| **Entry/Exit Actions** | No (Not shown) | Yes (Inline display) |
+| **Direction Control** | Yes (In API) | No (In renderer) |
+| **Browser Rendering** | Yes (JavaScript) | No (Needs server) |
+| **Nested States** | Yes (Good) | Yes (Excellent) |
 | **File Size** | Small | Small |
 | **Learning Curve** | Easy | Easy |
 
@@ -434,7 +434,7 @@ test('machine has expected structure', () => {
 
 ## Common Pitfalls
 
-### ❌ Expecting Runtime Updates
+### [ERROR] Expecting Runtime Updates
 
 ```javascript
 // Wrong - diagram is static snapshot
@@ -446,7 +446,7 @@ machine.send('EVENT');
 const newDiagram = machine.visualize();
 ```
 
-### ❌ Including Dynamic Data
+### [ERROR] Including Dynamic Data
 
 ```javascript
 // Context values not shown in diagrams
@@ -457,7 +457,7 @@ context: {
 // Diagrams show structure, not runtime data
 ```
 
-### ❌ Manual Diagram Editing
+### [ERROR] Manual Diagram Editing
 
 ```javascript
 // Don't edit generated diagrams

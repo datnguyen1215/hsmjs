@@ -275,7 +275,7 @@ test('guard prevents invalid transition', async () => {
 
 ## Common Pitfalls
 
-### ❌ Side Effects in Guards
+### [ERROR] Side Effects in Guards
 
 ```javascript
 // Wrong - guard has side effect
@@ -289,7 +289,7 @@ cond: ({ context }) => {
 cond: ({ context }) => context.isValid
 ```
 
-### ❌ Async Guards
+### [ERROR] Async Guards
 
 ```javascript
 // Wrong - guards must be synchronous
@@ -305,7 +305,7 @@ entry: [async () => {
 }]
 ```
 
-### ❌ Forgetting Fallback
+### [ERROR] Forgetting Fallback
 
 ```javascript
 // Risky - no fallback if conditions don't match
